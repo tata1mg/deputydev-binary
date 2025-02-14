@@ -1,0 +1,56 @@
+from concurrent.futures import ProcessPoolExecutor
+from deputydev_core.services.chunking.chunker.handlers.non_vector_db_chunker import NonVectorDBChunker
+from deputydev_core.services.chunking.chunker.handlers.vector_db_chunker import VectorDBChunker
+from deputydev_core.services.chunking.chunking_manager import ChunkingManger
+from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
+from deputydev_core.services.search.dataclasses.main import SearchTypes
+from deputydev_core.utils.config_manager import ConfigManager
+from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
+from deputydev_core.services.initialization.initialization_service import InitializationManager
+from deputydev_core.services.embedding.one_dev_embedding_manager import OneDevEmbeddingManager
+from typing import Optional, Dict
+from app.utils.constants import NUMBER_OF_WORKERS
+import json
+
+
+class InitializationService:
+    @classmethod
+    async def update_vector_store(cls, repo_path, auth_token):
+        with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
+            one_dev_client = OneDevClient()
+            initialization_manager = InitializationManager(repo_path=repo_path, auth_token=auth_token,
+                                                           process_executor=executor,
+                                                           one_dev_client=one_dev_client)
+            local_repo = initialization_manager.get_local_repo()
+            chunkable_files_and_hashes = await local_repo.get_chunkable_files_and_commit_hashes()
+            await initialization_manager.initialize_vector_db()
+            await initialization_manager.prefill_vector_store(chunkable_files_and_hashes)
+
+    @classmethod
+    async def initialize(cls, payload):
+        await cls.get_config(auth_token=payload.auth_token)
+        await cls.update_vector_store(payload.repo_path, payload.auth_token)
+
+    @classmethod
+    async def get_config(cls, auth_token, file_path="../config.json"):
+        if not ConfigManager.configs:
+            ConfigManager.initialize(in_memory=True)
+            one_dev_client = OneDevClient()
+            try:
+                configs: Optional[Dict[str, str]] = await one_dev_client.get_configs(
+                    headers={"Content-Type": "application/json", "Authorization": f"Bearer {auth_token}"}
+                )
+                if configs is None:
+                    raise Exception("No configs fetched")
+                ConfigManager.set(configs)
+                with open(file_path, "w") as json_file:
+                    json.dump(configs, json_file, indent=4)
+                print("hello")
+            except Exception as error:
+                print("Failed to fetch configs")
+                await cls.close_session_and_exit(one_dev_client)
+
+    @staticmethod
+    async def close_session_and_exit(one_dev_client):
+        print("Exiting ...")
+        await one_dev_client.close_session()

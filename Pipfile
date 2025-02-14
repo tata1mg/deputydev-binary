@@ -1,0 +1,12 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+sanic = "==22.12.0"
+deputydev-core = { ref = "common_changes", git = "ssh://git@github.com/tata1mg/deputydev-core.git" }
+websockets= "==12.0"
+
+[requires]
+python_version = "3.9"
