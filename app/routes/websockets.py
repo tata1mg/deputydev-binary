@@ -19,7 +19,6 @@ class RelevantChunksParams(BaseModel):
 class UpdateVectorStoreParams(BaseModel):
     repo_path: str
     auth_token: str
-    query: str
 
 
 @websocket_routes.websocket("/relevant_chunks")
