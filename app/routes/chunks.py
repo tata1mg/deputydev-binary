@@ -5,10 +5,10 @@ from app.services.relevant_chunk_service import RelevantChunksService
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 
-websocket_routes = Blueprint("websockets", url_prefix="")
+chunks = Blueprint("chunks", url_prefix="")
 
 
-@websocket_routes.websocket("/relevant_chunks")
+@chunks.websocket("/relevant_chunks")
 async def relevant_chunks(request, ws):
     try:
         data = await ws.recv()
@@ -23,7 +23,7 @@ async def relevant_chunks(request, ws):
         print(f"Connection closed: {e}")
 
 
-@websocket_routes.websocket("/update_vector_store")
+@chunks.websocket("/update_chunks")
 async def update_vector_store(request, ws):
     try:
         data = await ws.recv()
