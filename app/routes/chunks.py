@@ -16,7 +16,7 @@ async def relevant_chunks(request, ws):
         payload = RelevantChunksParams(**payload)
         relevant_chunks_data = await RelevantChunksService.get_relevant_chunks(payload)
         relevant_chunks_data = json.dumps(relevant_chunks_data)
-        await ws.send(f"{relevant_chunks_data}")
+        await ws.send(relevant_chunks_data)
     except Exception as e:
         # uncomment for local debugging
         # print(traceback.format_exc())
@@ -30,7 +30,7 @@ async def update_vector_store(request, ws):
         payload = json.loads(data)
         payload = UpdateVectorStoreParams(**payload)
         await InitializationService.initialize(payload)
-        await ws.send(f"Success")
+        await ws.send(f"Completed")
     except Exception as e:
         # uncomment for local debugging
         # print(traceback.format_exc())
