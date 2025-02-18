@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "204eece70e45b03807f8cfc66d94a7191e6d68c3168321eb1245b626c69e6e77"
+            "sha256": "423f2975afbd3a119f2d23ccaaf3e2dbf333ad054a255abf24e2815b116e7b0d"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -135,7 +135,7 @@
                 "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f",
                 "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"
             ],
-            "markers": "python_version < '3.11'",
+            "markers": "python_version >= '3.7'",
             "version": "==4.0.3"
         },
         "attrs": {
@@ -232,7 +232,7 @@
                 "sha256:f7f5baafcc48261359e14bcd6d9bff6d4b28d9103847c9e136694cb0501aef87",
                 "sha256:fc48c783f9c87e60831201f2cce7f3b2e4846bf4d8728eabe54d60700b318a0b"
             ],
-            "markers": "platform_python_implementation != 'PyPy'",
+            "markers": "python_version >= '3.8'",
             "version": "==1.17.1"
         },
         "charset-normalizer": {
@@ -372,14 +372,14 @@
         },
         "deputydev-core": {
             "git": "ssh://git@github.com/tata1mg/deputydev-core.git",
-            "ref": "567529cbeb6e393e31a027e04c1630976402fe69"
+            "ref": "3c6b6b6a492990278a414ee0f41d9dc301190bcf"
         },
         "exceptiongroup": {
             "hashes": [
                 "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b",
                 "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc"
             ],
-            "markers": "python_version < '3.11'",
+            "markers": "python_version >= '3.7'",
             "version": "==1.2.2"
         },
         "frozenlist": {
@@ -1532,7 +1532,7 @@
                 "sha256:f8ccb77b3e40b151e20519c6ae6d89bfe3f4c14e8e210d910287f778368bb3d1",
                 "sha256:fbd8fd427f57a03cff3ad6574b5e299131585d9727c8c366da4624a9069ed746"
             ],
-            "markers": "sys_platform != 'win32' and implementation_name == 'cpython'",
+            "markers": "python_version >= '3.8'",
             "version": "==5.10.0"
         },
         "urllib3": {
@@ -1583,7 +1583,7 @@
                 "sha256:f3df876acd7ec037a3d005b3ab85a7e4110422e4d9c1571d4fc89b0fc41b6816",
                 "sha256:f7089d2dc73179ce5ac255bdf37c236a9f914b264825fdaacaded6990a7fb4c2"
             ],
-            "markers": "sys_platform != 'win32' and implementation_name == 'cpython'",
+            "markers": "python_full_version >= '3.8.0'",
             "version": "==0.21.0"
         },
         "validators": {
