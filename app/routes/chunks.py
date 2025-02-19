@@ -30,7 +30,7 @@ async def update_vector_store(request, ws):
         payload = json.loads(data)
         payload = UpdateVectorStoreParams(**payload)
         await InitializationService.initialize(payload)
-        await ws.send(f"Completed")
+        await ws.send("Completed")
     except Exception as e:
         # uncomment for local debugging
         # print(traceback.format_exc())

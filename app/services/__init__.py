@@ -6,5 +6,5 @@ try:
         ConfigManager.in_memory = True
         data = json.load(json_file)
         ConfigManager.config = data
-except Exception as e:
+except Exception:
     pass
