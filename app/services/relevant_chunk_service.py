@@ -54,6 +54,9 @@ class RelevantChunksService:
                 )
             )
             final_chunks = cls.handle_relevant_chunks(reranked_chunks)
+            # closing weaviate clients
+            weaviate_client.sync_client.close()
+            await weaviate_client.async_client.close()
         return final_chunks
 
     @classmethod

@@ -28,6 +28,9 @@ class InitializationService:
             await initialization_manager.prefill_vector_store(
                 chunkable_files_and_hashes
             )
+            # closing weaviate clients
+            await initialization_manager.weaviate_client.async_client.close()
+            initialization_manager.weaviate_client.sync_client.close()
 
     @classmethod
     async def initialize(cls, payload):
