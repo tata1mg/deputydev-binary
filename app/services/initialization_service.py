@@ -5,13 +5,15 @@ from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
 from typing import Optional, Dict
+
+from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.utils.constants import NUMBER_OF_WORKERS
 import json
 
 
 class InitializationService:
     @classmethod
-    async def update_vector_store(cls, repo_path, auth_token):
+    async def update_vector_store(cls, repo_path: str, auth_token: str) -> None:
         with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
             one_dev_client = OneDevClient()
             initialization_manager = InitializationManager(
@@ -33,12 +35,12 @@ class InitializationService:
             initialization_manager.weaviate_client.sync_client.close()
 
     @classmethod
-    async def initialize(cls, payload):
+    async def initialize(cls, payload: UpdateVectorStoreParams) -> None:
         await cls.get_config(auth_token=payload.auth_token)
         await cls.update_vector_store(payload.repo_path, payload.auth_token)
 
     @classmethod
-    async def get_config(cls, auth_token, file_path="../config.json"):
+    async def get_config(cls, auth_token: str, file_path: str = "../config.json") -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
             one_dev_client = OneDevClient()

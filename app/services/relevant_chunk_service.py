@@ -1,4 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
+
+from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
 from deputydev_core.services.search.dataclasses.main import SearchTypes
@@ -10,12 +12,17 @@ from deputydev_core.services.initialization.initialization_service import (
 from deputydev_core.services.embedding.one_dev_embedding_manager import (
     OneDevEmbeddingManager,
 )
+
+from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.utils.constants import NUMBER_OF_WORKERS
+from typing import List, Dict, Any
 
 
 class RelevantChunksService:
     @classmethod
-    async def get_relevant_chunks(cls, payload):
+    async def get_relevant_chunks(
+        cls, payload: RelevantChunksParams
+    ) -> List[Dict[str, Any]]:
         repo_path = payload.repo_path
         auth_token = payload.auth_token
         query = payload.query
@@ -60,6 +67,6 @@ class RelevantChunksService:
         return final_chunks
 
     @classmethod
-    def handle_relevant_chunks(cls, chunks):
+    def handle_relevant_chunks(cls, chunks: List[ChunkInfo]):
         dumped_chunks = [chunk.model_dump(mode="json") for chunk in chunks]
         return dumped_chunks
