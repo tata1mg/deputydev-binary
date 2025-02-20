@@ -38,12 +38,22 @@ class RelevantChunksService:
             await local_repo.get_chunkable_files_and_commit_hashes()
         )
         with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
-            weaviate_client = await InitializationManager(
+            initialization_manager = InitializationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,
                 process_executor=executor,
                 one_dev_client=one_dev_client,
-            ).initialize_vector_db()
+            )
+            weaviate_client = await initialization_manager.initialize_vector_db()
+            if (
+                payload.perform_chunking
+                and ConfigManager.configs["BINARY"]["RELEVANT_CHUNKS"][
+                    "CHUNKING_ENABLED"
+                ]
+            ):
+                await initialization_manager.prefill_vector_store(
+                    chunkable_files_and_hashes
+                )
             max_relevant_chunks = ConfigManager.configs["CHUNKING"]["NUMBER_OF_CHUNKS"]
             reranked_chunks, input_tokens, focus_chunks_details = (
                 await ChunkingManger.get_relevant_chunks(
