@@ -13,7 +13,9 @@ import json
 
 class InitializationService:
     @classmethod
-    async def update_vector_store(cls, repo_path: str, auth_token: str) -> None:
+    async def update_vector_store(
+        cls, repo_path: str, auth_token: str, chunkable_files: list = None
+    ) -> None:
         with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
             one_dev_client = OneDevClient()
             initialization_manager = InitializationManager(
@@ -22,7 +24,7 @@ class InitializationService:
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
-            local_repo = initialization_manager.get_local_repo()
+            local_repo = initialization_manager.get_local_repo(chunkable_files=chunkable_files)
             chunkable_files_and_hashes = (
                 await local_repo.get_chunkable_files_and_commit_hashes()
             )
@@ -40,7 +42,9 @@ class InitializationService:
         await cls.update_vector_store(payload.repo_path, payload.auth_token)
 
     @classmethod
-    async def get_config(cls, auth_token: str, file_path: str = "../config.json") -> None:
+    async def get_config(
+        cls, auth_token: str, file_path: str = "../config.json"
+    ) -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
             one_dev_client = OneDevClient()
