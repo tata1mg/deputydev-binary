@@ -39,7 +39,7 @@ class InitializationService:
     @classmethod
     async def initialize(cls, payload: UpdateVectorStoreParams) -> None:
         await cls.get_config(auth_token=payload.auth_token)
-        await cls.update_vector_store(payload.repo_path, payload.auth_token)
+        await cls.update_vector_store(payload.repo_path, payload.auth_token, payload.chunkable_files)
 
     @classmethod
     async def get_config(
