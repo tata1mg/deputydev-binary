@@ -385,7 +385,7 @@
         },
         "deputydev-core": {
             "git": "ssh://git@github.com/tata1mg/deputydev-core.git",
-            "ref": "55a7c1e748756a03e8ee2a548096911f2d0ddb9f"
+            "ref": "1a9c9fb4c0532309ad6089cfcafa5e76f28e0b0d"
         },
         "exceptiongroup": {
             "hashes": [
