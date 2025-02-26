@@ -1,5 +1,6 @@
+from typing import List, Optional
+
 from pydantic import BaseModel
-from typing import Optional, List
 
 
 class RelevantChunksParams(BaseModel):
@@ -8,4 +9,5 @@ class RelevantChunksParams(BaseModel):
     query: str
     focus_chunks: Optional[List[str]] = []
     focus_files: Optional[List[str]] = []
+    focus_directories: Optional[List[str]] = []
     perform_chunking: Optional[bool] = False

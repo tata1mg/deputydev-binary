@@ -1,4 +1,5 @@
 import json
+
 from deputydev_core.utils.config_manager import ConfigManager
 
 try:

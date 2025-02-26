@@ -1,6 +1,7 @@
 from sanic import Blueprint
-from app.routes.chunks import chunks
+
 from app.routes.auth_token import auth_token
+from app.routes.chunks import chunks
 
 blueprints = [chunks, auth_token]
 

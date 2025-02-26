@@ -1,14 +1,16 @@
+import json
 from concurrent.futures import ProcessPoolExecutor
+from typing import Dict, Optional
+
+from deputydev_core.clients.http.service_clients.one_dev_client import \
+    OneDevClient
+from deputydev_core.services.initialization.initialization_service import \
+    InitializationManager
 from deputydev_core.utils.config_manager import ConfigManager
-from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
-from deputydev_core.services.initialization.initialization_service import (
-    InitializationManager,
-)
-from typing import Optional, Dict
 
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
+from app.services.shared_chunks_manager import SharedChunksManager
 from app.utils.constants import NUMBER_OF_WORKERS
-import json
 
 
 class InitializationService:
@@ -24,9 +26,14 @@ class InitializationService:
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
-            local_repo = initialization_manager.get_local_repo(chunkable_files=chunkable_files)
+            local_repo = initialization_manager.get_local_repo(
+                chunkable_files=chunkable_files
+            )
             chunkable_files_and_hashes = (
                 await local_repo.get_chunkable_files_and_commit_hashes()
+            )
+            await SharedChunksManager.update_chunks(
+                repo_path, chunkable_files_and_hashes, chunkable_files
             )
             await initialization_manager.initialize_vector_db()
             await initialization_manager.prefill_vector_store(
@@ -39,7 +46,9 @@ class InitializationService:
     @classmethod
     async def initialize(cls, payload: UpdateVectorStoreParams) -> None:
         await cls.get_config(auth_token=payload.auth_token)
-        await cls.update_vector_store(payload.repo_path, payload.auth_token, payload.chunkable_files)
+        await cls.update_vector_store(
+            payload.repo_path, payload.auth_token, payload.chunkable_files
+        )
 
     @classmethod
     async def get_config(

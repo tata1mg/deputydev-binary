@@ -1,9 +1,14 @@
-from sanic import Blueprint
 import json
-from app.services.initialization_service import InitializationService
-from app.services.relevant_chunk_service import RelevantChunksService
+
+from sanic import Blueprint, HTTPResponse
+from sanic.request import Request
+
+from app.models.dtos.autocomplete_search_params import AutocompleteSearchParams
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
+from app.services.autocomplete_search_service import AutocompleteSearchService
+from app.services.initialization_service import InitializationService
+from app.services.relevant_chunk_service import RelevantChunksService
 
 chunks = Blueprint("chunks", url_prefix="")
 
@@ -35,3 +40,36 @@ async def update_vector_store(request, ws):
         # uncomment for local debugging
         # print(traceback.format_exc())
         print(f"Connection closed: {e}")
+
+
+@chunks.route("/keyword_search", methods=["POST"])
+async def get_autocomplete_keyword_chunks(_request: Request, **kwargs):
+    payload = _request.json
+    headers = _request.headers
+    payload = AutocompleteSearchParams(**payload)
+    chunks = await AutocompleteSearchService.get_autocomplete_keyword_chunks(payload)
+    return HTTPResponse(body=json.dumps(chunks))
+
+
+@chunks.route("/keyword_type_search", methods=["POST"])
+async def get_autocomplete_keyword_type_chunks(_request: Request):
+    payload = _request.json
+    payload = AutocompleteSearchParams(**payload)
+    chunks = await AutocompleteSearchService.get_autocomplete_keyword_type_chunks(
+        payload
+    )
+    return HTTPResponse(body=json.dumps(chunks))
+
+
+# @chunks.route("/update_chunks", methods=["POST"])
+# async def update_vector_store(request):
+#     try:
+#         payload = request.json
+#         payload = UpdateVectorStoreParams(**payload)
+#         await InitializationService.initialize(payload)
+#         return HTTPResponse(body=json.dumps({}))
+#     except Exception as e:
+#         # uncomment for local debugging
+#         # print(traceback.format_exc())
+#         raise e
+#         # print(f"Connection closed: {e}")
