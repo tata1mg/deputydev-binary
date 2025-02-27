@@ -4,18 +4,13 @@ from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from deputydev_core.utils.config_manager import ConfigManager
 
-ConfigManager.config = {"ab": "bc"}
 chunks = Blueprint("chunks", url_prefix="")
-print(id(ConfigManager.config))
 
 
 @chunks.websocket("/relevant_chunks")
 async def relevant_chunks(request, ws):
     try:
-        print(ConfigManager.config)
-        print(id(ConfigManager.config))
         data = await ws.recv()
         payload = json.loads(data)
         payload = RelevantChunksParams(**payload)
@@ -28,7 +23,6 @@ async def relevant_chunks(request, ws):
         await ws.send(json.dumps({"error": "can not find relevant chunks"}))
         # uncomment for local debugging
         import traceback
-
         print(traceback.format_exc())
         print(f"Connection closed: {e}")
 

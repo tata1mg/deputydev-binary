@@ -12,7 +12,7 @@ from deputydev_core.services.initialization.initialization_service import (
 
 
 async def setup_weaviate(app, _):
-    ConfigManager.initialize(in_memory=True)
+    ConfigManager.in_memory = True
     ConfigManager.set(
         {
             "WEAVIATE_HOST": WEAVIATE_HOST,
@@ -21,7 +21,6 @@ async def setup_weaviate(app, _):
         }
     )
     weaviate_client = await InitializationManager().initialize_vector_db()
-    ConfigManager.config = {}
     app.ctx.weaviate_client = weaviate_client
 
 

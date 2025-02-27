@@ -7,6 +7,5 @@ try:
         ConfigManager.in_memory = True
         data = json.load(json_file)
         ConfigManager.set(data)
-        print(f"Config Data: {ConfigManager.configs}")
 except Exception as e:
     pass
