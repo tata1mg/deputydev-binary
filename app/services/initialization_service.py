@@ -25,7 +25,9 @@ class InitializationService:
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
-            local_repo = initialization_manager.get_local_repo(chunkable_files=chunkable_files)
+            local_repo = initialization_manager.get_local_repo(
+                chunkable_files=chunkable_files
+            )
             chunkable_files_and_hashes = (
                 await local_repo.get_chunkable_files_and_commit_hashes()
             )
@@ -41,12 +43,12 @@ class InitializationService:
     @classmethod
     async def initialize(cls, payload: UpdateVectorStoreParams) -> None:
         await cls.get_config(auth_token=payload.auth_token)
-        await cls.update_vector_store(payload.repo_path, payload.auth_token, payload.chunkable_files)
+        await cls.update_vector_store(
+            payload.repo_path, payload.auth_token, payload.chunkable_files
+        )
 
     @classmethod
-    async def get_config(
-        cls, auth_token: str, file_path: str = CONFIG_PATH
-    ) -> None:
+    async def get_config(cls, auth_token: str, file_path: str = CONFIG_PATH) -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
             one_dev_client = OneDevClient()

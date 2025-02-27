@@ -14,7 +14,8 @@ async def apply_unified_diff(_request: Request, **kwargs):
 
     try:
         DiffApplicatorService().apply_diff(repo_path, file_path_to_diff_map)
-        return response.json({"message": "Unified Diff applied successfully"}, status=200)
+        return response.json(
+            {"message": "Unified Diff applied successfully"}, status=200
+        )
     except Exception as e:
         return response.json({"error": str(e)}, status=500)
-
