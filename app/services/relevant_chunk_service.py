@@ -78,11 +78,11 @@ class RelevantChunksService:
                 query_vector=query_vector[0][0],
                 search_type=SearchTypes.VECTOR_DB_BASED,
             )
-            reranked_chunks = await RerankerService(self.auth_token).rerank(
-                query,
-                relevant_chunks=relevant_chunks,
-                is_llm_reranking_enabled=True,
-                focus_chunks=focus_chunks_details,
-            )
+            # reranked_chunks = await RerankerService(self.auth_token).rerank(
+            #     query,
+            #     relevant_chunks=relevant_chunks,
+            #     is_llm_reranking_enabled=True,
+            #     focus_chunks=focus_chunks_details,
+            # )
 
-        return chunks_content(reranked_chunks)
+        return chunks_content(relevant_chunks)
