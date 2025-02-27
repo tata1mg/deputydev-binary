@@ -1,5 +1,4 @@
 from concurrent.futures import ProcessPoolExecutor
-from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
 from deputydev_core.services.search.dataclasses.main import SearchTypes
@@ -12,16 +11,20 @@ from deputydev_core.services.embedding.one_dev_embedding_manager import (
     OneDevEmbeddingManager,
 )
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
+from app.services.reranker_service import RerankerService
 from app.utils.constants import NUMBER_OF_WORKERS
 from typing import List, Dict, Any
 from sanic import Sanic
 
+from app.utils.util import chunks_content
+
 
 class RelevantChunksService:
-    @classmethod
-    async def get_relevant_chunks(
-        cls, payload: RelevantChunksParams
-    ) -> List[str]:
+    def __init__(self, auth_token, repo_path):
+        self.auth_token = auth_token
+        self.repo_path = repo_path
+
+    async def get_relevant_chunks(self, payload: RelevantChunksParams) -> List[str]:
         repo_path = payload.repo_path
         auth_token = payload.auth_token
         query = payload.query
@@ -59,7 +62,7 @@ class RelevantChunksService:
                 )
             max_relevant_chunks = ConfigManager.configs["CHUNKING"]["NUMBER_OF_CHUNKS"]
             (
-                reranked_chunks,
+                relevant_chunks,
                 input_tokens,
                 focus_chunks_details,
             ) = await ChunkingManger.get_relevant_chunks(
@@ -75,11 +78,11 @@ class RelevantChunksService:
                 query_vector=query_vector[0][0],
                 search_type=SearchTypes.VECTOR_DB_BASED,
             )
-            final_chunks = cls.handle_relevant_chunks(reranked_chunks)
+            reranked_chunks = await RerankerService(self.auth_token).rerank(
+                query,
+                relevant_chunks=relevant_chunks,
+                is_llm_reranking_enabled=True,
+                focus_chunks=focus_chunks_details,
+            )
 
-        return final_chunks
-
-    @classmethod
-    def handle_relevant_chunks(cls, chunks: List[ChunkInfo]):
-        dumped_chunks = [chunk.content for chunk in chunks]
-        return dumped_chunks
+        return chunks_content(reranked_chunks)
