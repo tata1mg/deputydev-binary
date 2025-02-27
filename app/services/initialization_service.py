@@ -1,4 +1,3 @@
-import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
@@ -10,7 +9,9 @@ from deputydev_core.utils.config_manager import ConfigManager
 
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.shared_chunks_manager import SharedChunksManager
-from app.utils.constants import NUMBER_OF_WORKERS
+from app.utils.constants import NUMBER_OF_WORKERS, CONFIG_PATH
+import json
+from sanic import Sanic
 
 
 class InitializationService:
@@ -35,13 +36,14 @@ class InitializationService:
             await SharedChunksManager.update_chunks(
                 repo_path, chunkable_files_and_hashes, chunkable_files
             )
-            await initialization_manager.initialize_vector_db()
+            app = Sanic.get_app()
+            if app.ctx.weaviate_client:
+                initialization_manager.weaviate_client = app.ctx.weaviate_client
+            else:
+                await initialization_manager.initialize_vector_db()
             await initialization_manager.prefill_vector_store(
                 chunkable_files_and_hashes
             )
-            # closing weaviate clients
-            await initialization_manager.weaviate_client.async_client.close()
-            initialization_manager.weaviate_client.sync_client.close()
 
     @classmethod
     async def initialize(cls, payload: UpdateVectorStoreParams) -> None:
@@ -52,7 +54,7 @@ class InitializationService:
 
     @classmethod
     async def get_config(
-        cls, auth_token: str, file_path: str = "../config.json"
+        cls, auth_token: str, file_path: str = CONFIG_PATH
     ) -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)

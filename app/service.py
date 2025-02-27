@@ -1,12 +1,19 @@
 from sanic import Sanic
 
 from app.routes import binary_blueprints
+import sys
+from app.listeners import listeners
 
-app = Sanic("WebSocketServer")
+app = Sanic("BinaryServer")
 app.blueprint(binary_blueprints)
 app.config.REQUEST_TIMEOUT = 300
 app.config.RESPONSE_TIMEOUT = 300
 app.config.KEEP_ALIVE_TIMEOUT = 300
 
+for listener in listeners:
+    app.register_listener(listener[0], listener[1])
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=9000, debug=False, legacy=True)
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000  # Default: 8000
+    app.run(host="0.0.0.0", port=port, debug=False, legacy=True)
