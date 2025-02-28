@@ -57,15 +57,10 @@ class AuthTokenService:
             return {
                 "message": Status.SUCCESS.value
             }
-        except ValueError as ve:
+        except (ValueError, Exception) as e:
             return {
                 "message": Status.FAILED.value,
-                "error": f"Failed to store auth token: {ve}"
-            }
-        except Exception as e:
-            return {
-                "message": Status.FAILED.value,
-                "error": f"Failed to store auth token due: {e}"
+                "error": f"Failed to store auth token: {e}"
             }
 
     @classmethod
@@ -92,12 +87,7 @@ class AuthTokenService:
                 "message": Status.SUCCESS.value,
                 "auth_token": auth_token
             }
-        except ValueError as ve:
-            return {
-                "message": Status.FAILED.value,
-                "error": f"Failed to load auth token: {ve}"
-            }
-        except Exception as e:
+        except (ValueError, Exception) as e:
             return {
                 "message": Status.FAILED.value,
                 "error": f"Failed to load auth token: {e}"
