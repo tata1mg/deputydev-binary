@@ -8,3 +8,4 @@ class RelevantChunksParams(BaseModel):
     query: str
     focus_chunks: Optional[List[str]] = []
     focus_files: Optional[List[str]] = []
+    perform_chunking: Optional[bool] = False
