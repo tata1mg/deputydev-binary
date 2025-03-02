@@ -31,6 +31,7 @@ class RerankerService:
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.auth_token}",
             }
+            # TODO: Update this HOST and timeout
             filtered_and_ranked_chunks_denotations = await OneDevClient(
                 host_and_timeout={"HOST": "http://127.0.0.1:8081", "TIMEOUT": 15}
             ).llm_reranking(payload, headers=headers)
