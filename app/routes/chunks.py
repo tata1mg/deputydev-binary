@@ -22,8 +22,8 @@ async def relevant_chunks(request, ws):
     except Exception as e:
         await ws.send(json.dumps({"error": "can not find relevant chunks"}))
         # uncomment for local debugging
-        import traceback
-        print(traceback.format_exc())
+        # import traceback
+        # print(traceback.format_exc())
         print(f"Connection closed: {e}")
 
 
