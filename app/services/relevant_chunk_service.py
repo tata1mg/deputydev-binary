@@ -1,7 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
-from typing import List
+from typing import Dict, List
 
-from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.embedding.one_dev_embedding_manager import (
     OneDevEmbeddingManager,
@@ -12,13 +11,13 @@ from deputydev_core.services.initialization.initialization_service import (
 from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
 from deputydev_core.services.search.dataclasses.main import SearchTypes
 from deputydev_core.utils.config_manager import ConfigManager
-from sanic import Sanic
 
+from app.clients.one_dev_extension_client import OneDevExtensionClient
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
 from app.services.shared_chunks_manager import SharedChunksManager
 from app.utils.constants import NUMBER_OF_WORKERS
-from app.utils.util import chunks_content
+from app.utils.util import jsonify_chunks, weaviate_connection
 
 
 class RelevantChunksService:
@@ -26,12 +25,14 @@ class RelevantChunksService:
         self.auth_token = auth_token
         self.repo_path = repo_path
 
-    async def get_relevant_chunks(self, payload: RelevantChunksParams) -> List[str]:
+    async def get_relevant_chunks(
+        self, payload: RelevantChunksParams
+    ) -> List[Dict[str, dict]]:
         repo_path = payload.repo_path
         auth_token = payload.auth_token
         query = payload.query
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
-        one_dev_client = OneDevClient()
+        one_dev_client = OneDevExtensionClient()
         embedding_manager = OneDevEmbeddingManager(
             auth_token=auth_token, one_dev_client=one_dev_client
         )
@@ -49,9 +50,9 @@ class RelevantChunksService:
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
-            app = Sanic.get_app()
-            if app.ctx.weaviate_client:
-                weaviate_client = app.ctx.weaviate_client
+            weaviate_client = await weaviate_connection()
+            if weaviate_client:
+                weaviate_client = weaviate_client
             else:
                 weaviate_client = await initialization_manager.initialize_vector_db()
             if (
@@ -82,11 +83,14 @@ class RelevantChunksService:
                 query_vector=query_vector[0][0],
                 search_type=SearchTypes.VECTOR_DB_BASED,
             )
-            # reranked_chunks = await RerankerService(self.auth_token).rerank(
-            #     query,
-            #     relevant_chunks=relevant_chunks,
-            #     is_llm_reranking_enabled=True,
-            #     focus_chunks=focus_chunks_details,
-            # )
+            reranked_chunks = await RerankerService(self.auth_token).rerank(
+                query,
+                relevant_chunks=relevant_chunks,
+                # is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
+                #     "IS_LLM_RERANKING_ENABLED"
+                # ],
+                is_llm_reranking_enabled=False,
+                focus_chunks=focus_chunks_details,
+            )
 
-        return chunks_content(relevant_chunks)
+        return jsonify_chunks(reranked_chunks)

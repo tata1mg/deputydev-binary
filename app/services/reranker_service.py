@@ -1,10 +1,10 @@
 from typing import List
 
-from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.utils.config_manager import ConfigManager
 
+from app.clients.one_dev_extension_client import OneDevExtensionClient
 from app.utils.util import filter_chunks_by_denotation, jsonify_chunks
 
 
@@ -32,7 +32,8 @@ class RerankerService:
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.auth_token}",
             }
-            filtered_and_ranked_chunks_denotations = await OneDevClient(
+            # TODO: Update this HOST and timeout
+            filtered_and_ranked_chunks_denotations = await OneDevExtensionClient(
                 host_and_timeout={"HOST": "http://127.0.0.1:8081", "TIMEOUT": 15}
             ).llm_reranking(payload, headers=headers)
             return filter_chunks_by_denotation(
@@ -48,9 +49,11 @@ class RerankerService:
     def get_default_chunks(
         cls, focus_chunks: List[ChunkInfo], related_codebase_chunks: List[ChunkInfo]
     ) -> List[ChunkInfo]:
-        max_default_chunks_to_return = ConfigManager.config["CHUNKING"][
-            "DEFAULT_MAX_CHUNKS_CODE_GENERATION"
-        ]
+        # max_default_chunks_to_return = ConfigManager.config["CHUNKING"][
+        #     "DEFAULT_MAX_CHUNKS_CODE_GENERATION"
+        # ]
+        # TODO: Add this in config api to return
+        max_default_chunks_to_return = 50
         chunks = focus_chunks + related_codebase_chunks
         chunks.sort(key=lambda chunk: chunk.search_score, reverse=True)
         return chunks[:max_default_chunks_to_return]

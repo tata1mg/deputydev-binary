@@ -9,5 +9,10 @@ deputydev-core = { ref = "merged_branch", git = "ssh://git@github.com/tata1mg/de
 #deputydev-core = {path = "/Users/ankitrana/projects/deputydev-core"}
 websockets = "==12.0"
 
+[dev-packages]
+flake8 = "==7.1.1"
+black = "==22.12.0"
+isort = "==5.13.2"
+
 [requires]
 python_version = "3.9"

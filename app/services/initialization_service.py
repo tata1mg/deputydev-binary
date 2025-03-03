@@ -2,16 +2,16 @@ import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
-from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
 from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
 from deputydev_core.utils.config_manager import ConfigManager
-from sanic import Sanic
 
+from app.clients.one_dev_extension_client import OneDevExtensionClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from app.services.shared_chunks_manager import SharedChunksManager
 from app.utils.constants import CONFIG_PATH, NUMBER_OF_WORKERS
+from app.services.shared_chunks_manager import SharedChunksManager
+from app.utils.util import weaviate_connection
 
 
 class InitializationService:
@@ -20,7 +20,7 @@ class InitializationService:
         cls, repo_path: str, auth_token: str, chunkable_files: list = None
     ) -> None:
         with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
-            one_dev_client = OneDevClient()
+            one_dev_client = OneDevExtensionClient()
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,
@@ -36,9 +36,9 @@ class InitializationService:
             await SharedChunksManager.update_chunks(
                 repo_path, chunkable_files_and_hashes, chunkable_files
             )
-            app = Sanic.get_app()
-            if app.ctx.weaviate_client:
-                initialization_manager.weaviate_client = app.ctx.weaviate_client
+            weaviate_client = await weaviate_connection()
+            if weaviate_client:
+                initialization_manager.weaviate_client = weaviate_client
             else:
                 await initialization_manager.initialize_vector_db()
             await initialization_manager.prefill_vector_store(
@@ -56,7 +56,7 @@ class InitializationService:
     async def get_config(cls, auth_token: str, file_path: str = CONFIG_PATH) -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
-            one_dev_client = OneDevClient()
+            one_dev_client = OneDevExtensionClient()
             try:
                 configs: Optional[Dict[str, str]] = await one_dev_client.get_configs(
                     headers={

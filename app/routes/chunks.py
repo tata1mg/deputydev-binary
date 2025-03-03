@@ -1,14 +1,13 @@
 import json
 
-from sanic import Blueprint, HTTPResponse
-from sanic.request import Request
+from sanic import Blueprint
 
-from app.models.dtos.autocomplete_search_params import AutocompleteSearchParams
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from app.services.autocomplete_search_service import AutocompleteSearchService
 from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
+from app.services.autocomplete_search_service import AutocompleteSearchService
+from app.models.dtos.autocomplete_search_params import AutocompleteSearchParams
 
 chunks = Blueprint("chunks", url_prefix="")
 
@@ -27,9 +26,8 @@ async def relevant_chunks(request, ws):
     except Exception as e:
         await ws.send(json.dumps({"error": "can not find relevant chunks"}))
         # uncomment for local debugging
-        import traceback
-
-        print(traceback.format_exc())
+        # import traceback
+        # print(traceback.format_exc())
         print(f"Connection closed: {e}")
 
 
