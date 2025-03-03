@@ -1,24 +1,23 @@
 from concurrent.futures import ProcessPoolExecutor
-from deputydev_core.services.chunking.chunking_manager import ChunkingManger
-from deputydev_core.services.repo.local_repo.local_repo_factory import \
-    LocalRepoFactory
-from deputydev_core.services.search.dataclasses.main import SearchTypes
-from deputydev_core.utils.config_manager import ConfigManager
+from typing import List
+
 from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
-from deputydev_core.services.initialization.initialization_service import (
-    InitializationManager,
-)
+from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.embedding.one_dev_embedding_manager import (
     OneDevEmbeddingManager,
 )
-
-from app.models.dtos.relevant_chunks_params import RelevantChunksParams
-from app.services.shared_chunks_manager import SharedChunksManager
-from app.services.reranker_service import RerankerService
-from app.utils.constants import NUMBER_OF_WORKERS
-from typing import List
+from deputydev_core.services.initialization.initialization_service import (
+    InitializationManager,
+)
+from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
+from deputydev_core.services.search.dataclasses.main import SearchTypes
+from deputydev_core.utils.config_manager import ConfigManager
 from sanic import Sanic
 
+from app.models.dtos.relevant_chunks_params import RelevantChunksParams
+from app.services.reranker_service import RerankerService
+from app.services.shared_chunks_manager import SharedChunksManager
+from app.utils.constants import NUMBER_OF_WORKERS
 from app.utils.util import chunks_content
 
 

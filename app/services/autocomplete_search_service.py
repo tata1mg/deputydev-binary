@@ -1,10 +1,10 @@
 import os
 
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
-from deputydev_core.services.initialization.initialization_service import \
-    InitializationManager
-from deputydev_core.services.repository.chunk_files_service import \
-    ChunkFilesService
+from deputydev_core.services.initialization.initialization_service import (
+    InitializationManager,
+)
+from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
 
 from app.constants.constant import KeywordTypes, PropertyTypes
 from app.models.dtos.autocomplete_search_params import AutocompleteSearchParams

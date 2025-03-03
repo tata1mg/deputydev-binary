@@ -1,17 +1,17 @@
+import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
-from deputydev_core.clients.http.service_clients.one_dev_client import \
-    OneDevClient
-from deputydev_core.services.initialization.initialization_service import \
-    InitializationManager
+from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
+from deputydev_core.services.initialization.initialization_service import (
+    InitializationManager,
+)
 from deputydev_core.utils.config_manager import ConfigManager
+from sanic import Sanic
 
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.shared_chunks_manager import SharedChunksManager
-from app.utils.constants import NUMBER_OF_WORKERS, CONFIG_PATH
-import json
-from sanic import Sanic
+from app.utils.constants import CONFIG_PATH, NUMBER_OF_WORKERS
 
 
 class InitializationService:
@@ -53,9 +53,7 @@ class InitializationService:
         )
 
     @classmethod
-    async def get_config(
-        cls, auth_token: str, file_path: str = CONFIG_PATH
-    ) -> None:
+    async def get_config(cls, auth_token: str, file_path: str = CONFIG_PATH) -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
             one_dev_client = OneDevClient()

@@ -1,9 +1,10 @@
+import multiprocessing
+import sys
+
 from sanic import Sanic
 
-from app.routes import binary_blueprints
-import sys
 from app.listeners import listeners
-import multiprocessing
+from app.routes import binary_blueprints
 
 app = Sanic("BinaryServer")
 app.blueprint(binary_blueprints)

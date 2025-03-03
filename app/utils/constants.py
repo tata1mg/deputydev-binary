@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 NUMBER_OF_WORKERS = 1
 WEAVIATE_HOST = "127.0.0.1"
 WEAVIATE_HTTP_PORT = 8079

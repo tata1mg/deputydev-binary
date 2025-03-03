@@ -1,5 +1,7 @@
 import json
+
 from deputydev_core.utils.config_manager import ConfigManager
+
 from app.utils.constants import CONFIG_PATH
 
 try:

@@ -1,10 +1,11 @@
-from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from typing import List
-from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
-from deputydev_core.utils.config_manager import ConfigManager
-from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 
-from app.utils.util import jsonify_chunks, filter_chunks_by_denotation
+from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
+from deputydev_core.services.chunking.chunk_info import ChunkInfo
+from deputydev_core.services.chunking.chunking_manager import ChunkingManger
+from deputydev_core.utils.config_manager import ConfigManager
+
+from app.utils.util import filter_chunks_by_denotation, jsonify_chunks
 
 
 class RerankerService:

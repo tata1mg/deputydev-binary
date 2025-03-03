@@ -1,5 +1,6 @@
+from typing import Dict, List
+
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
-from typing import List, Dict
 
 
 def jsonify_chunks(chunks: List[ChunkInfo]) -> List[Dict[str, dict]]:
