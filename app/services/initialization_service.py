@@ -2,11 +2,12 @@ import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
-from app.clients.one_dev_extension_client import OneDevExtensionClient
 from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
 from deputydev_core.utils.config_manager import ConfigManager
+
+from app.clients.one_dev_extension_client import OneDevExtensionClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.utils.constants import CONFIG_PATH, NUMBER_OF_WORKERS
 from app.utils.util import weaviate_connection

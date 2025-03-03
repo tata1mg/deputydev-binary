@@ -1,10 +1,10 @@
 from typing import List
 
-from app.clients.one_dev_extension_client import OneDevExtensionClient
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.utils.config_manager import ConfigManager
 
+from app.clients.one_dev_extension_client import OneDevExtensionClient
 from app.utils.util import filter_chunks_by_denotation, jsonify_chunks
 
 
