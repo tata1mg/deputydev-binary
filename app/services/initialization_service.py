@@ -2,7 +2,7 @@ import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
-from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
+from app.clients.one_dev_extension_client import OneDevExtensionClient
 from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
@@ -19,7 +19,7 @@ class InitializationService:
         cls, repo_path: str, auth_token: str, chunkable_files: list = None
     ) -> None:
         with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
-            one_dev_client = OneDevClient()
+            one_dev_client = OneDevExtensionClient()
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,
@@ -52,7 +52,7 @@ class InitializationService:
     async def get_config(cls, auth_token: str, file_path: str = CONFIG_PATH) -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
-            one_dev_client = OneDevClient()
+            one_dev_client = OneDevExtensionClient()
             try:
                 configs: Optional[Dict[str, str]] = await one_dev_client.get_configs(
                     headers={

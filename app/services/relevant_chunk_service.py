@@ -1,7 +1,7 @@
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List
 
-from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
+from app.clients.one_dev_extension_client import OneDevExtensionClient
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.embedding.one_dev_embedding_manager import (
     OneDevEmbeddingManager,
@@ -29,7 +29,7 @@ class RelevantChunksService:
         auth_token = payload.auth_token
         query = payload.query
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
-        one_dev_client = OneDevClient()
+        one_dev_client = OneDevExtensionClient()
         embedding_manager = OneDevEmbeddingManager(
             auth_token=auth_token, one_dev_client=one_dev_client
         )
