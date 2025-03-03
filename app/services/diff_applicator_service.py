@@ -11,4 +11,4 @@ class DiffApplicatorService:
         diff_type: DiffTypes = DiffTypes.UDIFF,
     ):
         repo = LocalRepoFactory.get_local_repo(repo_path)
-        repo.apply_diff(file_path_to_diff_map, diff_type)
+        return repo.get_modified_file_content(file_path_to_diff_map, diff_type)
