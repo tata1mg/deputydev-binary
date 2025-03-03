@@ -7,10 +7,9 @@ from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
 from deputydev_core.utils.config_manager import ConfigManager
-from sanic import Sanic
-
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.utils.constants import CONFIG_PATH, NUMBER_OF_WORKERS
+from app.utils.util import weaviate_connection
 
 
 class InitializationService:
@@ -32,9 +31,9 @@ class InitializationService:
             chunkable_files_and_hashes = (
                 await local_repo.get_chunkable_files_and_commit_hashes()
             )
-            app = Sanic.get_app()
-            if app.ctx.weaviate_client:
-                initialization_manager.weaviate_client = app.ctx.weaviate_client
+            weaviate_client = await weaviate_connection()
+            if weaviate_client:
+                initialization_manager.weaviate_client = weaviate_client
             else:
                 await initialization_manager.initialize_vector_db()
             await initialization_manager.prefill_vector_store(

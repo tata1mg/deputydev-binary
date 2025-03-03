@@ -1,5 +1,7 @@
 from typing import Dict, List
-
+from deputydev_core.services.repository.dataclasses.main import (
+    WeaviateSyncAndAsyncClients,
+)
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from sanic import Sanic
 
@@ -21,15 +23,11 @@ def filter_chunks_by_denotation(
 async def weaviate_connection():
     app = Sanic.get_app()
     if app.ctx.weaviate_client:
-        weaviate_clients = app.ctx.weaviate_client
-        try:
-            if (
-                await weaviate_clients.async_client.schema.get()
-                and weaviate_clients.sync_client.schema.get()
-            ):
-                return weaviate_clients
-        except Exception as error:
-            print(f"Connection was dropped, Reconnecting {error}")
-            weaviate_clients.sync_client.connect()
+        weaviate_clients: WeaviateSyncAndAsyncClients = app.ctx.weaviate_client
+        if not weaviate_clients.async_client.is_connected():
+            print(f"Async Connection was dropped, Reconnecting")
             await weaviate_clients.async_client.connect()
-            return weaviate_clients
+        if not weaviate_clients.sync_client.is_connected():
+            print(f"Sync Connection was dropped, Reconnecting")
+            weaviate_clients.sync_client.connect()
+        return weaviate_clients

@@ -46,7 +46,7 @@ class RelevantChunksService:
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
-            weaviate_client = weaviate_connection()
+            weaviate_client = await weaviate_connection()
             if weaviate_client:
                 weaviate_client = weaviate_client
             else:
