@@ -21,6 +21,7 @@ async def setup_weaviate(app, _):
         }
     )
     weaviate_client = await InitializationManager().initialize_vector_db()
+    ConfigManager.config = {}
     app.ctx.weaviate_client = weaviate_client
 
 
