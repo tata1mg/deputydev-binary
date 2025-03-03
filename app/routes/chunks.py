@@ -1,9 +1,11 @@
-from sanic import Blueprint
 import json
-from app.services.initialization_service import InitializationService
-from app.services.relevant_chunk_service import RelevantChunksService
+
+from sanic import Blueprint
+
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
+from app.services.initialization_service import InitializationService
+from app.services.relevant_chunk_service import RelevantChunksService
 
 chunks = Blueprint("chunks", url_prefix="")
 

@@ -1,13 +1,13 @@
-from app.utils.constants import (
-    ListenerEventTypes,
-    WEAVIATE_HOST,
-    WEAVIATE_GRPC_PORT,
-    WEAVIATE_HTTP_PORT,
-)
-
-from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
+)
+from deputydev_core.utils.config_manager import ConfigManager
+
+from app.utils.constants import (
+    WEAVIATE_GRPC_PORT,
+    WEAVIATE_HOST,
+    WEAVIATE_HTTP_PORT,
+    ListenerEventTypes,
 )
 
 

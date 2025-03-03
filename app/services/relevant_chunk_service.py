@@ -1,22 +1,22 @@
 from concurrent.futures import ProcessPoolExecutor
-from deputydev_core.services.chunking.chunking_manager import ChunkingManger
-from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
-from deputydev_core.services.search.dataclasses.main import SearchTypes
-from deputydev_core.utils.config_manager import ConfigManager
+from typing import Any, Dict, List
+
 from deputydev_core.clients.http.service_clients.one_dev_client import OneDevClient
-from deputydev_core.services.initialization.initialization_service import (
-    InitializationManager,
-)
+from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.embedding.one_dev_embedding_manager import (
     OneDevEmbeddingManager,
 )
+from deputydev_core.services.initialization.initialization_service import (
+    InitializationManager,
+)
+from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
+from deputydev_core.services.search.dataclasses.main import SearchTypes
+from deputydev_core.utils.config_manager import ConfigManager
+
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
 from app.utils.constants import NUMBER_OF_WORKERS
-from typing import List, Dict, Any
-from sanic import Sanic
-
-from app.utils.util import chunks_content
+from app.utils.util import chunks_content, weaviate_connection
 
 
 class RelevantChunksService:
@@ -46,9 +46,9 @@ class RelevantChunksService:
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
-            app = Sanic.get_app()
-            if app.ctx.weaviate_client:
-                weaviate_client = app.ctx.weaviate_client
+            weaviate_client = weaviate_connection()
+            if weaviate_client:
+                weaviate_client = weaviate_client
             else:
                 weaviate_client = await initialization_manager.initialize_vector_db()
             if (
@@ -81,7 +81,9 @@ class RelevantChunksService:
             reranked_chunks = await RerankerService(self.auth_token).rerank(
                 query,
                 relevant_chunks=relevant_chunks,
-                is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"]["IS_LLM_RERANKING_ENABLED"],
+                is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
+                    "IS_LLM_RERANKING_ENABLED"
+                ],
                 focus_chunks=focus_chunks_details,
             )
 
