@@ -49,9 +49,11 @@ class RerankerService:
     def get_default_chunks(
         cls, focus_chunks: List[ChunkInfo], related_codebase_chunks: List[ChunkInfo]
     ) -> List[ChunkInfo]:
-        max_default_chunks_to_return = ConfigManager.config["CHUNKING"][
-            "DEFAULT_MAX_CHUNKS_CODE_GENERATION"
-        ]
+        # max_default_chunks_to_return = ConfigManager.config["CHUNKING"][
+        #     "DEFAULT_MAX_CHUNKS_CODE_GENERATION"
+        # ]
+        # TODO: Add this in config api to return
+        max_default_chunks_to_return = 50
         chunks = focus_chunks + related_codebase_chunks
         chunks.sort(key=lambda chunk: chunk.search_score, reverse=True)
         return chunks[:max_default_chunks_to_return]

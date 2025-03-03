@@ -1,5 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from app.clients.one_dev_extension_client import OneDevExtensionClient
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
@@ -16,7 +16,7 @@ from deputydev_core.utils.config_manager import ConfigManager
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
 from app.utils.constants import NUMBER_OF_WORKERS
-from app.utils.util import chunks_content, weaviate_connection
+from app.utils.util import jsonify_chunks, weaviate_connection
 
 
 class RelevantChunksService:
@@ -24,7 +24,7 @@ class RelevantChunksService:
         self.auth_token = auth_token
         self.repo_path = repo_path
 
-    async def get_relevant_chunks(self, payload: RelevantChunksParams) -> List[str]:
+    async def get_relevant_chunks(self, payload: RelevantChunksParams) -> List[Dict[str, dict]]:
         repo_path = payload.repo_path
         auth_token = payload.auth_token
         query = payload.query
@@ -81,10 +81,11 @@ class RelevantChunksService:
             reranked_chunks = await RerankerService(self.auth_token).rerank(
                 query,
                 relevant_chunks=relevant_chunks,
-                is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
-                    "IS_LLM_RERANKING_ENABLED"
-                ],
+                # is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
+                #     "IS_LLM_RERANKING_ENABLED"
+                # ],
+                is_llm_reranking_enabled=False,
                 focus_chunks=focus_chunks_details,
             )
 
-        return chunks_content(reranked_chunks)
+        return jsonify_chunks(reranked_chunks)
