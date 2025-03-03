@@ -1,6 +1,6 @@
 import json
 
-from sanic import Blueprint
+from sanic import Blueprint, Request, HTTPResponse
 
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
