@@ -1,5 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.embedding.one_dev_embedding_manager import (
@@ -15,6 +15,7 @@ from deputydev_core.utils.config_manager import ConfigManager
 from app.clients.one_dev_extension_client import OneDevExtensionClient
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
+from app.services.shared_chunks_manager import SharedChunksManager
 from app.utils.constants import NUMBER_OF_WORKERS
 from app.utils.util import jsonify_chunks, weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
@@ -86,10 +87,10 @@ class RelevantChunksService:
             reranked_chunks = await RerankerService(self.auth_token).rerank(
                 query,
                 relevant_chunks=relevant_chunks,
-                # is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
-                #     "IS_LLM_RERANKING_ENABLED"
-                # ],
-                is_llm_reranking_enabled=False,
+                is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
+                    "IS_LLM_RERANKING_ENABLED"
+                ],
+                # is_llm_reranking_enabled=False,
                 focus_chunks=focus_chunks_details,
             )
 

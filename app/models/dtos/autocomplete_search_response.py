@@ -19,7 +19,7 @@ class CodeSymbol(BaseModel):
         return {
             "type": self.type,
             "value": self.value,
-            "filepath": self.file_path,
+            "path": self.file_path,
             "chunks": [
                 {"start_line": c.start_line, "end_line": c.end_line}
                 for c in self.chunks

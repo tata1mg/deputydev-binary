@@ -3,8 +3,7 @@ import pickle
 from multiprocessing import Lock, shared_memory
 from typing import Dict, List, Optional
 
-from deputydev_core.services.repo.local_repo.local_repo_factory import \
-    LocalRepoFactory
+from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
 
 logger = logging.getLogger(__name__)
 
