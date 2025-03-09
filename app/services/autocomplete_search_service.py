@@ -177,7 +177,7 @@ class AutocompleteSearchService:
             List of formatted search results
         """
 
-        keyword_chunks = await chunk_files_service.get_autocomplete_keyword_type_chunks(
+        keyword_chunks = await chunk_files_service.get_keyword_type_chunks(
             keyword=keyword,
             type=search_type,
             chunkable_files_and_hashes=chunkable_files_and_hashes,
