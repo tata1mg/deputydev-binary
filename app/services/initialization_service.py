@@ -1,16 +1,15 @@
 import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
-
 from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
 from deputydev_core.utils.config_manager import ConfigManager
-
 from app.clients.one_dev_extension_client import OneDevExtensionClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.utils.constants import CONFIG_PATH, NUMBER_OF_WORKERS
 from app.utils.util import weaviate_connection
+from app.services.shared_chunks_manager import SharedChunksManager
 
 
 class InitializationService:
@@ -31,6 +30,9 @@ class InitializationService:
             )
             chunkable_files_and_hashes = (
                 await local_repo.get_chunkable_files_and_commit_hashes()
+            )
+            await SharedChunksManager.update_chunks(
+                repo_path, chunkable_files_and_hashes, chunkable_files
             )
             weaviate_client = await weaviate_connection()
             if weaviate_client:

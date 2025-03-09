@@ -1,5 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.embedding.one_dev_embedding_manager import (
@@ -17,6 +17,7 @@ from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
 from app.utils.constants import NUMBER_OF_WORKERS
 from app.utils.util import jsonify_chunks, weaviate_connection
+from app.services.shared_chunks_manager import SharedChunksManager
 
 
 class RelevantChunksService:
@@ -41,6 +42,7 @@ class RelevantChunksService:
         chunkable_files_and_hashes = (
             await local_repo.get_chunkable_files_and_commit_hashes()
         )
+        await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
         with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
@@ -75,6 +77,7 @@ class RelevantChunksService:
                 max_chunks_to_return=max_relevant_chunks,
                 focus_files=payload.focus_files,
                 focus_chunks=payload.focus_chunks,
+                focus_directories=payload.focus_directories,
                 weaviate_client=weaviate_client,
                 chunkable_files_with_hashes=chunkable_files_and_hashes,
                 query_vector=query_vector[0][0],
