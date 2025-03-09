@@ -12,7 +12,7 @@ class OneDevExtensionClient(OneDevClient):
         return (await result.json()).get("data")
 
     async def llm_reranking(self, payload: Dict[str, Any], headers: Dict[str, str]):
-        path = "/end_user/v1/rerank/llm_based"
+        path = "/end_user/common/v1/rerank/llm_based"
         result = await self.post(url=self._host + path, json=payload, headers=headers)
         return (await result.json()).get("data")
 

@@ -6,7 +6,7 @@ from deputydev_core.models.dto.chunk_dto import ChunkDTO
 from deputydev_core.services.initialization.initialization_service import InitializationManager
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
 from deputydev_core.services.repository.chunk_service import ChunkService
-from deputydev_core.utils.constants import CHUNKFILE_KEYWORD_PROPERTY_MAP
+from deputydev_core.utils.constants.constants import CHUNKFILE_KEYWORD_PROPERTY_MAP
 
 from app.models.dtos.batch_chunk_search_params import SearchTerm
 from app.models.dtos.batch_chunk_search_response import BatchSearchResponse, Chunk
