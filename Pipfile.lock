@@ -389,7 +389,7 @@
         },
         "deputydev-core": {
             "git": "ssh://git@github.com/tata1mg/deputydev-core.git",
-            "ref": "6021d3d56ead551d9093ec26950ffddd9c5f0a20"
+            "ref": "bfcd8b4deb9a4fcc5eacc4b764c08b4cd198674e"
         },
         "diff-match-patch": {
             "hashes": [
