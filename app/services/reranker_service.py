@@ -34,7 +34,7 @@ class RerankerService:
             }
             # TODO: Update this HOST and timeout
             filtered_and_ranked_chunks_denotations = await OneDevExtensionClient(
-                host_and_timeout={"HOST": "http://127.0.0.1:8081", "TIMEOUT": 15}
+                host_and_timeout={"HOST": "http://127.0.0.1:8081", "TIMEOUT": 20}
             ).llm_reranking(payload, headers=headers)
             return filter_chunks_by_denotation(
                 relevant_chunks + focus_chunks, filtered_and_ranked_chunks_denotations
