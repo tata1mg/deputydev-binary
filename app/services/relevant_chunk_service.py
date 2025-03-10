@@ -87,10 +87,10 @@ class RelevantChunksService:
             reranked_chunks = await RerankerService(self.auth_token).rerank(
                 query,
                 relevant_chunks=relevant_chunks,
-                # is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
-                #     "IS_LLM_RERANKING_ENABLED"
-                # ],
-                is_llm_reranking_enabled=False,
+                is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
+                    "IS_LLM_RERANKING_ENABLED"
+                ],
+                # is_llm_reranking_enabled=False,
                 focus_chunks=focus_chunks_details,
             )
 
