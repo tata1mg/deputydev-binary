@@ -13,10 +13,12 @@ class OneDevExtensionClient(OneDevClient):
 
     async def llm_reranking(self, payload: Dict[str, Any], headers: Dict[str, str]):
         path = "/end_user/common/v1/rerank/llm_based"
+        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
         return (await result.json()).get("data")
 
     async def get_configs(self, headers: Dict[str, str]) -> Optional[Dict[str, Any]]:
         path = "/end_user/v1/get-configs"
+        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
         result = await self.get(url=self._host + path, headers=headers)
         return (await result.json()).get("data")
