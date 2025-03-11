@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 from deputydev_core.clients.http.base_http_client import BaseHTTPClient
 from deputydev_core.utils.config_manager import ConfigManager
+from deputydev_core.utils.constants.enums import ConfigConsumer
 
 
 class OneDevClient(BaseHTTPClient):
@@ -38,6 +39,7 @@ class OneDevClient(BaseHTTPClient):
 
     async def get_configs(self, headers: Dict[str, str]) -> Optional[Dict[str, Any]]:
         path = "/end_user/v1/configs/get-configs"
-        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
-        result = await self.get(url=self._host + path, headers=headers)
+        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "1.0.0"}
+        result = await self.get(url=self._host + path, headers=headers,
+                                params={"consumer": ConfigConsumer.BINARY.value})
         return (await result.json()).get("data")
