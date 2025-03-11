@@ -4,7 +4,7 @@ from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.utils.config_manager import ConfigManager
 
-from app.clients.one_dev_extension_client import OneDevExtensionClient
+from app.clients.one_dev_client import OneDevClient
 from app.utils.constants import DEPUTYDEV_HOST
 from app.utils.util import filter_chunks_by_denotation, jsonify_chunks
 
@@ -34,9 +34,7 @@ class RerankerService:
                 "Authorization": f"Bearer {self.auth_token}",
             }
             # TODO: Update this HOST and timeout
-            filtered_and_ranked_chunks_denotations = await OneDevExtensionClient(
-                host_and_timeout={"HOST": DEPUTYDEV_HOST, "TIMEOUT": 20}
-            ).llm_reranking(payload, headers=headers)
+            filtered_and_ranked_chunks_denotations = await OneDevClient().llm_reranking(payload, headers=headers)
             return filter_chunks_by_denotation(
                 relevant_chunks + focus_chunks, filtered_and_ranked_chunks_denotations
             )

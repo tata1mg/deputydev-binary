@@ -1,9 +1,6 @@
 from enum import Enum
 
 NUMBER_OF_WORKERS = 1
-WEAVIATE_HOST = "127.0.0.1"
-WEAVIATE_HTTP_PORT = 8079
-WEAVIATE_GRPC_PORT = 50050
 CONFIG_PATH = "./binary_config.json"
 DEPUTYDEV_HOST = "http://127.0.0.1:8084"
 

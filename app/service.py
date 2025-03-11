@@ -2,7 +2,6 @@ import multiprocessing
 import sys
 
 from sanic import Sanic
-
 from app.listeners import listeners
 from app.routes import binary_blueprints
 
@@ -15,7 +14,6 @@ app.config.TOUCHUP = False
 
 for listener in listeners:
     app.register_listener(listener[0], listener[1])
-
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()

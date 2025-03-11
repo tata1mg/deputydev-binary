@@ -5,20 +5,22 @@ from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
 from deputydev_core.utils.config_manager import ConfigManager
-from app.clients.one_dev_extension_client import OneDevExtensionClient
+from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.utils.constants import CONFIG_PATH, NUMBER_OF_WORKERS
 from app.utils.util import weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
+from sanic import Sanic
 
 
 class InitializationService:
     @classmethod
-    async def update_vector_store(
-        cls, repo_path: str, auth_token: str, chunkable_files: list = None
-    ) -> None:
+    async def update_vector_store(cls, payload: UpdateVectorStoreParams) -> None:
+        repo_path = payload.repo_path
+        auth_token = payload.auth_token
+        chunkable_files = payload.chunkable_files
         with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
-            one_dev_client = OneDevExtensionClient()
+            one_dev_client = OneDevClient()
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,
@@ -44,17 +46,17 @@ class InitializationService:
             )
 
     @classmethod
-    async def initialize(cls, payload: UpdateVectorStoreParams) -> None:
-        await cls.get_config(auth_token=payload.auth_token)
-        await cls.update_vector_store(
-            payload.repo_path, payload.auth_token, payload.chunkable_files
-        )
+    async def initialization(cls, auth_token, payload):
+        app = Sanic.get_app()
+        await cls.get_config(auth_token, base_config=payload.get("config"))
+        weaviate_client = await InitializationManager().initialize_vector_db()
+        app.ctx.weaviate_client = weaviate_client
 
     @classmethod
-    async def get_config(cls, auth_token: str, file_path: str = CONFIG_PATH) -> None:
+    async def get_config(cls, auth_token: str, file_path: str = CONFIG_PATH, base_config: Dict = {}) -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
-            one_dev_client = OneDevExtensionClient()
+            one_dev_client = OneDevClient(base_config)
             try:
                 configs: Optional[Dict[str, str]] = await one_dev_client.get_configs(
                     headers={

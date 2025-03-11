@@ -12,7 +12,7 @@ from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepo
 from deputydev_core.services.search.dataclasses.main import SearchTypes
 from deputydev_core.utils.config_manager import ConfigManager
 
-from app.clients.one_dev_extension_client import OneDevExtensionClient
+from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
 from app.services.shared_chunks_manager import SharedChunksManager
@@ -33,7 +33,7 @@ class RelevantChunksService:
         auth_token = payload.auth_token
         query = payload.query
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
-        one_dev_client = OneDevExtensionClient()
+        one_dev_client = OneDevClient()
         embedding_manager = OneDevEmbeddingManager(
             auth_token=auth_token, one_dev_client=one_dev_client
         )
@@ -58,9 +58,7 @@ class RelevantChunksService:
                 weaviate_client = await initialization_manager.initialize_vector_db()
             if (
                 payload.perform_chunking
-                and ConfigManager.configs["BINARY"]["RELEVANT_CHUNKS"][
-                    "CHUNKING_ENABLED"
-                ]
+                and ConfigManager.configs["RELEVANT_CHUNKS"]["CHUNKING_ENABLED"]
             ):
                 await initialization_manager.prefill_vector_store(
                     chunkable_files_and_hashes

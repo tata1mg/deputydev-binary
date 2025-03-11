@@ -1,5 +1,4 @@
 import json
-
 from sanic import Blueprint, Request, HTTPResponse
 from sanic.request import Request
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
@@ -39,7 +38,7 @@ async def update_vector_store(request, ws):
         data = await ws.recv()
         payload = json.loads(data)
         payload = UpdateVectorStoreParams(**payload)
-        await InitializationService.initialize(payload)
+        await InitializationService.update_vector_store(payload)
         await ws.send(json.dumps({"status": "Completed"}))
     except Exception as e:
         # uncomment for local debugging
