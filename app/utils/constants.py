@@ -2,7 +2,7 @@ from enum import Enum
 
 NUMBER_OF_WORKERS = 1
 CONFIG_PATH = "./binary_config.json"
-DEPUTYDEV_HOST = "http://127.0.0.1:8084"
+
 
 class ListenerEventTypes(Enum):
     AFTER_SERVER_START = "after_server_start"

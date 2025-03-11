@@ -2,10 +2,7 @@ from typing import List
 
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
-from deputydev_core.utils.config_manager import ConfigManager
-
 from app.clients.one_dev_client import OneDevClient
-from app.utils.constants import DEPUTYDEV_HOST
 from app.utils.util import filter_chunks_by_denotation, jsonify_chunks
 
 
