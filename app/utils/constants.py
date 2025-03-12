@@ -1,6 +1,5 @@
 from enum import Enum
 
-NUMBER_OF_WORKERS = 1
 CONFIG_PATH = "./binary_config.json"
 
 

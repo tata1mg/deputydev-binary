@@ -15,8 +15,6 @@ from deputydev_core.utils.config_manager import ConfigManager
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
-from app.services.shared_chunks_manager import SharedChunksManager
-from app.utils.constants import NUMBER_OF_WORKERS
 from app.utils.util import jsonify_chunks, weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
 
@@ -44,7 +42,7 @@ class RelevantChunksService:
             await local_repo.get_chunkable_files_and_commit_hashes()
         )
         await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
-        with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
+        with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,

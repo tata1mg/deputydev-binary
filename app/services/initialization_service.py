@@ -7,7 +7,7 @@ from deputydev_core.services.initialization.initialization_service import (
 from deputydev_core.utils.config_manager import ConfigManager
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from app.utils.constants import CONFIG_PATH, NUMBER_OF_WORKERS
+from app.utils.constants import CONFIG_PATH
 from app.utils.util import weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
 from sanic import Sanic
@@ -19,7 +19,7 @@ class InitializationService:
         repo_path = payload.repo_path
         auth_token = payload.auth_token
         chunkable_files = payload.chunkable_files
-        with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
+        with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             one_dev_client = OneDevClient()
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
