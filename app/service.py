@@ -17,5 +17,5 @@ for listener in listeners:
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000  # Default: 8000
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8001  # Default: 8001
     app.run(host="0.0.0.0", port=port, debug=False, legacy=True)
