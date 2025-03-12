@@ -49,9 +49,9 @@ class InitializationService:
     async def initialization(cls, auth_token, payload):
         app = Sanic.get_app()
         await cls.get_config(auth_token, base_config=payload.get("config"))
-
-        weaviate_client = await InitializationManager().initialize_vector_db()
-        app.ctx.weaviate_client = weaviate_client
+        if not hasattr(app.ctx, "weaviate_client"):
+            weaviate_client = await InitializationManager().initialize_vector_db()
+            app.ctx.weaviate_client = weaviate_client
 
     @classmethod
     async def get_config(cls, auth_token: str, file_path: str = CONFIG_PATH, base_config: Dict = {}) -> None:
