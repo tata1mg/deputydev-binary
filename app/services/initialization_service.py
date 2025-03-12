@@ -49,6 +49,7 @@ class InitializationService:
     async def initialization(cls, auth_token, payload):
         app = Sanic.get_app()
         await cls.get_config(auth_token, base_config=payload.get("config"))
+
         weaviate_client = await InitializationManager().initialize_vector_db()
         app.ctx.weaviate_client = weaviate_client
 
