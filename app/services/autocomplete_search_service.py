@@ -5,11 +5,16 @@ from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
+from deputydev_core.services.repository.dataclasses.main import WeaviateSyncAndAsyncClients
+from deputydev_core.utils.app_logger import AppLogger
 
 from app.constants.constant import KeywordTypes, PropertyTypes
 from app.models.dtos.autocomplete_search_params import AutocompleteSearchParams
 from app.models.dtos.autocomplete_search_response import ChunkRange, CodeSymbol
 from app.services.shared_chunks_manager import SharedChunksManager
+import time
+
+from app.utils.util import weaviate_connection
 
 
 class AutocompleteSearchService:
@@ -30,24 +35,30 @@ class AutocompleteSearchService:
     }
 
     @classmethod
+    async def initialise_weaviate_client(cls, repo_path: str) -> WeaviateSyncAndAsyncClients:
+        initialization_manager = InitializationManager(repo_path=repo_path)
+        weaviate_client = await weaviate_connection()
+        if weaviate_client:
+            weaviate_client = weaviate_client
+        else:
+            weaviate_client = await initialization_manager.initialize_vector_db()
+        return weaviate_client
+
+    @classmethod
     async def get_autocomplete_keyword_chunks(cls, payload: AutocompleteSearchParams):
+        start_time = time.perf_counter()
         repo_path = payload.repo_path
-        weaviate_client = None
 
         try:
-
             chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(
                 payload.repo_path
             )
-            weaviate_client = await InitializationManager(
-                repo_path
-            ).initialize_vector_db()
 
-            keyword_chunks = await ChunkFilesService(
-                weaviate_client
-            ).get_autocomplete_keyword_chunks(
+            weaviate_client = await cls.initialise_weaviate_client(repo_path)
+            keyword_chunks = await ChunkFilesService(weaviate_client).get_autocomplete_keyword_chunks(
                 payload.keyword, chunkable_files_and_hashes
             )
+
             sorted_chunks = cls.sort_chunks(keyword_chunks)
 
             chunk_map = {}
@@ -58,11 +69,7 @@ class AutocompleteSearchService:
                 chunk_range = ChunkRange(
                     start_line=chunk_dto.start_line, end_line=chunk_dto.end_line
                 )
-                score = (
-                    chunk_obj.metadata.score
-                    if hasattr(chunk_obj.metadata, "score")
-                    else 0.0
-                )
+                score = chunk_obj.metadata.score if hasattr(chunk_obj.metadata, "score") else 0.0
 
                 cls.add_symbols_to_map(
                     chunk_map,
@@ -84,9 +91,7 @@ class AutocompleteSearchService:
 
                 if chunk_dto.file_path not in seen_files:
                     seen_files.add(chunk_dto.file_path)
-                    chunk_map[
-                        f"{KeywordTypes.FILE.value}_{chunk_dto.file_path}"
-                    ] = CodeSymbol(
+                    chunk_map[f"{KeywordTypes.FILE.value}_{chunk_dto.file_path}"] = CodeSymbol(
                         type=KeywordTypes.FILE.value,
                         value=os.path.basename(chunk_dto.file_path),
                         file_path=chunk_dto.file_path,
@@ -94,53 +99,33 @@ class AutocompleteSearchService:
                         score=score,
                     )
 
-            sorted_chunks = sorted(
-                chunk_map.values(), key=lambda x: x.score, reverse=True
-            )
+            sorted_chunks = sorted(chunk_map.values(), key=lambda x: x.score, reverse=True)
             response = [chunk.to_dict() for chunk in sorted_chunks]
+
+            print(f"Total execution time: {time.perf_counter() - start_time:.6f} sec")
             return {"response": response}
+
         except Exception as ex:
-            raise ex
+            AppLogger.log_error(f"autocomplete search failed with exception {ex}")
             return {"response": []}
-        finally:
-            if weaviate_client:
-                weaviate_client.sync_client.close()
-                await weaviate_client.async_client.close()
 
     @classmethod
-    async def get_autocomplete_keyword_type_chunks(
-        cls, payload: AutocompleteSearchParams
-    ):
-        """
-        Search for code symbols by type (file, class, function, directory)
+    async def get_autocomplete_keyword_type_chunks(cls, payload: AutocompleteSearchParams):
+        start_time = time.perf_counter()
 
-        Args:
-            payload: AutocompleteSearchParams
-
-        Returns:
-            Dictionary with search results formatted according to the type
-        """
         keyword_type = payload.type
         keyword = payload.keyword
         repo_path = payload.repo_path
-        weaviate_client = None
 
         if keyword_type not in cls.VALID_TYPES:
             return {"response": []}
 
         try:
-            chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(
-                repo_path
-            )
-
-            # Initialize Weaviate client
-            initialization_manager = InitializationManager(repo_path=repo_path)
-            weaviate_client = await initialization_manager.initialize_vector_db()
-
+            chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(repo_path)
             if keyword_type == "directory":
                 result = await cls.search_directories(repo_path, keyword)
             else:
-                # For file, class and function
+                weaviate_client = await cls.initialise_weaviate_client(repo_path)
                 chunk_files_service = ChunkFilesService(weaviate_client)
                 result = await cls.search_by_type(
                     chunk_files_service,
@@ -148,14 +133,13 @@ class AutocompleteSearchService:
                     keyword,
                     chunkable_files_and_hashes,
                 )
+
+            print(f"Total execution time: {time.perf_counter() - start_time:.6f} sec")
             return {"response": result}
         except Exception as ex:
-            raise ex
+            AppLogger.log_error(f"autocomplete type search failed with exception {ex}")
             return {"response": []}
-        finally:
-            if weaviate_client:
-                weaviate_client.sync_client.close()
-                await weaviate_client.async_client.close()
+
 
     @classmethod
     async def search_by_type(
