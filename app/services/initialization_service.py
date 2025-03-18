@@ -44,7 +44,8 @@ class InitializationService:
             else:
                 await initialization_manager.initialize_vector_db()
             progressbar = CustomProgressBar()
-            progress_monitor_task = asyncio.create_task(cls._monitor_embedding_progress(progressbar, progress_callback))
+            if payload.sync:
+                progress_monitor_task = asyncio.create_task(cls._monitor_embedding_progress(progressbar, progress_callback))
             await initialization_manager.prefill_vector_store(
                 chunkable_files_and_hashes,
                 progressbar=progressbar
