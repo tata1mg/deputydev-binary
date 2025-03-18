@@ -5,6 +5,7 @@ from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.embedding.one_dev_embedding_manager import (
     OneDevEmbeddingManager,
 )
+from deputydev_core.services.initialization.extensions_initialisation_manager import ExtensionInitialisationManager
 from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
@@ -43,7 +44,7 @@ class RelevantChunksService:
         )
         await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
         with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
-            initialization_manager = InitializationManager(
+            initialization_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,
                 process_executor=executor,

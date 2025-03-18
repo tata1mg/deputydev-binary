@@ -3,7 +3,7 @@ import time
 from typing import Dict, List, Any, Optional, Set
 
 from deputydev_core.models.dto.chunk_dto import ChunkDTO
-from deputydev_core.services.initialization.initialization_service import InitializationManager
+from deputydev_core.services.initialization.extensions_initialisation_manager import ExtensionInitialisationManager
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
 from deputydev_core.services.repository.chunk_service import ChunkService
 from deputydev_core.utils.constants.constants import CHUNKFILE_KEYWORD_PROPERTY_MAP
@@ -27,7 +27,7 @@ class BatchSearchService:
         try:
             chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(repo_path)
 
-            initialization_manager = InitializationManager(repo_path=repo_path)
+            initialization_manager = ExtensionInitialisationManager(repo_path=repo_path)
             weaviate_client = await initialization_manager.initialize_vector_db()
 
             chunk_files_service = ChunkFilesService(weaviate_client)

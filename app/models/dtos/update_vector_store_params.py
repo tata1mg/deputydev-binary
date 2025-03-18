@@ -7,3 +7,4 @@ class UpdateVectorStoreParams(BaseModel):
     repo_path: str
     auth_token: str
     chunkable_files: Optional[List[str]] = []
+    sync: bool
