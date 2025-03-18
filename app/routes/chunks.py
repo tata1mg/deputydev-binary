@@ -63,6 +63,7 @@ async def get_autocomplete_keyword_type_chunks(_request: Request):
     chunks = await AutocompleteSearchService.get_autocomplete_keyword_type_chunks(
         payload
     )
+    print(chunks)
     return HTTPResponse(body=json.dumps(chunks))
 
 
