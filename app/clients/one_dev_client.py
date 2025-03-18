@@ -27,6 +27,7 @@ class OneDevClient(BaseHTTPClient):
             self, payload: Dict[str, Any], headers: Dict[str, str]
     ) -> Dict[str, Any]:
         path = "/end_user/v1/code-gen/create-embedding"
+        payload.update({"use_grace_period": True})
         headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
         return (await result.json()).get("data")
@@ -42,4 +43,22 @@ class OneDevClient(BaseHTTPClient):
         headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "1.0.0"}
         result = await self.get(url=self._host + path, headers=headers,
                                 params={"consumer": ConfigConsumer.BINARY.value})
+        return (await result.json()).get("data")
+
+    async def verify_auth_token(self, headers: Dict[str, str], payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Verify the authentication token for the user.
+
+        Args:
+            headers (Dict[str, str]): The headers containing the authentication token.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the verification result if successful, otherwise None.
+
+        Raises:
+            Exception: Raises an exception if the request fails or the response is not valid.
+        """
+        path = "/end_user/v1/auth/verify-auth-token"
+        result = await self.post(url=self._host + path,
+                                 headers={**headers, "X-Client-Version": "1.5.0", "X-Client": "VSCODE_EXT"}, json=payload)
         return (await result.json()).get("data")

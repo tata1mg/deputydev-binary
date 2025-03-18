@@ -5,9 +5,12 @@ from deputydev_core.services.initialization.initialization_service import (
     InitializationManager,
 )
 from deputydev_core.utils.config_manager import ConfigManager
+from deputydev_core.utils.constants.auth import AuthStatus
+
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from app.utils.constants import CONFIG_PATH
+from app.services.auth_token_service import AuthTokenService
+from app.utils.constants import CONFIG_PATH, AuthTokenStorageManagers
 from app.utils.util import weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
 from sanic import Sanic
@@ -21,6 +24,13 @@ class InitializationService:
         chunkable_files = payload.chunkable_files
         with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             one_dev_client = OneDevClient()
+            token_data = await one_dev_client.verify_auth_token(headers={"Authorization": f"Bearer {auth_token}"},
+                                                                payload={"enable_grace_period": True})
+            if token_data["status"] == AuthStatus.EXPIRED.value:
+                # TODO: make type on the basis of client
+                await AuthTokenService.store_token(headers={"Authorization": f"Bearer {auth_token}",
+                                                            "Type": AuthTokenStorageManagers.EXTENSION_AUTH_TOKEN_STORAGE_MANAGER.value})
+                auth_token = token_data["encrypted_session_data"]
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,
