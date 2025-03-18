@@ -28,11 +28,8 @@ class InitializationService:
             headers = {"Authorization": f"Bearer {auth_token}"}
             token_data = await one_dev_client.verify_auth_token(headers=headers, payload=payload)
             if token_data["status"] == AuthStatus.EXPIRED.value:
-                # TODO: make type on the basis of client, when we start receving from extension
-                # TODO: This type should not be passed through headers
-                await AuthTokenService.store_token(headers={"Authorization": f"Bearer {auth_token}",
-                                                            "Type": AuthTokenStorageManagers.EXTENSION_AUTH_TOKEN_STORAGE_MANAGER.value})
-                auth_token = token_data["encrypted_session_data"]
+                auth_token = cls.handle_expired_token(token_data)
+
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,
@@ -57,6 +54,13 @@ class InitializationService:
                 chunkable_files_and_hashes
             )
 
+    @classmethod
+    async def handle_expired_token(cls, token_data):
+        auth_token = token_data["encrypted_session_data"]
+        # TODO: make type on the basis of client, when we start receving from extension
+        # TODO: This type should not be passed through headers
+        await AuthTokenService.store_token(headers={"Authorization": f"Bearer {auth_token}",
+                                                    "Type": AuthTokenStorageManagers.EXTENSION_AUTH_TOKEN_STORAGE_MANAGER.value})
     @classmethod
     async def initialization(cls, auth_token, payload):
         app = Sanic.get_app()
