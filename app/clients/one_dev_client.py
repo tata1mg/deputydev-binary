@@ -27,7 +27,7 @@ class OneDevClient(BaseHTTPClient):
             self, payload: Dict[str, Any], headers: Dict[str, str]
     ) -> Dict[str, Any]:
         path = "/end_user/v1/code-gen/create-embedding"
-        payload.update({"use_grace_period": True})
+        payload.update({"use_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]})
         headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
         return (await result.json()).get("data")

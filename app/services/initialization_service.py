@@ -24,10 +24,12 @@ class InitializationService:
         chunkable_files = payload.chunkable_files
         with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             one_dev_client = OneDevClient()
-            token_data = await one_dev_client.verify_auth_token(headers={"Authorization": f"Bearer {auth_token}"},
-                                                                payload={"enable_grace_period": True})
+            payload = {"enable_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]}
+            headers = {"Authorization": f"Bearer {auth_token}"}
+            token_data = await one_dev_client.verify_auth_token(headers=headers, payload=payload)
             if token_data["status"] == AuthStatus.EXPIRED.value:
-                # TODO: make type on the basis of client
+                # TODO: make type on the basis of client, when we start receving from extension
+                # TODO: This type should not be passed through headers
                 await AuthTokenService.store_token(headers={"Authorization": f"Bearer {auth_token}",
                                                             "Type": AuthTokenStorageManagers.EXTENSION_AUTH_TOKEN_STORAGE_MANAGER.value})
                 auth_token = token_data["encrypted_session_data"]
