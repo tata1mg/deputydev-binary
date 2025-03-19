@@ -2,9 +2,7 @@ import os
 from typing import List
 
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
-from deputydev_core.services.initialization.initialization_service import (
-    InitializationManager,
-)
+from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
 from deputydev_core.services.repository.dataclasses.main import (
     WeaviateSyncAndAsyncClients,
@@ -41,7 +39,7 @@ class AutocompleteSearchService:
     async def initialise_weaviate_client(
         cls, repo_path: str
     ) -> WeaviateSyncAndAsyncClients:
-        initialization_manager = InitializationManager(repo_path=repo_path)
+        initialization_manager = ExtensionInitialisationManager(repo_path=repo_path)
         weaviate_client = await weaviate_connection()
         if weaviate_client:
             weaviate_client = weaviate_client
