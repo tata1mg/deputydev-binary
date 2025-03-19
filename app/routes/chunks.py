@@ -1,4 +1,5 @@
 import json
+import traceback
 from sanic import Blueprint, Request, HTTPResponse
 from sanic.request import Request
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
@@ -27,8 +28,9 @@ async def relevant_chunks(request, ws):
     except Exception as e:
         await ws.send(json.dumps({"error": "can not find relevant chunks"}))
         # uncomment for local debugging
-        # import traceback
-        # print(traceback.format_exc())
+        import traceback
+
+        print(traceback.format_exc())
         print(f"Connection closed: {e}")
 
 
@@ -42,7 +44,7 @@ async def update_vector_store(request, ws):
         await ws.send(json.dumps({"status": "Completed"}))
     except Exception as e:
         # uncomment for local debugging
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         await ws.send(json.dumps({"status": "Failed"}))
         print(f"Connection closed: {e}")
 
@@ -85,7 +87,5 @@ async def update_vector_store(request):
 async def get_autocomplete_keyword_type_chunks(_request: Request):
     payload = _request.json
     payload = BatchSearchParams(**payload)
-    chunks = await BatchSearchService.search_code(
-        payload
-    )
+    chunks = await BatchSearchService.search_code(payload)
     return HTTPResponse(body=json.dumps(chunks))

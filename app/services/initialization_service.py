@@ -19,7 +19,9 @@ class InitializationService:
         repo_path = payload.repo_path
         auth_token = payload.auth_token
         chunkable_files = payload.chunkable_files
-        with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
+        with ProcessPoolExecutor(
+            max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
+        ) as executor:
             one_dev_client = OneDevClient()
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
@@ -48,13 +50,17 @@ class InitializationService:
     @classmethod
     async def initialization(cls, auth_token, payload):
         app = Sanic.get_app()
+        print("Getting config")
         await cls.get_config(auth_token, base_config=payload.get("config"))
         if not hasattr(app.ctx, "weaviate_client"):
             weaviate_client = await InitializationManager().initialize_vector_db()
             app.ctx.weaviate_client = weaviate_client
 
     @classmethod
-    async def get_config(cls, auth_token: str, file_path: str = CONFIG_PATH, base_config: Dict = {}) -> None:
+    async def get_config(
+        cls, auth_token: str, file_path: str = CONFIG_PATH, base_config: Dict = {}
+    ) -> None:
+        print("Getting config 2")
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
             one_dev_client = OneDevClient(base_config)
@@ -68,6 +74,9 @@ class InitializationService:
                 if configs is None:
                     raise Exception("No configs fetched")
                 ConfigManager.set(configs)
+                print("********************")
+                print(ConfigManager.configs)
+                print("********************")
                 with open(file_path, "w") as json_file:
                     json.dump(configs, json_file, indent=4)
             except Exception as error:

@@ -31,7 +31,9 @@ class RerankerService:
                 "Authorization": f"Bearer {self.auth_token}",
             }
             # TODO: Update this HOST and timeout
-            filtered_and_ranked_chunks_denotations = await OneDevClient().llm_reranking(payload, headers=headers)
+            filtered_and_ranked_chunks_denotations = await OneDevClient().llm_reranking(
+                payload, headers=headers
+            )
             return filter_chunks_by_denotation(
                 relevant_chunks + focus_chunks, filtered_and_ranked_chunks_denotations
             )
