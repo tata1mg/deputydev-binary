@@ -36,9 +36,9 @@ async def relevant_chunks(request, ws):
 
 
 @chunks.route("/get-focus-chunks", methods=["POST"])
-async def focus_chunks(request):
+async def focus_chunks(_request: Request):
     try:
-        payload = request.json()
+        payload = _request.json
         payload = FocusChunksParams(**payload)
         focus_chunks = await RelevantChunksService(
             payload.auth_token, payload.repo_path
