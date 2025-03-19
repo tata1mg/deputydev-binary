@@ -1,6 +1,5 @@
 import asyncio
-import time
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Set
 
 from deputydev_core.models.dto.chunk_dto import ChunkDTO
 from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
@@ -9,9 +8,11 @@ from deputydev_core.services.repository.chunk_service import ChunkService
 from deputydev_core.utils.constants.constants import CHUNKFILE_KEYWORD_PROPERTY_MAP
 
 from app.models.dtos.batch_chunk_search_params import SearchTerm
-from app.models.dtos.batch_chunk_search_response import BatchSearchResponse, Chunk
+from app.models.dtos.batch_chunk_search_response import BatchSearchResponse
 from app.services.shared_chunks_manager import SharedChunksManager
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
+from deputydev_core.services.chunking.chunk_info import ChunkInfo
+from deputydev_core.services.chunking.chunk_info import ChunkSourceDetails
 
 class BatchSearchService:
 
@@ -138,7 +139,6 @@ class BatchSearchService:
 
         return {chunk.chunk_hash: chunk for chunk, _ in chunks_with_vectors}
 
-
     @classmethod
     def map_chunks_to_results(
             cls,
@@ -157,7 +157,8 @@ class BatchSearchService:
         Returns:
             List of code search results
         """
-        final_results = []
+
+        final_results: List[BatchSearchResponse] = []
 
         for idx, request in enumerate(search_terms):
             chunk_files = chunk_files_results.get(idx, [])
@@ -174,19 +175,22 @@ class BatchSearchService:
                 )
                 continue
 
-
             # Map chunks
-            chunk_results = []
+            chunk_results: List[ChunkInfo] = []
             for chunk_file in chunk_files:
                 chunk_file_dto = ChunkFileDTO(**chunk_file.properties, id=str(chunk_file.uuid))
                 # Get the corresponding chunk text
                 chunk = chunks_by_hash.get(chunk_file_dto.chunk_hash)
                 if chunk:
                     chunk_results.append(
-                        Chunk(
-                            text=chunk.text,
-                            start_line=chunk_file_dto.start_line,
-                            end_line=chunk_file_dto.end_line
+                        ChunkInfo(
+                            content=chunk.text,
+                            source_details=ChunkSourceDetails(
+                                file_path=chunk_file_dto.file_path,
+                                start_line=chunk_file_dto.start_line,
+                                end_line=chunk_file_dto.end_line,
+                                file_hash=chunk_file_dto.file_hash
+                            ),
                         )
                     )
 

@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
 from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
@@ -132,7 +133,7 @@ class AutocompleteSearchService:
                     chunkable_files_and_hashes,
                 )
 
-            print(f"Total execution time: {time.perf_counter() - start_time:.6f} sec")
+            AppLogger.log_info(f"Total execution time: {time.perf_counter() - start_time:.6f} sec")
             return {"response": result}
         except Exception as ex:
             AppLogger.log_error(f"autocomplete type search failed with exception {ex}")
@@ -164,6 +165,7 @@ class AutocompleteSearchService:
             type=search_type,
             chunkable_files_and_hashes=chunkable_files_and_hashes,
         )
+        print(keyword_chunks)
 
         sorted_chunks = cls.sort_chunks(keyword_chunks)
 
@@ -287,7 +289,7 @@ class AutocompleteSearchService:
             return []
 
     @staticmethod
-    def sort_chunks(chunks):
+    def sort_chunks(chunks: List[ChunkFileDTO]) -> List[ChunkFileDTO]:
         return sorted(
             chunks, key=lambda x: getattr(x.metadata, "score", 0.0), reverse=True
         )
