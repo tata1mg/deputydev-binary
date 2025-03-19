@@ -23,6 +23,7 @@ class RelevantChunksService:
     async def get_relevant_chunks(
         self, payload: RelevantChunksParams
     ) -> List[Dict[str, dict]]:
+        print(ConfigManager.configs)
         repo_path = payload.repo_path
         auth_token = payload.auth_token
         query = payload.query
@@ -38,7 +39,9 @@ class RelevantChunksService:
             await local_repo.get_chunkable_files_and_commit_hashes()
         )
         await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
-        with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
+        with ProcessPoolExecutor(
+            max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
+        ) as executor:
             initialization_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,
