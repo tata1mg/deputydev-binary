@@ -2,6 +2,7 @@ import json
 import traceback
 from sanic import Blueprint, Request, HTTPResponse
 from sanic.request import Request
+from app.models.dtos.focus_chunk_params import FocusChunksParams
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
@@ -27,6 +28,23 @@ async def relevant_chunks(request, ws):
         await ws.send(relevant_chunks_data)
     except Exception as e:
         await ws.send(json.dumps({"error": "can not find relevant chunks"}))
+        # uncomment for local debugging
+        import traceback
+
+        print(traceback.format_exc())
+        print(f"Connection closed: {e}")
+
+
+@chunks.route("/get-focus-chunks", methods=["POST"])
+async def focus_chunks(request):
+    try:
+        payload = request.json()
+        payload = FocusChunksParams(**payload)
+        focus_chunks = await RelevantChunksService(
+            payload.auth_token, payload.repo_path
+        ).get_focus_chunks(payload)
+        return HTTPResponse(body=json.dumps(focus_chunks))
+    except Exception as e:
         # uncomment for local debugging
         import traceback
 

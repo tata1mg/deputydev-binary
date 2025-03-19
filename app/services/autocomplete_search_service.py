@@ -89,6 +89,7 @@ class AutocompleteSearchService:
                     chunk_dto.file_path,
                     chunk_range,
                     score,
+                    chunk_dto.file_hash,
                 )
 
                 cls.add_symbols_to_map(
@@ -98,6 +99,7 @@ class AutocompleteSearchService:
                     chunk_dto.file_path,
                     chunk_range,
                     score,
+                    chunk_dto.file_hash,
                 )
 
                 if chunk_dto.file_path not in seen_files:
@@ -110,12 +112,13 @@ class AutocompleteSearchService:
                         file_path=chunk_dto.file_path,
                         chunks=[],
                         score=score,
+                        commit_hash=chunk_dto.file_hash,
                     )
 
             sorted_chunks = sorted(
                 chunk_map.values(), key=lambda x: x.score, reverse=True
             )
-            response = [chunk.to_dict() for chunk in sorted_chunks]
+            response = [chunk.model_dump(mode="json") for chunk in sorted_chunks]
 
             print(f"Total execution time: {time.perf_counter() - start_time:.6f} sec")
             return {"response": response}
@@ -217,6 +220,7 @@ class AutocompleteSearchService:
                         file_path=file_path,
                         chunks=[],
                         score=score,
+                        commit_hash=chunk_dto.file_hash,
                     )
             else:
                 symbols = getattr(chunk_dto, property_name, [])
@@ -224,16 +228,22 @@ class AutocompleteSearchService:
                     start_line=chunk_dto.start_line, end_line=chunk_dto.end_line
                 )
                 cls.add_symbols_to_map(
-                    chunk_map, symbol_type, symbols, file_path, chunk_range, score
+                    chunk_map,
+                    symbol_type,
+                    symbols,
+                    file_path,
+                    chunk_range,
+                    score,
+                    chunk_dto.file_hash,
                 )
 
         sorted_chunks = sorted(chunk_map.values(), key=lambda x: x.score, reverse=True)
-        response = [chunk.to_dict() for chunk in sorted_chunks]
+        response = [chunk.model_dump(mode="json") for chunk in sorted_chunks]
         return response
 
     @classmethod
     def add_symbols_to_map(
-        cls, chunk_map, symbol_type, symbols, file_path, chunk_range, score
+        cls, chunk_map, symbol_type, symbols, file_path, chunk_range, score, file_hash
     ):
         for symbol_name in symbols:
             key = f"{symbol_type}_{symbol_name}_{file_path}"
@@ -245,6 +255,7 @@ class AutocompleteSearchService:
                     file_path=file_path,
                     chunks=[],
                     score=score,
+                    commit_hash=file_hash,
                 )
             chunk_map[key].chunks.append(chunk_range)
             chunk_map[key].score = max(chunk_map[key].score, score)

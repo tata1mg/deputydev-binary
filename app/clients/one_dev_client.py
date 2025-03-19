@@ -59,10 +59,9 @@ class OneDevClient(BaseHTTPClient):
 
     async def get_configs(self, headers: Dict[str, str]) -> Optional[Dict[str, Any]]:
         path = "/end_user/v1/configs/get-configs"
-        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "1.0.0"}
+        headers = {**headers, "X-Client": "BINARY", "X-Client-Version": "1.0.0"}
         result = await self.get(
             url=self._host + path,
             headers=headers,
-            params={"consumer": ConfigConsumer.BINARY.value},
         )
         return (await result.json()).get("data")

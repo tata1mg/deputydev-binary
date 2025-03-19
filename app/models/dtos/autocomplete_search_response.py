@@ -14,14 +14,4 @@ class CodeSymbol(BaseModel):
     file_path: str
     chunks: List[ChunkRange]
     score: float
-
-    def to_dict(self) -> Dict:
-        return {
-            "type": self.type,
-            "value": self.value,
-            "path": self.file_path,
-            "chunks": [
-                {"start_line": c.start_line, "end_line": c.end_line}
-                for c in self.chunks
-            ],
-        }
+    commit_hash: str

@@ -1,5 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.embedding.one_dev_embedding_manager import (
@@ -13,10 +13,14 @@ from deputydev_core.services.search.dataclasses.main import SearchTypes
 from deputydev_core.utils.config_manager import ConfigManager
 
 from app.clients.one_dev_client import OneDevClient
+from app.models.dtos.focus_chunk_params import FocusChunksParams
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
 from app.utils.util import jsonify_chunks, weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
+from deputydev_core.services.chunking.chunk_info import ChunkInfo, ChunkSourceDetails
+from deputydev_core.services.repository.chunk_service import ChunkService
+from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
 
 
 class RelevantChunksService:
@@ -94,3 +98,60 @@ class RelevantChunksService:
             )
 
         return jsonify_chunks(reranked_chunks)
+
+    async def get_focus_chunks(
+        self, payload: FocusChunksParams
+    ) -> List[Dict[str, Any]]:
+        print(ConfigManager.configs)
+        repo_path = payload.repo_path
+        auth_token = payload.auth_token
+        local_repo = LocalRepoFactory.get_local_repo(repo_path)
+        one_dev_client = OneDevClient()
+        chunkable_files_and_hashes = (
+            await local_repo.get_chunkable_files_and_commit_hashes()
+        )
+        await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
+        with ProcessPoolExecutor(
+            max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
+        ) as executor:
+            initialization_manager = InitializationManager(
+                repo_path=repo_path,
+                auth_token=auth_token,
+                process_executor=executor,
+                one_dev_client=one_dev_client,
+            )
+            weaviate_client = await weaviate_connection()
+            if weaviate_client:
+                weaviate_client = weaviate_client
+            else:
+                weaviate_client = await initialization_manager.initialize_vector_db()
+            chunk_files = await ChunkFilesService(
+                weaviate_client=weaviate_client
+            ).get_chunk_files_by_commit_hashes(
+                file_to_commit_hashes=payload.file_path_to_commit_hashes
+            )
+            chunk_hashes = [chunk_file.chunk_hash for chunk_file in chunk_files]
+            chunks = await ChunkService(
+                weaviate_client=weaviate_client
+            ).get_chunks_by_chunk_hashes(chunk_hashes=chunk_hashes)
+
+            chunk_info_list: List[ChunkInfo] = []
+            for chunk_dto, _vector in chunks:
+                for chunk_file in chunk_files:
+                    if chunk_file.chunk_hash == chunk_dto.chunk_hash:
+                        chunk_info_list.append(
+                            ChunkInfo(
+                                content=chunk_dto.text,
+                                source_details=ChunkSourceDetails(
+                                    file_path=chunk_file.file_path,
+                                    file_hash=chunk_file.file_hash,
+                                    start_line=chunk_file.start_line,
+                                    end_line=chunk_file.end_line,
+                                ),
+                                embedding=None,
+                                metadata=chunk_file.meta_info,
+                            )
+                        )
+                        break
+
+        return jsonify_chunks(chunk_info_list)
