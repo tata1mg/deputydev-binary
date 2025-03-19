@@ -19,9 +19,7 @@ async def relevant_chunks(request, ws):
         data = await ws.recv()
         payload = json.loads(data)
         payload = RelevantChunksParams(**payload)
-        relevant_chunks_data = await RelevantChunksService(
-            payload.auth_token, payload.repo_path
-        ).get_relevant_chunks(payload)
+        relevant_chunks_data = await RelevantChunksService(payload.repo_path).get_relevant_chunks(payload)
         relevant_chunks_data = json.dumps(relevant_chunks_data)
         await ws.send(relevant_chunks_data)
     except Exception as e:

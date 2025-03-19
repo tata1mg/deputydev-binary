@@ -3,6 +3,8 @@ import multiprocessing
 from multiprocessing import shared_memory
 
 
+# TODO: Remove this from here and move in core
+
 class SharedMemory:
     _lock = multiprocessing.Lock()  # Lock for safe access
 

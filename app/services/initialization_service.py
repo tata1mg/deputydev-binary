@@ -21,7 +21,7 @@ class InitializationService:
     @classmethod
     async def update_vector_store(cls, payload: UpdateVectorStoreParams) -> None:
         repo_path = payload.repo_path
-        auth_token = payload.auth_token
+        auth_token = SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
         with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             one_dev_client = OneDevClient()
@@ -30,10 +30,11 @@ class InitializationService:
             token_data = await one_dev_client.verify_auth_token(headers=headers, payload=payload)
             if token_data["status"] == AuthStatus.EXPIRED.value:
                 auth_token = cls.handle_expired_token(token_data)
+                SharedMemory.create(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
 
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
-                auth_token=auth_token,
+                auth_token_key=SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value,
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
