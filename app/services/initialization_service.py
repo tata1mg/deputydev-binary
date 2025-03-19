@@ -10,10 +10,11 @@ from deputydev_core.utils.constants.auth import AuthStatus
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.auth_token_service import AuthTokenService
-from app.utils.constants import CONFIG_PATH, AuthTokenStorageManagers
+from app.utils.constants import CONFIG_PATH, AuthTokenStorageManagers, SharedMemoryKeys
 from app.utils.util import weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
 from sanic import Sanic
+from app.utils.shared_memory import SharedMemory
 
 
 class InitializationService:
@@ -61,6 +62,7 @@ class InitializationService:
         # TODO: This type should not be passed through headers
         await AuthTokenService.store_token(headers={"Authorization": f"Bearer {auth_token}",
                                                     "Type": AuthTokenStorageManagers.EXTENSION_AUTH_TOKEN_STORAGE_MANAGER.value})
+
     @classmethod
     async def initialization(cls, auth_token, payload):
         app = Sanic.get_app()
@@ -70,7 +72,7 @@ class InitializationService:
             app.ctx.weaviate_client = weaviate_client
 
     @classmethod
-    async def get_config(cls, auth_token: str, file_path: str = CONFIG_PATH, base_config: Dict = {}) -> None:
+    async def get_config(cls, auth_token: str, base_config: Dict = {}) -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
             one_dev_client = OneDevClient(base_config)
@@ -84,8 +86,7 @@ class InitializationService:
                 if configs is None:
                     raise Exception("No configs fetched")
                 ConfigManager.set(configs)
-                with open(file_path, "w") as json_file:
-                    json.dump(configs, json_file, indent=4)
+                SharedMemory.create(SharedMemoryKeys.BINARY_CONFIG.value, configs)
             except Exception as error:
                 print(f"Failed to fetch configs: {error}")
                 await cls.close_session_and_exit(one_dev_client)

@@ -2,6 +2,10 @@ from typing import Any, Dict, Optional
 from deputydev_core.clients.http.base_http_client import BaseHTTPClient
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.enums import ConfigConsumer
+from functools import wraps
+from typing import Callable, Dict, Any, Optional, Tuple
+
+from app.utils.response_headers_handler import handle_response_headers
 
 
 class OneDevClient(BaseHTTPClient):
@@ -38,12 +42,15 @@ class OneDevClient(BaseHTTPClient):
         result = await self.post(url=self._host + path, json=payload, headers=headers)
         return (await result.json()).get("data")
 
-    async def get_configs(self, headers: Dict[str, str]) -> Optional[Dict[str, Any]]:
+    @handle_response_headers
+    async def get_configs(self, headers: Dict[str, str]) -> Optional[Tuple[Dict[str, Any], Dict[str, str]]]:
         path = "/end_user/v1/configs/get-configs"
         headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "1.0.0"}
         result = await self.get(url=self._host + path, headers=headers,
                                 params={"consumer": ConfigConsumer.BINARY.value})
-        return (await result.json()).get("data")
+        response_headers = result.headers
+        result = await result.json()
+        return result.get("data"), response_headers
 
     async def verify_auth_token(self, headers: Dict[str, str], payload: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -60,5 +67,6 @@ class OneDevClient(BaseHTTPClient):
         """
         path = "/end_user/v1/auth/verify-auth-token"
         result = await self.post(url=self._host + path,
-                                 headers={**headers, "X-Client-Version": "1.5.0", "X-Client": "VSCODE_EXT"}, json=payload)
+                                 headers={**headers, "X-Client-Version": "1.5.0", "X-Client": "VSCODE_EXT"},
+                                 json=payload)
         return (await result.json()).get("data")

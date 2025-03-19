@@ -18,3 +18,9 @@ class AuthTokenStorageManagers(Enum):
 class Status(Enum):
     SUCCESS = "success"
     FAILED = "failed"
+
+
+class SharedMemoryKeys(Enum):
+    BINARY_CONFIG = "BINARY_CONFIG"
+    CLI_AUTH_TOKEN = "CLI_AUTH_TOKEN"
+    EXTENSION_AUTH_TOKEN = "EXTENSION_AUTH_TOKEN"
