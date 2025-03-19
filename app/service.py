@@ -7,9 +7,9 @@ from app.routes import binary_blueprints
 
 app = Sanic("BinaryServer")
 app.blueprint(binary_blueprints)
-app.config.REQUEST_TIMEOUT = 300
-app.config.RESPONSE_TIMEOUT = 300
-app.config.KEEP_ALIVE_TIMEOUT = 300
+app.config.REQUEST_TIMEOUT = 3000
+app.config.RESPONSE_TIMEOUT = 3000
+app.config.KEEP_ALIVE_TIMEOUT = 3000
 app.config.TOUCHUP = False
 
 for listener in listeners:
