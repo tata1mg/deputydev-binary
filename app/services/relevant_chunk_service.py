@@ -2,13 +2,8 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, List
 
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
-from deputydev_core.services.embedding.one_dev_embedding_manager import (
-    OneDevEmbeddingManager,
-)
-from deputydev_core.services.initialization.extensions_initialisation_manager import ExtensionInitialisationManager
-from deputydev_core.services.initialization.initialization_service import (
-    InitializationManager,
-)
+from deputydev_core.services.embedding.extension_embedding_manager import ExtensionEmbeddingManager
+from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
 from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
 from deputydev_core.services.search.dataclasses.main import SearchTypes
 from deputydev_core.utils.config_manager import ConfigManager
@@ -33,7 +28,7 @@ class RelevantChunksService:
         query = payload.query
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
         one_dev_client = OneDevClient()
-        embedding_manager = OneDevEmbeddingManager(
+        embedding_manager = ExtensionEmbeddingManager(
             auth_token=auth_token, one_dev_client=one_dev_client
         )
         query_vector = await embedding_manager.embed_text_array(

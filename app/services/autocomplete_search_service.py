@@ -1,10 +1,7 @@
 import os
 
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
-from deputydev_core.services.initialization.extensions_initialisation_manager import ExtensionInitialisationManager
-from deputydev_core.services.initialization.initialization_service import (
-    InitializationManager,
-)
+from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
 from deputydev_core.services.repository.dataclasses.main import WeaviateSyncAndAsyncClients
 from deputydev_core.utils.app_logger import AppLogger

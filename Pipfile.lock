@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5711e96f967af0d903c1c952fcb09a7d8508ec850d3763f23e87a78d539ac741"
+            "sha256": "75030b014935d4c722e2a271876ed39e772d4617ab771ae9ed58ca8b57864e34"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -25,8 +25,8 @@
             "version": "==24.1.0"
         },
         "deputydev-core": {
-            "git": "ssh://git@github.com/tata1mg/deputydev-core.git",
-            "ref": "0cc78f258723f328f34af553aeb68f4713191671"
+            "path": "/Users/anand/Desktop/1mg/bitbucket/deputydev-core",
+            "version": "==0.1.0"
         },
         "httptools": {
             "hashes": [

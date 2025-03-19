@@ -3,7 +3,7 @@ import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
-from deputydev_core.services.initialization.extensions_initialisation_manager import ExtensionInitialisationManager
+from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.custom_progress_bar import CustomProgressBar
 
@@ -56,12 +56,11 @@ class InitializationService:
         """A separate task that can monitor and report progress while chunking happens"""
         try:
             while True:
-                # print("progressing", progress_bar.total_percentage)
-                if progress_bar.total_percentage < 100:
+                if not progress_bar.is_completed():
                     await progress_callback(progress_bar.total_percentage)
                 else:
                     return
-                await asyncio.sleep(0.2)  # Check progress every second
+                await asyncio.sleep(0.2)
         except asyncio.CancelledError:
             return
 
