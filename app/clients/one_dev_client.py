@@ -1,11 +1,11 @@
-from typing import Any, Dict, Optional
 from deputydev_core.clients.http.base_http_client import BaseHTTPClient
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.enums import ConfigConsumer
-from functools import wraps
-from typing import Callable, Dict, Any, Optional, Tuple
+from typing import Dict, Any
 from deputydev_core.clients.http.adapters.http_response_adapter import AiohttpToRequestsAdapter
 from app.utils.response_headers_handler import handle_client_response
+
+from app.utils.util import get_common_headers
 
 
 class OneDevClient(BaseHTTPClient):
@@ -22,9 +22,9 @@ class OneDevClient(BaseHTTPClient):
         else:
             self._host = config["DEPUTY_DEV"]["HOST"]
             timeout = config["DEPUTY_DEV"].get("TIMEOUT") or 15
-            limit = config["DEPUTY_DEV"].get("LIMIT")
-            limit_per_host = config["DEPUTY_DEV"].get("LIMIT_PER_HOST")
-            ttl_dns_cache = config["DEPUTY_DEV"].get("TTL_DNS_CACHE")
+            limit = config["DEPUTY_DEV"].get("LIMIT") or 0
+            limit_per_host = config["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
+            ttl_dns_cache = config["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
         super().__init__(timeout=timeout, limit=limit, limit_per_host=limit_per_host, ttl_dns_cache=ttl_dns_cache)
 
     @handle_client_response
@@ -33,21 +33,21 @@ class OneDevClient(BaseHTTPClient):
     ) -> Dict[str, Any]:
         path = "/end_user/v1/code-gen/create-embedding"
         payload.update({"use_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]})
-        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
+        headers = {**headers, **get_common_headers()}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
         return result
 
     @handle_client_response
     async def llm_reranking(self, payload: Dict[str, Any], headers: Dict[str, str]):
         path = "/end_user/v1/chunks/rerank-via-llm"
-        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
+        headers = {**headers, **get_common_headers()}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
         return result
 
     @handle_client_response
     async def get_configs(self, headers: Dict[str, str]) -> AiohttpToRequestsAdapter:
         path = "/end_user/v1/configs/get-configs"
-        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "1.0.0"}
+        headers = {**headers, **get_common_headers()}
         result = await self.get(url=self._host + path, headers=headers,
                                 params={"consumer": ConfigConsumer.BINARY.value})
         return result
@@ -67,7 +67,6 @@ class OneDevClient(BaseHTTPClient):
             Exception: Raises an exception if the request fails or the response is not valid.
         """
         path = "/end_user/v1/auth/verify-auth-token"
-        result = await self.post(url=self._host + path,
-                                 headers={**headers, "X-Client-Version": "1.5.0", "X-Client": "VSCODE_EXT"},
-                                 json=payload)
+        headers = {**headers, **get_common_headers()}
+        result = await self.post(url=self._host + path, headers=headers, json=payload)
         return result

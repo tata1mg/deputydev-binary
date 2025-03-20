@@ -4,7 +4,9 @@ from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.repository.dataclasses.main import (
     WeaviateSyncAndAsyncClients,
 )
+from app.utils.constants import Headers
 from sanic import Sanic
+from deputydev_core.utils.context_vars import get_context_value
 
 
 def jsonify_chunks(chunks: List[ChunkInfo]) -> List[Dict[str, dict]]:
@@ -16,7 +18,7 @@ def chunks_content(chunks: List[ChunkInfo]) -> List[str]:
 
 
 def filter_chunks_by_denotation(
-    chunks: List[ChunkInfo], denotations: List[str]
+        chunks: List[ChunkInfo], denotations: List[str]
 ) -> List[ChunkInfo]:
     return [chunk for chunk in chunks if chunk.denotation in denotations]
 
@@ -32,3 +34,9 @@ async def weaviate_connection():
             print(f"Sync Connection was dropped, Reconnecting")
             weaviate_clients.sync_client.connect()
         return weaviate_clients
+
+
+def get_common_headers() -> Dict[str, str]:
+    headers = get_context_value("headers")
+    return {Headers.X_CLIENT: headers.get(Headers.X_CLIENT),
+            Headers.X_Client_Version: headers.get(Headers.X_Client_Version)}
