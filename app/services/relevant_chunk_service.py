@@ -110,7 +110,7 @@ class RelevantChunksService:
         with ProcessPoolExecutor(
             max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
         ) as executor:
-            initialization_manager = InitializationManager(
+            initialization_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
                 auth_token=auth_token,
                 process_executor=executor,
