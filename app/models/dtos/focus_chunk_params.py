@@ -15,5 +15,4 @@ class ChunkDetails(BaseModel):
 
 class FocusChunksParams(BaseModel):
     repo_path: str
-    auth_token: str
     chunks: List[ChunkDetails]

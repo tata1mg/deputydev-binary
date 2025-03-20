@@ -35,19 +35,18 @@ async def relevant_chunks(request, ws):
 
 
 @chunks.route("/get-focus-chunks", methods=["POST"])
+@request_handler
 async def focus_chunks(_request: Request):
     try:
         payload = _request.json
         payload = FocusChunksParams(**payload)
-        focus_chunks = await RelevantChunksService(
-            payload.auth_token, payload.repo_path
-        ).get_focus_chunks(payload)
+        focus_chunks = await RelevantChunksService(payload.repo_path).get_focus_chunks(payload)
         return HTTPResponse(body=json.dumps(focus_chunks))
     except Exception as e:
         # uncomment for local debugging
-        import traceback
-
-        print(traceback.format_exc())
+        # import traceback
+        #
+        # print(traceback.format_exc())
         print(f"Connection closed: {e}")
 
 
@@ -68,7 +67,7 @@ async def update_vector_store(request, ws):
 
     except Exception as e:
         # uncomment for local debugging
-        print(traceback.format_exc())
+        # print(traceback.format_exc())
         await ws.send(json.dumps({"status": "Failed"}))
         print(f"Connection closed: {e}")
 

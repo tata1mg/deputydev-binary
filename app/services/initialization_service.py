@@ -2,7 +2,7 @@ import asyncio
 import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
-
+from app.utils.constants import Headers
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
 )
@@ -34,9 +34,9 @@ class InitializationService:
             max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
         ) as executor:
             one_dev_client = OneDevClient()
-            payload = {"enable_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]}
+            body = {"enable_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]}
             headers = {"Authorization": f"Bearer {auth_token}"}
-            token_data = await one_dev_client.verify_auth_token(headers=headers, payload=payload)
+            token_data = await one_dev_client.verify_auth_token(headers=headers, payload=body)
             if token_data["status"] == AuthStatus.EXPIRED.value:
                 await cls.handle_expired_token(token_data)
 
@@ -86,7 +86,7 @@ class InitializationService:
     async def handle_expired_token(cls, token_data):
         auth_token = token_data["encrypted_session_data"]
         SharedMemory.create(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
-        await AuthTokenService.store_token(get_context_value("headers").get("X-Client"))
+        await AuthTokenService.store_token(get_context_value("headers").get(Headers.X_CLIENT))
         return auth_token
 
     @classmethod

@@ -47,7 +47,7 @@ class RelevantChunksService:
         )
         await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
         with ProcessPoolExecutor(
-            max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
+                max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
         ) as executor:
             initialization_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
@@ -98,12 +98,8 @@ class RelevantChunksService:
 
         return jsonify_chunks(reranked_chunks)
 
-    async def get_focus_chunks(
-        self, payload: FocusChunksParams
-    ) -> List[Dict[str, Any]]:
-        print(ConfigManager.configs)
+    async def get_focus_chunks(self, payload: FocusChunksParams) -> List[Dict[str, Any]]:
         repo_path = payload.repo_path
-        auth_token = payload.auth_token
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
         one_dev_client = OneDevClient()
         chunkable_files_and_hashes = (
@@ -111,11 +107,11 @@ class RelevantChunksService:
         )
         await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
         with ProcessPoolExecutor(
-            max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
+                max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
         ) as executor:
             initialization_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
-                auth_token_key=auth_token,
+                auth_token_key=SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value,
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )

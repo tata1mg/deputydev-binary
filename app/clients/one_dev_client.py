@@ -9,18 +9,6 @@ from app.utils.util import get_common_headers
 
 class OneDevClient(BaseHTTPClient):
     def __init__(self, config=None):
-        from deputydev_core.utils.config_manager import ConfigManager
-
-        print(ConfigManager.configs)
-        config = {
-            "DEPUTY_DEV": {
-                "HOST": "http://localhost:8084",
-                "TIMEOUT": 15,
-                "LIMIT": 0,
-                "LIMIT_PER_HOST": 0,
-                "TTL_DNS_CACHE": 10,
-            }
-        }
         if not config:
             self._host = ConfigManager.configs["DEPUTY_DEV"]["HOST"]
             timeout = ConfigManager.configs["DEPUTY_DEV"].get("TIMEOUT") or 15

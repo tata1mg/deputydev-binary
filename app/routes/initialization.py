@@ -11,7 +11,6 @@ initialization = Blueprint("initialization", url_prefix="")
 @initialization.route("/init", methods=["POST"])
 @request_handler
 async def initialize_service(_request: Request, **kwargs):
-    print("Init called")
     try:
         payload = _request.json
         await InitializationService.initialization(payload=payload)
