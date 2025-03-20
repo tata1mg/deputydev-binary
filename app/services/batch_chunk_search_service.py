@@ -2,7 +2,9 @@ import asyncio
 from typing import Dict, List, Set
 
 from deputydev_core.models.dto.chunk_dto import ChunkDTO
-from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
+from deputydev_core.services.initialization.extension_initialisation_manager import (
+    ExtensionInitialisationManager,
+)
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
 from deputydev_core.services.repository.chunk_service import ChunkService
 from deputydev_core.utils.constants.constants import CHUNKFILE_KEYWORD_PROPERTY_MAP

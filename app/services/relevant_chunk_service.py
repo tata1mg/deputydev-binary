@@ -2,8 +2,12 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List
 
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
-from deputydev_core.services.embedding.extension_embedding_manager import ExtensionEmbeddingManager
-from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
+from deputydev_core.services.embedding.extension_embedding_manager import (
+    ExtensionEmbeddingManager,
+)
+from deputydev_core.services.initialization.extension_initialisation_manager import (
+    ExtensionInitialisationManager,
+)
 from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
 from deputydev_core.services.search.dataclasses.main import SearchTypes
 from deputydev_core.utils.config_manager import ConfigManager
@@ -121,19 +125,15 @@ class RelevantChunksService:
                 weaviate_client = weaviate_client
             else:
                 weaviate_client = await initialization_manager.initialize_vector_db()
-            chunk_files = await ChunkFilesService(
-                weaviate_client=weaviate_client
-            ).get_chunk_files_by_commit_hashes(
-                file_to_commit_hashes=payload.file_path_to_commit_hashes
-            )
-            chunk_hashes = [chunk_file.chunk_hash for chunk_file in chunk_files]
             chunks = await ChunkService(
                 weaviate_client=weaviate_client
-            ).get_chunks_by_chunk_hashes(chunk_hashes=chunk_hashes)
+            ).get_chunks_by_chunk_hashes(
+                chunk_hashes=[chunk.chunk_hash for chunk in payload.chunks]
+            )
 
             chunk_info_list: List[ChunkInfo] = []
             for chunk_dto, _vector in chunks:
-                for chunk_file in chunk_files:
+                for chunk_file in payload.chunks:
                     if chunk_file.chunk_hash == chunk_dto.chunk_hash:
                         chunk_info_list.append(
                             ChunkInfo(
