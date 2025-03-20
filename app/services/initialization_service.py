@@ -1,4 +1,3 @@
-import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 from deputydev_core.services.initialization.initialization_service import (
@@ -9,12 +8,13 @@ from deputydev_core.utils.constants.auth import AuthStatus
 
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from app.services.auth_token_service import AuthTokenService
-from app.utils.constants import CONFIG_PATH, AuthTokenStorageManagers, SharedMemoryKeys
+from deputydev_core.services.auth_token_storage.auth_token_service import AuthTokenService
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
 from app.utils.util import weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
 from sanic import Sanic
-from app.utils.shared_memory import SharedMemory
+from deputydev_core.utils.shared_memory import SharedMemory
+from deputydev_core.utils.context_vars import get_context_value
 
 
 class InitializationService:
@@ -29,8 +29,7 @@ class InitializationService:
             headers = {"Authorization": f"Bearer {auth_token}"}
             token_data = await one_dev_client.verify_auth_token(headers=headers, payload=payload)
             if token_data["status"] == AuthStatus.EXPIRED.value:
-                auth_token = cls.handle_expired_token(token_data)
-                SharedMemory.create(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
+                await cls.handle_expired_token(token_data)
 
             initialization_manager = InitializationManager(
                 repo_path=repo_path,
@@ -59,21 +58,20 @@ class InitializationService:
     @classmethod
     async def handle_expired_token(cls, token_data):
         auth_token = token_data["encrypted_session_data"]
-        # TODO: make type on the basis of client, when we start receving from extension
-        # TODO: This type should not be passed through headers
-        await AuthTokenService.store_token(headers={"Authorization": f"Bearer {auth_token}",
-                                                    "Type": AuthTokenStorageManagers.EXTENSION_AUTH_TOKEN_STORAGE_MANAGER.value})
+        SharedMemory.create(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
+        await AuthTokenService.store_token(get_context_value("headers").get("X-Client"))
+        return auth_token
 
     @classmethod
-    async def initialization(cls, auth_token, payload):
+    async def initialization(cls, payload):
         app = Sanic.get_app()
-        await cls.get_config(auth_token, base_config=payload.get("config"))
+        await cls.get_config(base_config=payload.get("config"))
         if not hasattr(app.ctx, "weaviate_client"):
             weaviate_client = await InitializationManager().initialize_vector_db()
             app.ctx.weaviate_client = weaviate_client
 
     @classmethod
-    async def get_config(cls, auth_token: str, base_config: Dict = {}) -> None:
+    async def get_config(cls, base_config: Dict = {}) -> None:
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
             one_dev_client = OneDevClient(base_config)
@@ -81,7 +79,7 @@ class InitializationService:
                 configs: Optional[Dict[str, str]] = await one_dev_client.get_configs(
                     headers={
                         "Content-Type": "application/json",
-                        "Authorization": f"Bearer {auth_token}",
+                        "Authorization": f"Bearer {SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)}",
                     }
                 )
                 if configs is None:

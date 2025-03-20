@@ -4,8 +4,8 @@ from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.enums import ConfigConsumer
 from functools import wraps
 from typing import Callable, Dict, Any, Optional, Tuple
-
-from app.utils.response_headers_handler import handle_response_headers
+from deputydev_core.clients.http.adapters.http_response_adapter import AiohttpToRequestsAdapter
+from app.utils.response_headers_handler import handle_client_response
 
 
 class OneDevClient(BaseHTTPClient):
@@ -27,6 +27,7 @@ class OneDevClient(BaseHTTPClient):
             ttl_dns_cache = config["DEPUTY_DEV"].get("TTL_DNS_CACHE")
         super().__init__(timeout=timeout, limit=limit, limit_per_host=limit_per_host, ttl_dns_cache=ttl_dns_cache)
 
+    @handle_client_response
     async def create_embedding(
             self, payload: Dict[str, Any], headers: Dict[str, str]
     ) -> Dict[str, Any]:
@@ -34,24 +35,24 @@ class OneDevClient(BaseHTTPClient):
         payload.update({"use_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]})
         headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
-        return (await result.json()).get("data")
+        return result
 
+    @handle_client_response
     async def llm_reranking(self, payload: Dict[str, Any], headers: Dict[str, str]):
         path = "/end_user/v1/chunks/rerank-via-llm"
         headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
-        return (await result.json()).get("data")
+        return result
 
-    @handle_response_headers
-    async def get_configs(self, headers: Dict[str, str]) -> Optional[Tuple[Dict[str, Any], Dict[str, str]]]:
+    @handle_client_response
+    async def get_configs(self, headers: Dict[str, str]) -> AiohttpToRequestsAdapter:
         path = "/end_user/v1/configs/get-configs"
         headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "1.0.0"}
         result = await self.get(url=self._host + path, headers=headers,
                                 params={"consumer": ConfigConsumer.BINARY.value})
-        response_headers = result.headers
-        result = await result.json()
-        return result.get("data"), response_headers
+        return result
 
+    @handle_client_response
     async def verify_auth_token(self, headers: Dict[str, str], payload: Dict[str, Any]) -> Dict[str, Any]:
         """
         Verify the authentication token for the user.
@@ -69,4 +70,4 @@ class OneDevClient(BaseHTTPClient):
         result = await self.post(url=self._host + path,
                                  headers={**headers, "X-Client-Version": "1.5.0", "X-Client": "VSCODE_EXT"},
                                  json=payload)
-        return (await result.json()).get("data")
+        return result

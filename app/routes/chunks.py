@@ -1,5 +1,5 @@
 import json
-from sanic import Blueprint, Request, HTTPResponse
+from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
@@ -9,11 +9,13 @@ from app.services.relevant_chunk_service import RelevantChunksService
 from app.models.dtos.batch_chunk_search_params import BatchSearchParams
 from app.services.autocomplete_search_service import AutocompleteSearchService
 from app.models.dtos.autocomplete_search_params import AutocompleteSearchParams
+from app.utils.request_handlers import request_handler
 
 chunks = Blueprint("chunks", url_prefix="")
 
 
 @chunks.websocket("/relevant_chunks")
+@request_handler
 async def relevant_chunks(request, ws):
     try:
         data = await ws.recv()
@@ -31,6 +33,7 @@ async def relevant_chunks(request, ws):
 
 
 @chunks.websocket("/update_chunks")
+@request_handler
 async def update_vector_store(request, ws):
     try:
         data = await ws.recv()
@@ -48,7 +51,6 @@ async def update_vector_store(request, ws):
 @chunks.route("/keyword_search", methods=["POST"])
 async def get_autocomplete_keyword_chunks(_request: Request, **kwargs):
     payload = _request.json
-    headers = _request.headers
     payload = AutocompleteSearchParams(**payload)
     chunks = await AutocompleteSearchService.get_autocomplete_keyword_chunks(payload)
     return HTTPResponse(body=json.dumps(chunks))
@@ -58,9 +60,7 @@ async def get_autocomplete_keyword_chunks(_request: Request, **kwargs):
 async def get_autocomplete_keyword_type_chunks(_request: Request):
     payload = _request.json
     payload = AutocompleteSearchParams(**payload)
-    chunks = await AutocompleteSearchService.get_autocomplete_keyword_type_chunks(
-        payload
-    )
+    chunks = await AutocompleteSearchService.get_autocomplete_keyword_type_chunks(payload)
     return HTTPResponse(body=json.dumps(chunks))
 
 
@@ -69,7 +69,7 @@ async def update_vector_store(request):
     try:
         payload = request.json
         payload = UpdateVectorStoreParams(**payload)
-        await InitializationService.initialize(payload)
+        await InitializationService.update_vector_store(payload)
         return HTTPResponse(body=json.dumps({}))
     except Exception as e:
         # uncomment for local debugging
@@ -82,7 +82,5 @@ async def update_vector_store(request):
 async def get_autocomplete_keyword_type_chunks(_request: Request):
     payload = _request.json
     payload = BatchSearchParams(**payload)
-    chunks = await BatchSearchService.search_code(
-        payload
-    )
+    chunks = await BatchSearchService.search_code(payload)
     return HTTPResponse(body=json.dumps(chunks))

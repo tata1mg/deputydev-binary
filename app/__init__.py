@@ -1,7 +1,7 @@
 from deputydev_core.utils.config_manager import ConfigManager
 from app.utils.constants import CONFIG_PATH
-from app.utils.shared_memory import SharedMemory
-from app.utils.constants import SharedMemoryKeys
+from deputydev_core.utils.shared_memory import SharedMemory
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
 
 config = SharedMemory.read(SharedMemoryKeys.BINARY_CONFIG.value)
 if config:

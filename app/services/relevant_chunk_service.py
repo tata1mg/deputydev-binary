@@ -12,7 +12,7 @@ from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepo
 from deputydev_core.services.search.dataclasses.main import SearchTypes
 from deputydev_core.utils.config_manager import ConfigManager
 
-from app.utils.constants import SharedMemoryKeys
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService

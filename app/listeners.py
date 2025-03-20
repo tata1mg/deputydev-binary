@@ -1,5 +1,6 @@
-from app.utils.constants import ListenerEventTypes, CONFIG_PATH, SharedMemoryKeys
-from app.utils.shared_memory import SharedMemory
+from app.utils.constants import ListenerEventTypes, CONFIG_PATH
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from deputydev_core.utils.shared_memory import SharedMemory
 
 
 async def close_server(app, _):
