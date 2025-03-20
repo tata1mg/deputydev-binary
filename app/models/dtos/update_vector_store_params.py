@@ -6,3 +6,4 @@ from pydantic import BaseModel
 class UpdateVectorStoreParams(BaseModel):
     repo_path: str
     chunkable_files: Optional[List[str]] = []
+    sync: Optional[bool] = False

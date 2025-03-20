@@ -1,20 +1,23 @@
 import asyncio
-import time
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Set
 
 from deputydev_core.models.dto.chunk_dto import ChunkDTO
-from deputydev_core.services.initialization.initialization_service import InitializationManager
+from deputydev_core.services.initialization.extension_initialisation_manager import (
+    ExtensionInitialisationManager,
+)
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
 from deputydev_core.services.repository.chunk_service import ChunkService
 from deputydev_core.utils.constants.constants import CHUNKFILE_KEYWORD_PROPERTY_MAP
 
 from app.models.dtos.batch_chunk_search_params import SearchTerm
-from app.models.dtos.batch_chunk_search_response import BatchSearchResponse, Chunk
+from app.models.dtos.batch_chunk_search_response import BatchSearchResponse
 from app.services.shared_chunks_manager import SharedChunksManager
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
+from deputydev_core.services.chunking.chunk_info import ChunkInfo
+from deputydev_core.services.chunking.chunk_info import ChunkSourceDetails
+
 
 class BatchSearchService:
-
     @classmethod
     async def search_code(cls, payload):
         """
@@ -25,25 +28,28 @@ class BatchSearchService:
         weaviate_client = None
 
         try:
-            chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(repo_path)
+            chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(
+                repo_path
+            )
 
-            initialization_manager = InitializationManager(repo_path=repo_path)
+            initialization_manager = ExtensionInitialisationManager(repo_path=repo_path)
             weaviate_client = await initialization_manager.initialize_vector_db()
 
             chunk_files_service = ChunkFilesService(weaviate_client)
             chunk_service = ChunkService(weaviate_client)
 
-
-            chunk_files_results = await cls.search_chunk_files(search_terms, chunkable_files_and_hashes, chunk_files_service)
+            chunk_files_results = await cls.search_chunk_files(
+                search_terms, chunkable_files_and_hashes, chunk_files_service
+            )
 
             all_chunk_hashes = cls.extract_chunk_hashes(chunk_files_results)
 
-            chunks_by_hash = await cls.fetch_chunks_by_hashes(all_chunk_hashes, chunk_service)
+            chunks_by_hash = await cls.fetch_chunks_by_hashes(
+                all_chunk_hashes, chunk_service
+            )
 
             final_results = cls.map_chunks_to_results(
-                search_terms,
-                chunk_files_results,
-                chunks_by_hash
+                search_terms, chunk_files_results, chunks_by_hash
             )
 
             return {"response": [result.model_dump() for result in final_results]}
@@ -53,22 +59,29 @@ class BatchSearchService:
                 weaviate_client.sync_client.close()
                 await weaviate_client.async_client.close()
 
-
     @classmethod
-    async def search_chunk_files(cls, search_terms, chunkable_files_and_hashes,  chunk_files_service) :
+    async def search_chunk_files(
+        cls, search_terms, chunkable_files_and_hashes, chunk_files_service
+    ):
 
         tasks = [
-            cls.process_file_search(idx, chunk_files_service, term, chunkable_files_and_hashes)
+            cls.process_file_search(
+                idx, chunk_files_service, term, chunkable_files_and_hashes
+            )
             for idx, term in enumerate(search_terms)
         ]
         results = await asyncio.gather(*tasks)
 
-
         return {idx: chunks for idx, chunks in results}
 
-
     @classmethod
-    async def process_file_search(cls,idx, chunk_files_service: ChunkFilesService, term: SearchTerm, chunkable_files_and_hashes: Dict):
+    async def process_file_search(
+        cls,
+        idx,
+        chunk_files_service: ChunkFilesService,
+        term: SearchTerm,
+        chunkable_files_and_hashes: Dict,
+    ):
         """
         Process a single search term
 
@@ -90,14 +103,13 @@ class BatchSearchService:
             keyword=term.keyword,
             type=term.type,
             chunkable_files_and_hashes=chunkable_files_and_hashes,
-            limit=5
+            limit=5,
         )
         sorted_chunks = sorted(
             chunks, key=lambda x: getattr(x.metadata, "score", 0.0), reverse=True
         )
 
         return idx, sorted_chunks
-
 
     @classmethod
     def extract_chunk_hashes(cls, chunk_files_results):
@@ -116,9 +128,7 @@ class BatchSearchService:
                 chunk_file_dto = ChunkFileDTO(**chunk.properties, id=str(chunk.uuid))
                 all_chunk_hashes.add(chunk_file_dto.chunk_hash)
 
-
         return all_chunk_hashes
-
 
     @classmethod
     async def fetch_chunks_by_hashes(cls, chunk_hashes: Set[str], chunk_service):
@@ -134,17 +144,18 @@ class BatchSearchService:
         if not chunk_hashes:
             return {}
 
-        chunks_with_vectors = await chunk_service.get_chunks_by_chunk_hashes(list(chunk_hashes))
+        chunks_with_vectors = await chunk_service.get_chunks_by_chunk_hashes(
+            list(chunk_hashes)
+        )
 
         return {chunk.chunk_hash: chunk for chunk, _ in chunks_with_vectors}
 
-
     @classmethod
     def map_chunks_to_results(
-            cls,
-            search_terms: List[SearchTerm],
-            chunk_files_results: Dict[int, List[ChunkFileDTO]],
-            chunks_by_hash: Dict[str, ChunkDTO]
+        cls,
+        search_terms: List[SearchTerm],
+        chunk_files_results: Dict[int, List[ChunkFileDTO]],
+        chunks_by_hash: Dict[str, ChunkDTO],
     ) -> List[BatchSearchResponse]:
         """
         Map chunks to search results.
@@ -157,7 +168,8 @@ class BatchSearchService:
         Returns:
             List of code search results
         """
-        final_results = []
+
+        final_results: List[BatchSearchResponse] = []
 
         for idx, request in enumerate(search_terms):
             chunk_files = chunk_files_results.get(idx, [])
@@ -169,24 +181,29 @@ class BatchSearchService:
                         keyword=request.keyword,
                         type=request.type,
                         file_path=request.file_path,
-                        chunks=[]
+                        chunks=[],
                     )
                 )
                 continue
 
-
             # Map chunks
-            chunk_results = []
+            chunk_results: List[ChunkInfo] = []
             for chunk_file in chunk_files:
-                chunk_file_dto = ChunkFileDTO(**chunk_file.properties, id=str(chunk_file.uuid))
+                chunk_file_dto = ChunkFileDTO(
+                    **chunk_file.properties, id=str(chunk_file.uuid)
+                )
                 # Get the corresponding chunk text
                 chunk = chunks_by_hash.get(chunk_file_dto.chunk_hash)
                 if chunk:
                     chunk_results.append(
-                        Chunk(
-                            text=chunk.text,
-                            start_line=chunk_file_dto.start_line,
-                            end_line=chunk_file_dto.end_line
+                        ChunkInfo(
+                            content=chunk.text,
+                            source_details=ChunkSourceDetails(
+                                file_path=chunk_file_dto.file_path,
+                                start_line=chunk_file_dto.start_line,
+                                end_line=chunk_file_dto.end_line,
+                                file_hash=chunk_file_dto.file_hash,
+                            ),
                         )
                     )
 
@@ -196,7 +213,7 @@ class BatchSearchService:
                     keyword=request.keyword,
                     type=request.type,
                     file_path=request.file_path,
-                    chunks=chunk_results
+                    chunks=chunk_results,
                 )
             )
 

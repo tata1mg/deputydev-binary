@@ -1,24 +1,39 @@
 from deputydev_core.clients.http.base_http_client import BaseHTTPClient
-from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.enums import ConfigConsumer
 from typing import Dict, Any
 from deputydev_core.clients.http.adapters.http_response_adapter import AiohttpToRequestsAdapter
 from app.utils.response_headers_handler import handle_client_response
-
+from deputydev_core.utils.config_manager import ConfigManager
 from app.utils.util import get_common_headers
 
 
 class OneDevClient(BaseHTTPClient):
     def __init__(self, config=None):
+        from deputydev_core.utils.config_manager import ConfigManager
+
+        print(ConfigManager.configs)
+        config = {
+            "DEPUTY_DEV": {
+                "HOST": "http://localhost:8084",
+                "TIMEOUT": 15,
+                "LIMIT": 0,
+                "LIMIT_PER_HOST": 0,
+                "TTL_DNS_CACHE": 10,
+            }
+        }
         if not config:
             self._host = ConfigManager.configs["DEPUTY_DEV"]["HOST"]
             timeout = ConfigManager.configs["DEPUTY_DEV"].get("TIMEOUT") or 15
             # The total number of simultaneous connections allowed (default is 100). (set 0 for unlimited)
             limit = ConfigManager.configs["DEPUTY_DEV"].get("LIMIT") or 0
             # The maximum number of connections allowed per host (default is 0, meaning unlimited).
-            limit_per_host = ConfigManager.configs["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
+            limit_per_host = (
+                    ConfigManager.configs["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
+            )
             # ttl_dns_cache: Time-to-live (TTL) for DNS cache entries, in seconds (default is 10).
-            ttl_dns_cache = ConfigManager.configs["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
+            ttl_dns_cache = (
+                    ConfigManager.configs["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
+            )
         else:
             self._host = config["DEPUTY_DEV"]["HOST"]
             timeout = config["DEPUTY_DEV"].get("TIMEOUT") or 15

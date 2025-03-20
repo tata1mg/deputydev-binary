@@ -1,16 +1,19 @@
 import os
+from typing import List
 
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
-from deputydev_core.services.initialization.initialization_service import (
-    InitializationManager,
+from deputydev_core.services.initialization.extension_initialisation_manager import (
+    ExtensionInitialisationManager,
 )
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
-from deputydev_core.services.repository.dataclasses.main import WeaviateSyncAndAsyncClients
+from deputydev_core.services.repository.dataclasses.main import (
+    WeaviateSyncAndAsyncClients,
+)
 from deputydev_core.utils.app_logger import AppLogger
 
 from app.constants.constant import KeywordTypes, PropertyTypes
 from app.models.dtos.autocomplete_search_params import AutocompleteSearchParams
-from app.models.dtos.autocomplete_search_response import ChunkRange, CodeSymbol
+from app.models.dtos.autocomplete_search_response import ChunkDetails, CodeSymbol
 from app.services.shared_chunks_manager import SharedChunksManager
 import time
 
@@ -35,8 +38,10 @@ class AutocompleteSearchService:
     }
 
     @classmethod
-    async def initialise_weaviate_client(cls, repo_path: str) -> WeaviateSyncAndAsyncClients:
-        initialization_manager = InitializationManager(repo_path=repo_path)
+    async def initialise_weaviate_client(
+        cls, repo_path: str
+    ) -> WeaviateSyncAndAsyncClients:
+        initialization_manager = ExtensionInitialisationManager(repo_path=repo_path)
         weaviate_client = await weaviate_connection()
         if weaviate_client:
             weaviate_client = weaviate_client
@@ -55,7 +60,9 @@ class AutocompleteSearchService:
             )
 
             weaviate_client = await cls.initialise_weaviate_client(repo_path)
-            keyword_chunks = await ChunkFilesService(weaviate_client).get_autocomplete_keyword_chunks(
+            keyword_chunks = await ChunkFilesService(
+                weaviate_client
+            ).get_autocomplete_keyword_chunks(
                 payload.keyword, chunkable_files_and_hashes
             )
 
@@ -66,10 +73,19 @@ class AutocompleteSearchService:
 
             for chunk_obj in sorted_chunks:
                 chunk_dto = ChunkFileDTO(**chunk_obj.properties, id=str(chunk_obj.uuid))
-                chunk_range = ChunkRange(
-                    start_line=chunk_dto.start_line, end_line=chunk_dto.end_line
+                chunk_range = ChunkDetails(
+                    start_line=chunk_dto.start_line,
+                    end_line=chunk_dto.end_line,
+                    chunk_hash=chunk_dto.chunk_hash,
+                    file_hash=chunk_dto.file_hash,
+                    file_path=chunk_dto.file_path,
+                    meta_info=chunk_dto.meta_info,
                 )
-                score = chunk_obj.metadata.score if hasattr(chunk_obj.metadata, "score") else 0.0
+                score = (
+                    chunk_obj.metadata.score
+                    if hasattr(chunk_obj.metadata, "score")
+                    else 0.0
+                )
 
                 cls.add_symbols_to_map(
                     chunk_map,
@@ -78,6 +94,7 @@ class AutocompleteSearchService:
                     chunk_dto.file_path,
                     chunk_range,
                     score,
+                    chunk_dto.file_hash,
                 )
 
                 cls.add_symbols_to_map(
@@ -87,20 +104,26 @@ class AutocompleteSearchService:
                     chunk_dto.file_path,
                     chunk_range,
                     score,
+                    chunk_dto.file_hash,
                 )
 
                 if chunk_dto.file_path not in seen_files:
                     seen_files.add(chunk_dto.file_path)
-                    chunk_map[f"{KeywordTypes.FILE.value}_{chunk_dto.file_path}"] = CodeSymbol(
+                    chunk_map[
+                        f"{KeywordTypes.FILE.value}_{chunk_dto.file_path}"
+                    ] = CodeSymbol(
                         type=KeywordTypes.FILE.value,
                         value=os.path.basename(chunk_dto.file_path),
                         file_path=chunk_dto.file_path,
                         chunks=[],
                         score=score,
+                        commit_hash=chunk_dto.file_hash,
                     )
 
-            sorted_chunks = sorted(chunk_map.values(), key=lambda x: x.score, reverse=True)
-            response = [chunk.to_dict() for chunk in sorted_chunks]
+            sorted_chunks = sorted(
+                chunk_map.values(), key=lambda x: x.score, reverse=True
+            )
+            response = [chunk.model_dump(mode="json") for chunk in sorted_chunks]
 
             print(f"Total execution time: {time.perf_counter() - start_time:.6f} sec")
             return {"response": response}
@@ -110,7 +133,9 @@ class AutocompleteSearchService:
             return {"response": []}
 
     @classmethod
-    async def get_autocomplete_keyword_type_chunks(cls, payload: AutocompleteSearchParams):
+    async def get_autocomplete_keyword_type_chunks(
+        cls, payload: AutocompleteSearchParams
+    ):
         start_time = time.perf_counter()
 
         keyword_type = payload.type
@@ -121,7 +146,9 @@ class AutocompleteSearchService:
             return {"response": []}
 
         try:
-            chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(repo_path)
+            chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(
+                repo_path
+            )
             if keyword_type == "directory":
                 result = await cls.search_directories(repo_path, keyword)
             else:
@@ -134,12 +161,13 @@ class AutocompleteSearchService:
                     chunkable_files_and_hashes,
                 )
 
-            print(f"Total execution time: {time.perf_counter() - start_time:.6f} sec")
+            AppLogger.log_info(
+                f"Total execution time: {time.perf_counter() - start_time:.6f} sec"
+            )
             return {"response": result}
         except Exception as ex:
             AppLogger.log_error(f"autocomplete type search failed with exception {ex}")
             return {"response": []}
-
 
     @classmethod
     async def search_by_type(
@@ -166,6 +194,7 @@ class AutocompleteSearchService:
             type=search_type,
             chunkable_files_and_hashes=chunkable_files_and_hashes,
         )
+        print(keyword_chunks)
 
         sorted_chunks = cls.sort_chunks(keyword_chunks)
 
@@ -196,23 +225,35 @@ class AutocompleteSearchService:
                         file_path=file_path,
                         chunks=[],
                         score=score,
+                        commit_hash=chunk_dto.file_hash,
                     )
             else:
                 symbols = getattr(chunk_dto, property_name, [])
-                chunk_range = ChunkRange(
-                    start_line=chunk_dto.start_line, end_line=chunk_dto.end_line
+                chunk_range = ChunkDetails(
+                    start_line=chunk_dto.start_line,
+                    end_line=chunk_dto.end_line,
+                    chunk_hash=chunk_dto.chunk_hash,
+                    file_hash=chunk_dto.file_hash,
+                    file_path=chunk_dto.file_path,
+                    meta_info=chunk_dto.meta_info,
                 )
                 cls.add_symbols_to_map(
-                    chunk_map, symbol_type, symbols, file_path, chunk_range, score
+                    chunk_map,
+                    symbol_type,
+                    symbols,
+                    file_path,
+                    chunk_range,
+                    score,
+                    chunk_dto.file_hash,
                 )
 
         sorted_chunks = sorted(chunk_map.values(), key=lambda x: x.score, reverse=True)
-        response = [chunk.to_dict() for chunk in sorted_chunks]
+        response = [chunk.model_dump(mode="json") for chunk in sorted_chunks]
         return response
 
     @classmethod
     def add_symbols_to_map(
-        cls, chunk_map, symbol_type, symbols, file_path, chunk_range, score
+        cls, chunk_map, symbol_type, symbols, file_path, chunk_range, score, file_hash
     ):
         for symbol_name in symbols:
             key = f"{symbol_type}_{symbol_name}_{file_path}"
@@ -224,6 +265,7 @@ class AutocompleteSearchService:
                     file_path=file_path,
                     chunks=[],
                     score=score,
+                    commit_hash=file_hash,
                 )
             chunk_map[key].chunks.append(chunk_range)
             chunk_map[key].score = max(chunk_map[key].score, score)
@@ -289,7 +331,7 @@ class AutocompleteSearchService:
             return []
 
     @staticmethod
-    def sort_chunks(chunks):
+    def sort_chunks(chunks: List[ChunkFileDTO]) -> List[ChunkFileDTO]:
         return sorted(
             chunks, key=lambda x: getattr(x.metadata, "score", 0.0), reverse=True
         )

@@ -13,10 +13,7 @@ class ChunkDetails(BaseModel):
     meta_info: Optional[ChunkMetadata] = None
 
 
-class CodeSymbol(BaseModel):
-    type: str
-    value: Optional[str] = None
-    file_path: str
+class FocusChunksParams(BaseModel):
+    repo_path: str
+    auth_token: str
     chunks: List[ChunkDetails]
-    score: float
-    commit_hash: str
