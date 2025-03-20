@@ -2,7 +2,9 @@ import os
 from typing import List
 
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
-from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
+from deputydev_core.services.initialization.extension_initialisation_manager import (
+    ExtensionInitialisationManager,
+)
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
 from deputydev_core.services.repository.dataclasses.main import (
     WeaviateSyncAndAsyncClients,
@@ -11,7 +13,7 @@ from deputydev_core.utils.app_logger import AppLogger
 
 from app.constants.constant import KeywordTypes, PropertyTypes
 from app.models.dtos.autocomplete_search_params import AutocompleteSearchParams
-from app.models.dtos.autocomplete_search_response import ChunkRange, CodeSymbol
+from app.models.dtos.autocomplete_search_response import ChunkDetails, CodeSymbol
 from app.services.shared_chunks_manager import SharedChunksManager
 import time
 
@@ -71,8 +73,13 @@ class AutocompleteSearchService:
 
             for chunk_obj in sorted_chunks:
                 chunk_dto = ChunkFileDTO(**chunk_obj.properties, id=str(chunk_obj.uuid))
-                chunk_range = ChunkRange(
-                    start_line=chunk_dto.start_line, end_line=chunk_dto.end_line
+                chunk_range = ChunkDetails(
+                    start_line=chunk_dto.start_line,
+                    end_line=chunk_dto.end_line,
+                    chunk_hash=chunk_dto.chunk_hash,
+                    file_hash=chunk_dto.file_hash,
+                    file_path=chunk_dto.file_path,
+                    meta_info=chunk_dto.meta_info,
                 )
                 score = (
                     chunk_obj.metadata.score
@@ -222,8 +229,13 @@ class AutocompleteSearchService:
                     )
             else:
                 symbols = getattr(chunk_dto, property_name, [])
-                chunk_range = ChunkRange(
-                    start_line=chunk_dto.start_line, end_line=chunk_dto.end_line
+                chunk_range = ChunkDetails(
+                    start_line=chunk_dto.start_line,
+                    end_line=chunk_dto.end_line,
+                    chunk_hash=chunk_dto.chunk_hash,
+                    file_hash=chunk_dto.file_hash,
+                    file_path=chunk_dto.file_path,
+                    meta_info=chunk_dto.meta_info,
                 )
                 cls.add_symbols_to_map(
                     chunk_map,

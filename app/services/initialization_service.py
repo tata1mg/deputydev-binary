@@ -3,7 +3,9 @@ import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
-from deputydev_core.services.initialization.extension_initialisation_manager import ExtensionInitialisationManager
+from deputydev_core.services.initialization.extension_initialisation_manager import (
+    ExtensionInitialisationManager,
+)
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.custom_progress_bar import CustomProgressBar
 
@@ -17,7 +19,9 @@ from sanic import Sanic
 
 class InitializationService:
     @classmethod
-    async def update_vector_store(cls, payload: UpdateVectorStoreParams, progress_callback) -> None:
+    async def update_vector_store(
+        cls, payload: UpdateVectorStoreParams, progress_callback
+    ) -> None:
         repo_path = payload.repo_path
         auth_token = payload.auth_token
         chunkable_files = payload.chunkable_files
@@ -29,7 +33,7 @@ class InitializationService:
                 repo_path=repo_path,
                 auth_token=auth_token,
                 process_executor=executor,
-                one_dev_client=one_dev_client
+                one_dev_client=one_dev_client,
             )
             local_repo = initialization_manager.get_local_repo(
                 chunkable_files=chunkable_files
@@ -47,10 +51,11 @@ class InitializationService:
                 await initialization_manager.initialize_vector_db()
             progressbar = CustomProgressBar()
             if payload.sync:
-                progress_monitor_task = asyncio.create_task(cls._monitor_embedding_progress(progressbar, progress_callback))
+                progress_monitor_task = asyncio.create_task(
+                    cls._monitor_embedding_progress(progressbar, progress_callback)
+                )
             await initialization_manager.prefill_vector_store(
-                chunkable_files_and_hashes,
-                progressbar=progressbar
+                chunkable_files_and_hashes, progressbar=progressbar
             )
 
     @classmethod
@@ -72,7 +77,9 @@ class InitializationService:
         print("Getting config")
         await cls.get_config(auth_token, base_config=payload.get("config"))
         if not hasattr(app.ctx, "weaviate_client"):
-            weaviate_client = await ExtensionInitialisationManager().initialize_vector_db()
+            weaviate_client = (
+                await ExtensionInitialisationManager().initialize_vector_db()
+            )
             app.ctx.weaviate_client = weaviate_client
 
     @classmethod
