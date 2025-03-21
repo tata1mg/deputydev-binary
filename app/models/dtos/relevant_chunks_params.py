@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from pydantic import BaseModel
+from deputydev_core.services.chunking.chunk_info import ChunkInfo
 
 
 class RelevantChunksParams(BaseModel):
@@ -11,3 +12,8 @@ class RelevantChunksParams(BaseModel):
     focus_files: Optional[List[str]] = []
     focus_directories: Optional[List[str]] = []
     perform_chunking: Optional[bool] = False
+
+
+class ChunkInfoAndHash(BaseModel):
+    chunk_info: ChunkInfo
+    chunk_hash: str

@@ -14,7 +14,10 @@ from deputydev_core.utils.config_manager import ConfigManager
 
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.focus_chunk_params import FocusChunksParams
-from app.models.dtos.relevant_chunks_params import RelevantChunksParams
+from app.models.dtos.relevant_chunks_params import (
+    ChunkInfoAndHash,
+    RelevantChunksParams,
+)
 from app.services.reranker_service import RerankerService
 from app.utils.util import jsonify_chunks, weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
@@ -131,23 +134,26 @@ class RelevantChunksService:
                 chunk_hashes=[chunk.chunk_hash for chunk in payload.chunks]
             )
 
-            chunk_info_list: List[ChunkInfo] = []
+            chunk_info_list: List[ChunkInfoAndHash] = []
             for chunk_dto, _vector in chunks:
                 for chunk_file in payload.chunks:
                     if chunk_file.chunk_hash == chunk_dto.chunk_hash:
                         chunk_info_list.append(
-                            ChunkInfo(
-                                content=chunk_dto.text,
-                                source_details=ChunkSourceDetails(
-                                    file_path=chunk_file.file_path,
-                                    file_hash=chunk_file.file_hash,
-                                    start_line=chunk_file.start_line,
-                                    end_line=chunk_file.end_line,
+                            ChunkInfoAndHash(
+                                chunk_info=ChunkInfo(
+                                    content=chunk_dto.text,
+                                    source_details=ChunkSourceDetails(
+                                        file_path=chunk_file.file_path,
+                                        file_hash=chunk_file.file_hash,
+                                        start_line=chunk_file.start_line,
+                                        end_line=chunk_file.end_line,
+                                    ),
+                                    embedding=None,
+                                    metadata=chunk_file.meta_info,
                                 ),
-                                embedding=None,
-                                metadata=chunk_file.meta_info,
+                                chunk_hash=chunk_file.chunk_hash,
                             )
                         )
                         break
 
-        return jsonify_chunks(chunk_info_list)
+        return [chunk_info.model_dump(mode="json") for chunk_info in chunk_info_list]

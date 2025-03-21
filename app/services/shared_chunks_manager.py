@@ -13,7 +13,7 @@ class SharedChunksManager:
     _lock = Lock()
 
     @classmethod
-    async def initialize_chunks(cls, repo_path: str) -> Optional[Dict]:
+    async def initialize_chunks(cls, repo_path: str) -> Dict[str, str]:
         """Initialize or get chunks from shared memory, with fallback"""
         chunks_dict = cls.get_chunks()
         if chunks_dict is not None and repo_path in chunks_dict:
@@ -21,8 +21,7 @@ class SharedChunksManager:
 
         # fallback case
         # repo_path = "/Users/ankitrana/projects/merch_service"
-        chunks = await cls._fetch_and_store_chunks(repo_path)
-        return chunks
+        return await cls._fetch_and_store_chunks(repo_path)
 
     @classmethod
     async def update_chunks(
@@ -48,7 +47,7 @@ class SharedChunksManager:
             cls.store_chunks(chunks_dict)
 
     @classmethod
-    async def _fetch_and_store_chunks(cls, repo_path: str) -> Dict:
+    async def _fetch_and_store_chunks(cls, repo_path: str) -> Dict[str, str]:
         """Fetch chunks from repo and store in shared memory"""
         with cls._lock:
             local_repo = LocalRepoFactory.get_local_repo(repo_path)
@@ -76,7 +75,7 @@ class SharedChunksManager:
         shm.close()
 
     @classmethod
-    def get_chunks(cls) -> Optional[Dict[str, Dict]]:
+    def get_chunks(cls) -> Optional[Dict[str, Dict[str, str]]]:
         """Get chunks dictionary from shared memory"""
         try:
             shm = shared_memory.SharedMemory(name=cls._shm_name, create=False)
