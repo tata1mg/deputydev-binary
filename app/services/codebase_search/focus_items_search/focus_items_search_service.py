@@ -202,12 +202,13 @@ class FocusSearchService:
                             keyword=payload.keyword,
                             type=payload.type.value,
                             chunkable_files_and_hashes=chunkable_files_and_hashes,
+                            limit=50,
                         )
                     )
                 else:
                     raw_search_result = (
                         await chunk_files_service.get_autocomplete_keyword_chunks(
-                            payload.keyword, chunkable_files_and_hashes
+                            payload.keyword, chunkable_files_and_hashes, limit=70
                         )
                     )
 
