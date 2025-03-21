@@ -8,6 +8,7 @@ sanic = "==22.12.0"
 deputydev-core = { ref = "feature/common-code-separation", git = "ssh://git@github.com/tata1mg/deputydev-core.git" }
 #deputydev-core = {path = "/Users/anand/Desktop/1mg/bitbucket/deputydev-core"}
 websockets = "==12.0"
+fuzzywuzzy = "*"
 
 [dev-packages]
 flake8 = "==7.1.1"

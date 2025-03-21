@@ -11,11 +11,15 @@ from deputydev_core.services.repository.dataclasses.main import (
 )
 from deputydev_core.utils.app_logger import AppLogger
 
-from app.dataclasses.focus_search.focus_search_dataclasses import SearchKeywordType
-from app.dataclasses.focus_search.focus_search_dataclasses import (
+from app.dataclasses.codebase_search.focus_items_search.focus_items_search_dataclasses import (
+    SearchKeywordType,
+)
+from app.dataclasses.codebase_search.focus_items_search.focus_items_search_dataclasses import (
     FocusItem,
 )
-from app.dataclasses.focus_search.focus_search_dataclasses import FocusSearchParams
+from app.dataclasses.codebase_search.focus_items_search.focus_items_search_dataclasses import (
+    FocusSearchParams,
+)
 from app.services.shared_chunks_manager import SharedChunksManager
 import time
 

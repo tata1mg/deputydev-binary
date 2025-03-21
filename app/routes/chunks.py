@@ -9,8 +9,6 @@ from app.services.batch_chunk_search_service import BatchSearchService
 from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
 from app.models.dtos.batch_chunk_search_params import BatchSearchParams
-from app.services.focus_search.focus_search_service import FocusSearchService
-from app.dataclasses.focus_search.focus_search_dataclasses import FocusSearchParams
 
 chunks = Blueprint("chunks", url_prefix="")
 
