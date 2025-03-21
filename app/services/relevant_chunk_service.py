@@ -12,6 +12,7 @@ from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepo
 from deputydev_core.services.search.dataclasses.main import SearchTypes
 from deputydev_core.utils.config_manager import ConfigManager
 
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.focus_chunk_params import FocusChunksParams
 from app.models.dtos.relevant_chunks_params import (
@@ -27,21 +28,19 @@ from deputydev_core.services.repository.chunk_files_service import ChunkFilesSer
 
 
 class RelevantChunksService:
-    def __init__(self, auth_token, repo_path):
-        self.auth_token = auth_token
+    def __init__(self, repo_path):
         self.repo_path = repo_path
 
     async def get_relevant_chunks(
-        self, payload: RelevantChunksParams
+            self, payload: RelevantChunksParams
     ) -> List[Dict[str, dict]]:
         print(ConfigManager.configs)
         repo_path = payload.repo_path
-        auth_token = payload.auth_token
         query = payload.query
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
         one_dev_client = OneDevClient()
         embedding_manager = ExtensionEmbeddingManager(
-            auth_token=auth_token, one_dev_client=one_dev_client
+            auth_token_key=SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value, one_dev_client=one_dev_client
         )
         query_vector = await embedding_manager.embed_text_array(
             texts=[query], store_embeddings=False
@@ -51,11 +50,11 @@ class RelevantChunksService:
         )
         await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
         with ProcessPoolExecutor(
-            max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
+                max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
         ) as executor:
             initialization_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
-                auth_token=auth_token,
+                auth_token_key=SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value,
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
@@ -65,8 +64,8 @@ class RelevantChunksService:
             else:
                 weaviate_client = await initialization_manager.initialize_vector_db()
             if (
-                payload.perform_chunking
-                and ConfigManager.configs["RELEVANT_CHUNKS"]["CHUNKING_ENABLED"]
+                    payload.perform_chunking
+                    and ConfigManager.configs["RELEVANT_CHUNKS"]["CHUNKING_ENABLED"]
             ):
                 await initialization_manager.prefill_vector_store(
                     chunkable_files_and_hashes
@@ -90,7 +89,7 @@ class RelevantChunksService:
                 query_vector=query_vector[0][0],
                 search_type=SearchTypes.VECTOR_DB_BASED,
             )
-            reranked_chunks = await RerankerService(self.auth_token).rerank(
+            reranked_chunks = await RerankerService().rerank(
                 query,
                 relevant_chunks=relevant_chunks,
                 is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
@@ -102,12 +101,8 @@ class RelevantChunksService:
 
         return jsonify_chunks(reranked_chunks)
 
-    async def get_focus_chunks(
-        self, payload: FocusChunksParams
-    ) -> List[Dict[str, Any]]:
-        print(ConfigManager.configs)
+    async def get_focus_chunks(self, payload: FocusChunksParams) -> List[Dict[str, Any]]:
         repo_path = payload.repo_path
-        auth_token = payload.auth_token
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
         one_dev_client = OneDevClient()
         chunkable_files_and_hashes = (
@@ -115,11 +110,11 @@ class RelevantChunksService:
         )
         await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
         with ProcessPoolExecutor(
-            max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
+                max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
         ) as executor:
             initialization_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
-                auth_token=auth_token,
+                auth_token_key=SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value,
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )

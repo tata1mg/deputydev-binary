@@ -1,13 +1,9 @@
-import json
-
 from deputydev_core.utils.config_manager import ConfigManager
-
 from app.utils.constants import CONFIG_PATH
+from deputydev_core.utils.shared_memory import SharedMemory
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
 
-try:
-    with open(CONFIG_PATH, "r") as json_file:
-        ConfigManager.in_memory = True
-        data = json.load(json_file)
-        ConfigManager.set(data)
-except Exception as e:
-    pass
+config = SharedMemory.read(SharedMemoryKeys.BINARY_CONFIG.value)
+if config:
+    ConfigManager.in_memory = True
+    ConfigManager.set(config)

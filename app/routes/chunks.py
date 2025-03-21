@@ -1,6 +1,5 @@
 import json
-import traceback
-from sanic import Blueprint, Request, HTTPResponse
+from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
 from app.models.dtos.focus_chunk_params import FocusChunksParams
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
@@ -9,48 +8,48 @@ from app.services.batch_chunk_search_service import BatchSearchService
 from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
 from app.models.dtos.batch_chunk_search_params import BatchSearchParams
+from app.utils.request_handlers import request_handler
 
 chunks = Blueprint("chunks", url_prefix="")
 
 
 @chunks.websocket("/relevant_chunks")
+@request_handler
 async def relevant_chunks(request, ws):
     try:
         data = await ws.recv()
         payload = json.loads(data)
         payload = RelevantChunksParams(**payload)
-        relevant_chunks_data = await RelevantChunksService(
-            payload.auth_token, payload.repo_path
-        ).get_relevant_chunks(payload)
+        relevant_chunks_data = await RelevantChunksService(payload.repo_path).get_relevant_chunks(payload)
         relevant_chunks_data = json.dumps(relevant_chunks_data)
         await ws.send(relevant_chunks_data)
     except Exception as e:
         await ws.send(json.dumps({"error": "can not find relevant chunks"}))
         # uncomment for local debugging
-        import traceback
-
-        print(traceback.format_exc())
+        # import traceback
+        #
+        # print(traceback.format_exc())
         print(f"Connection closed: {e}")
 
 
 @chunks.route("/get-focus-chunks", methods=["POST"])
+@request_handler
 async def focus_chunks(_request: Request):
     try:
         payload = _request.json
         payload = FocusChunksParams(**payload)
-        focus_chunks = await RelevantChunksService(
-            payload.auth_token, payload.repo_path
-        ).get_focus_chunks(payload)
+        focus_chunks = await RelevantChunksService(payload.repo_path).get_focus_chunks(payload)
         return HTTPResponse(body=json.dumps(focus_chunks))
     except Exception as e:
         # uncomment for local debugging
-        import traceback
-
-        print(traceback.format_exc())
+        # import traceback
+        #
+        # print(traceback.format_exc())
         print(f"Connection closed: {e}")
 
 
 @chunks.websocket("/update_chunks")
+@request_handler
 async def update_vector_store(request, ws):
     try:
         data = await ws.recv()
@@ -66,7 +65,7 @@ async def update_vector_store(request, ws):
 
     except Exception as e:
         # uncomment for local debugging
-        print(traceback.format_exc())
+        # print(traceback.format_exc())
         await ws.send(json.dumps({"status": "Failed"}))
         print(f"Connection closed: {e}")
 
@@ -76,7 +75,7 @@ async def update_vector_store(request):
     try:
         payload = request.json
         payload = UpdateVectorStoreParams(**payload)
-        await InitializationService.initialize(payload)
+        await InitializationService.update_vector_store(payload)
         return HTTPResponse(body=json.dumps({}))
     except Exception as e:
         # uncomment for local debugging

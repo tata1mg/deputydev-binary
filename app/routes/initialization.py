@@ -3,20 +3,17 @@ from app.services.initialization_service import InitializationService
 from sanic import HTTPResponse
 import json
 
+from app.utils.request_handlers import request_handler
+
 initialization = Blueprint("initialization", url_prefix="")
 
 
 @initialization.route("/init", methods=["POST"])
+@request_handler
 async def initialize_service(_request: Request, **kwargs):
-    print("Init called")
     try:
-        headers = _request.headers
         payload = _request.json
-        authorization_header = headers.get("Authorization")
-        auth_token = authorization_header.split(" ")[1]
-        await InitializationService.initialization(
-            auth_token=auth_token, payload=payload
-        )
+        await InitializationService.initialization(payload=payload)
         return HTTPResponse(body=json.dumps({"status": "Completed"}))
     except Exception as error:
         return HTTPResponse(body=json.dumps({"status": "Failed"}))

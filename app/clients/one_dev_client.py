@@ -1,22 +1,14 @@
-from typing import Any, Dict, Optional
 from deputydev_core.clients.http.base_http_client import BaseHTTPClient
 from deputydev_core.utils.constants.enums import ConfigConsumer
+from typing import Dict, Any
+from deputydev_core.clients.http.adapters.http_response_adapter import AiohttpToRequestsAdapter
+from app.utils.response_headers_handler import handle_client_response
+from deputydev_core.utils.config_manager import ConfigManager
+from app.utils.util import get_common_headers
 
 
 class OneDevClient(BaseHTTPClient):
     def __init__(self, config=None):
-        from deputydev_core.utils.config_manager import ConfigManager
-
-        print(ConfigManager.configs)
-        config = {
-            "DEPUTY_DEV": {
-                "HOST": "http://localhost:8084",
-                "TIMEOUT": 15,
-                "LIMIT": 0,
-                "LIMIT_PER_HOST": 0,
-                "TTL_DNS_CACHE": 10,
-            }
-        }
         if not config:
             self._host = ConfigManager.configs["DEPUTY_DEV"]["HOST"]
             timeout = ConfigManager.configs["DEPUTY_DEV"].get("TIMEOUT") or 15
@@ -24,44 +16,60 @@ class OneDevClient(BaseHTTPClient):
             limit = ConfigManager.configs["DEPUTY_DEV"].get("LIMIT") or 0
             # The maximum number of connections allowed per host (default is 0, meaning unlimited).
             limit_per_host = (
-                ConfigManager.configs["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
+                    ConfigManager.configs["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
             )
             # ttl_dns_cache: Time-to-live (TTL) for DNS cache entries, in seconds (default is 10).
             ttl_dns_cache = (
-                ConfigManager.configs["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
+                    ConfigManager.configs["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
             )
         else:
             self._host = config["DEPUTY_DEV"]["HOST"]
             timeout = config["DEPUTY_DEV"].get("TIMEOUT") or 15
-            limit = config["DEPUTY_DEV"].get("LIMIT")
-            limit_per_host = config["DEPUTY_DEV"].get("LIMIT_PER_HOST")
-            ttl_dns_cache = config["DEPUTY_DEV"].get("TTL_DNS_CACHE")
-        super().__init__(
-            timeout=timeout,
-            limit=limit,
-            limit_per_host=limit_per_host,
-            ttl_dns_cache=ttl_dns_cache,
-        )
+            limit = config["DEPUTY_DEV"].get("LIMIT") or 0
+            limit_per_host = config["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
+            ttl_dns_cache = config["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
+        super().__init__(timeout=timeout, limit=limit, limit_per_host=limit_per_host, ttl_dns_cache=ttl_dns_cache)
 
+    @handle_client_response
     async def create_embedding(
-        self, payload: Dict[str, Any], headers: Dict[str, str]
+            self, payload: Dict[str, Any], headers: Dict[str, str]
     ) -> Dict[str, Any]:
         path = "/end_user/v1/code-gen/create-embedding"
-        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
+        payload.update({"use_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]})
+        headers = {**headers, **get_common_headers()}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
-        return (await result.json()).get("data")
+        return result
 
+    @handle_client_response
     async def llm_reranking(self, payload: Dict[str, Any], headers: Dict[str, str]):
         path = "/end_user/v1/chunks/rerank-via-llm"
-        headers = {**headers, "X-Client": "VSCODE_EXT", "X-Client-Version": "2.0.0"}
+        headers = {**headers, **get_common_headers()}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
-        return (await result.json()).get("data")
+        return result
 
-    async def get_configs(self, headers: Dict[str, str]) -> Optional[Dict[str, Any]]:
+    @handle_client_response
+    async def get_configs(self, headers: Dict[str, str]) -> AiohttpToRequestsAdapter:
         path = "/end_user/v1/configs/get-configs"
-        headers = {**headers, "X-Client": "BINARY", "X-Client-Version": "1.0.0"}
-        result = await self.get(
-            url=self._host + path,
-            headers=headers,
-        )
-        return (await result.json()).get("data")
+        headers = {**headers, **get_common_headers()}
+        result = await self.get(url=self._host + path, headers=headers,
+                                params={"consumer": ConfigConsumer.BINARY.value})
+        return result
+
+    @handle_client_response
+    async def verify_auth_token(self, headers: Dict[str, str], payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Verify the authentication token for the user.
+
+        Args:
+            headers (Dict[str, str]): The headers containing the authentication token.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the verification result if successful, otherwise None.
+
+        Raises:
+            Exception: Raises an exception if the request fails or the response is not valid.
+        """
+        path = "/end_user/v1/auth/verify-auth-token"
+        headers = {**headers, **get_common_headers()}
+        result = await self.post(url=self._host + path, headers=headers, json=payload)
+        return result

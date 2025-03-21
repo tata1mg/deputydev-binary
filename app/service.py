@@ -11,6 +11,7 @@ app.config.REQUEST_TIMEOUT = 3000
 app.config.RESPONSE_TIMEOUT = 3000
 app.config.KEEP_ALIVE_TIMEOUT = 3000
 app.config.TOUCHUP = False
+app.config.WEBSOCKET_MAX_SIZE = 10 * 1024 * 1024  # 10 MB
 
 for listener in listeners:
     app.register_listener(listener[0], listener[1])

@@ -10,11 +10,6 @@ class ListenerEventTypes(Enum):
     AFTER_SERVER_STOP = "after_server_stop"
 
 
-class AuthTokenStorageManagers(Enum):
-    CLI_AUTH_TOKEN_STORAGE_MANAGER = "cli"
-    EXTENSION_AUTH_TOKEN_STORAGE_MANAGER = "extension"
-
-
-class Status(Enum):
-    SUCCESS = "success"
-    FAILED = "failed"
+class Headers:
+    X_CLIENT = "X-Client"
+    X_Client_Version = "X-Client-Version"
