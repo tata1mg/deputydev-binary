@@ -8,8 +8,6 @@ from app.services.batch_chunk_search_service import BatchSearchService
 from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
 from app.models.dtos.batch_chunk_search_params import BatchSearchParams
-from app.services.autocomplete_search_service import AutocompleteSearchService
-from app.models.dtos.autocomplete_search_params import AutocompleteSearchParams
 from app.utils.request_handlers import request_handler
 
 chunks = Blueprint("chunks", url_prefix="")
@@ -70,22 +68,6 @@ async def update_vector_store(request, ws):
         # print(traceback.format_exc())
         await ws.send(json.dumps({"status": "Failed"}))
         print(f"Connection closed: {e}")
-
-
-@chunks.route("/keyword_search", methods=["POST"])
-async def get_autocomplete_keyword_chunks(_request: Request, **kwargs):
-    payload = _request.json
-    payload = AutocompleteSearchParams(**payload)
-    chunks = await AutocompleteSearchService.get_autocomplete_keyword_chunks(payload)
-    return HTTPResponse(body=json.dumps(chunks))
-
-
-@chunks.route("/keyword_type_search", methods=["POST"])
-async def get_autocomplete_keyword_type_chunks(_request: Request):
-    payload = _request.json
-    payload = AutocompleteSearchParams(**payload)
-    chunks = await AutocompleteSearchService.get_autocomplete_keyword_type_chunks(payload)
-    return HTTPResponse(body=json.dumps(chunks))
 
 
 @chunks.route("/update_chunks", methods=["POST"])
