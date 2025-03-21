@@ -18,7 +18,7 @@ def chunks_content(chunks: List[ChunkInfo]) -> List[str]:
 
 
 def filter_chunks_by_denotation(
-        chunks: List[ChunkInfo], denotations: List[str]
+    chunks: List[ChunkInfo], denotations: List[str]
 ) -> List[ChunkInfo]:
     return [chunk for chunk in chunks if chunk.denotation in denotations]
 
@@ -38,5 +38,7 @@ async def weaviate_connection():
 
 def get_common_headers() -> Dict[str, str]:
     headers = get_context_value("headers")
-    return {Headers.X_CLIENT: headers.get(Headers.X_CLIENT),
-            Headers.X_Client_Version: headers.get(Headers.X_Client_Version)}
+    return {
+        Headers.X_CLIENT: headers.get(Headers.X_CLIENT),
+        Headers.X_Client_Version: headers.get(Headers.X_Client_Version),
+    }

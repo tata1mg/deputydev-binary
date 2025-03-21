@@ -20,7 +20,9 @@ async def relevant_chunks(request, ws):
         data = await ws.recv()
         payload = json.loads(data)
         payload = RelevantChunksParams(**payload)
-        relevant_chunks_data = await RelevantChunksService(payload.repo_path).get_relevant_chunks(payload)
+        relevant_chunks_data = await RelevantChunksService(
+            payload.repo_path
+        ).get_relevant_chunks(payload)
         relevant_chunks_data = json.dumps(relevant_chunks_data)
         await ws.send(relevant_chunks_data)
     except Exception as e:
@@ -38,7 +40,9 @@ async def focus_chunks(_request: Request):
     try:
         payload = _request.json
         payload = FocusChunksParams(**payload)
-        focus_chunks = await RelevantChunksService(payload.repo_path).get_focus_chunks(payload)
+        focus_chunks = await RelevantChunksService(payload.repo_path).get_focus_chunks(
+            payload
+        )
         return HTTPResponse(body=json.dumps(focus_chunks))
     except Exception as e:
         # uncomment for local debugging
