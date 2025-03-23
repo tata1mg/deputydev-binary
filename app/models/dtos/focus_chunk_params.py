@@ -15,7 +15,7 @@ class ChunkDetails(BaseModel):
 
 
 class CodeSnippetDetails(BaseModel):
-    unique_snippet_identifier: str
+    chunk_hash: str
     start_line: int
     end_line: int
     file_path: str
