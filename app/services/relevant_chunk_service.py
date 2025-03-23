@@ -1,4 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
+import os
 from typing import Any, Dict, List
 
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
@@ -14,9 +15,8 @@ from deputydev_core.utils.config_manager import ConfigManager
 
 from deputydev_core.utils.constants.enums import SharedMemoryKeys
 from app.clients.one_dev_client import OneDevClient
-from app.models.dtos.focus_chunk_params import FocusChunksParams
+from app.models.dtos.focus_chunk_params import ChunkDetails, ChunkInfoAndHash, CodeSnippetDetails, FocusChunksParams
 from app.models.dtos.relevant_chunks_params import (
-    ChunkInfoAndHash,
     RelevantChunksParams,
 )
 from app.services.reranker_service import RerankerService
@@ -24,7 +24,7 @@ from app.utils.util import jsonify_chunks, weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
 from deputydev_core.services.chunking.chunk_info import ChunkInfo, ChunkSourceDetails
 from deputydev_core.services.repository.chunk_service import ChunkService
-from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
+from deputydev_core.utils.app_logger import AppLogger
 
 
 class RelevantChunksService:
@@ -102,6 +102,12 @@ class RelevantChunksService:
 
         return jsonify_chunks(reranked_chunks)
 
+    def get_file_chunk(self, file_path: str, start_line: int, end_line: int) -> str:
+        abs_file_path = os.path.join(self.repo_path, file_path)
+        with open(abs_file_path, "r") as file:
+            lines = file.readlines()
+            return "".join(lines[start_line - 1: end_line])
+
     async def get_focus_chunks(
         self, payload: FocusChunksParams
     ) -> List[Dict[str, Any]]:
@@ -129,7 +135,7 @@ class RelevantChunksService:
             chunks = await ChunkService(
                 weaviate_client=weaviate_client
             ).get_chunks_by_chunk_hashes(
-                chunk_hashes=[chunk.chunk_hash for chunk in payload.chunks]
+                chunk_hashes=[chunk.chunk_hash for chunk in payload.chunks if isinstance(chunk, ChunkDetails)]
             )
 
             chunk_info_list: List[ChunkInfoAndHash] = []
@@ -153,5 +159,39 @@ class RelevantChunksService:
                             )
                         )
                         break
+
+            # handle code snippets
+            code_snippets = [
+                chunk for chunk in payload.chunks if isinstance(chunk, CodeSnippetDetails)
+            ]
+
+            for code_snippet in code_snippets:
+                file_content = ""
+                try:
+                    file_content = self.get_file_chunk(
+                        file_path=code_snippet.file_path,
+                        start_line=code_snippet.start_line,
+                        end_line=code_snippet.end_line,
+                    )
+                    chunk_info_list.append(
+                        ChunkInfoAndHash(
+                            chunk_info=ChunkInfo(
+                                content=file_content,
+                                source_details=ChunkSourceDetails(
+                                    file_path=code_snippet.file_path,
+                                    file_hash=None,
+                                    start_line=code_snippet.start_line,
+                                    end_line=code_snippet.end_line,
+                                ),
+                                embedding=None,
+                                metadata=None,
+                            ),
+                            chunk_hash=code_snippet.unique_snippet_identifier,
+                        )
+                    )
+                except Exception as ex:
+                    AppLogger.log_error(
+                        f"Error occurred while fetching code snippet: {ex}"
+                    )
 
         return [chunk_info.model_dump(mode="json") for chunk_info in chunk_info_list]
