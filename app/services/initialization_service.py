@@ -1,5 +1,4 @@
 import asyncio
-import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 from app.utils.constants import Headers
@@ -25,6 +24,12 @@ from deputydev_core.utils.context_vars import get_context_value
 
 
 class InitializationService:
+    @classmethod
+    async def update_chunks(cls, payload: UpdateVectorStoreParams, progress_callback):
+        task = asyncio.create_task(cls.update_vector_store(payload, progress_callback))
+        if payload.sync:
+            await task
+
     @classmethod
     async def update_vector_store(
         cls, payload: UpdateVectorStoreParams, progress_callback
@@ -74,7 +79,7 @@ class InitializationService:
                     cls._monitor_embedding_progress(progressbar, progress_callback)
                 )
             await initialization_manager.prefill_vector_store(
-                chunkable_files_and_hashes, progressbar=progressbar
+                chunkable_files_and_hashes, progressbar=progressbar, enable_refresh=payload.sync
             )
 
     @classmethod

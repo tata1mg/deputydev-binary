@@ -2,6 +2,8 @@ import os
 from typing import Any, Dict, List, Optional, Set
 
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO, ChunkFileData
+from deputydev_core.services.autocomplete.adapters.weaviate_auto_complete_adapter import WeaviateAutocompleteAdapter
+from deputydev_core.services.autocomplete.dataclasses.main import AutoCompleteSearch, SearchPath
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
 )
@@ -10,6 +12,7 @@ from deputydev_core.services.repository.dataclasses.main import (
     WeaviateSyncAndAsyncClients,
 )
 from deputydev_core.utils.app_logger import AppLogger
+from deputydev_core.utils.config_manager import ConfigManager
 
 from app.dataclasses.codebase_search.focus_items_search.focus_items_search_dataclasses import (
     SearchKeywordType,
@@ -202,15 +205,22 @@ class FocusSearchService:
                             keyword=payload.keyword,
                             type=payload.type.value,
                             chunkable_files_and_hashes=chunkable_files_and_hashes,
-                            limit=50,
+                            limit=ConfigManager.configs["AUTOCOMPLETE_SEARCH"]["MAX_RECORDS_TO_RETURN"],
                         )
                     )
                 else:
-                    raw_search_result = (
-                        await chunk_files_service.get_autocomplete_keyword_chunks(
-                            payload.keyword, chunkable_files_and_hashes, limit=70
-                        )
-                    )
+                    weaviate_auto_complete_adapter = WeaviateAutocompleteAdapter(weaviate_client)
+                    raw_search_result = await weaviate_auto_complete_adapter.keyword_suggestions(
+                        request=AutoCompleteSearch(
+                            keyword=payload.keyword,
+                            limit=ConfigManager.configs["AUTOCOMPLETE_SEARCH"]["MAX_RECORDS_TO_RETURN"],
+                            search_paths=[
+                                SearchPath(
+                                    file_path=key,
+                                    file_hash=chunkable_files_and_hashes[key]
+                                ) for key in chunkable_files_and_hashes
+                            ]
+                        ))
 
                 result = cls.get_focus_items(raw_search_result, payload.type)
 
