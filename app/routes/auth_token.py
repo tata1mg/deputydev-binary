@@ -25,3 +25,11 @@ async def load_token(_request: Request, **kwargs):
         get_context_value("headers").get(Headers.X_CLIENT)
     )
     return json(response)
+
+@auth_token.route("/delete_token", methods=["POST"])
+@request_handler
+async def delete_token(_request: Request, **kwargs):
+    response = await AuthTokenService.delete_token(
+        get_context_value("headers").get(Headers.X_CLIENT)
+    )
+    return json(response)
