@@ -74,20 +74,6 @@ async def update_vector_store(request, ws):
         print(f"Connection closed: {e}")
 
 
-@chunks.route("/update_chunks", methods=["POST"])
-async def update_vector_store(request):
-    try:
-        payload = request.json
-        payload = UpdateVectorStoreParams(**payload)
-        await InitializationService.update_vector_store(payload)
-        return HTTPResponse(body=json.dumps({}))
-    except Exception as e:
-        # uncomment for local debugging
-        # print(traceback.format_exc())
-        raise e
-        # print(f"Connection closed: {e}")
-
-
 @chunks.route("/batch_chunks_search", methods=["POST"])
 async def get_autocomplete_keyword_type_chunks(_request: Request):
     payload = _request.json
