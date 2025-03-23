@@ -122,8 +122,6 @@ class InitializationService:
                     }
                 )
                 if configs is None:
-                    import traceback
-                    print(traceback.format_exc())
                     raise Exception("No configs fetched")
                 ConfigManager.set(configs)
                 SharedMemory.create(SharedMemoryKeys.BINARY_CONFIG.value, configs)
