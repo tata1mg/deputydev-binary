@@ -26,7 +26,6 @@ async def get_focus_search_results(_request: Request):
     response = {
         "data": [chunk.model_dump(mode="json") for chunk in chunks],
     }
-    print(response)
     return HTTPResponse(body=json.dumps(response))
 
 
@@ -41,5 +40,4 @@ async def get_files_in_dir(_request: Request):
     response = {
         "data": files,
     }
-    print(response)
     return HTTPResponse(body=json.dumps(response))
