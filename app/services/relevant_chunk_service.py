@@ -197,7 +197,7 @@ class RelevantChunksService:
                                 embedding=None,
                                 metadata=None,
                             ),
-                            chunk_hash=code_snippet.unique_snippet_identifier,
+                            chunk_hash=code_snippet.chunk_hash,
                         )
                     )
                 except Exception as ex:
