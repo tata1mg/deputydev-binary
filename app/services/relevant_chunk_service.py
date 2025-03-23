@@ -15,7 +15,12 @@ from deputydev_core.utils.config_manager import ConfigManager
 
 from deputydev_core.utils.constants.enums import SharedMemoryKeys
 from app.clients.one_dev_client import OneDevClient
-from app.models.dtos.focus_chunk_params import ChunkDetails, ChunkInfoAndHash, CodeSnippetDetails, FocusChunksParams
+from app.models.dtos.focus_chunk_params import (
+    ChunkDetails,
+    ChunkInfoAndHash,
+    CodeSnippetDetails,
+    FocusChunksParams,
+)
 from app.models.dtos.relevant_chunks_params import (
     RelevantChunksParams,
 )
@@ -106,7 +111,7 @@ class RelevantChunksService:
         abs_file_path = os.path.join(self.repo_path, file_path)
         with open(abs_file_path, "r") as file:
             lines = file.readlines()
-            return "".join(lines[start_line - 1: end_line])
+            return "".join(lines[start_line - 1 : end_line])
 
     async def get_focus_chunks(
         self, payload: FocusChunksParams
@@ -135,7 +140,11 @@ class RelevantChunksService:
             chunks = await ChunkService(
                 weaviate_client=weaviate_client
             ).get_chunks_by_chunk_hashes(
-                chunk_hashes=[chunk.chunk_hash for chunk in payload.chunks if isinstance(chunk, ChunkDetails)]
+                chunk_hashes=[
+                    chunk.chunk_hash
+                    for chunk in payload.chunks
+                    if isinstance(chunk, ChunkDetails)
+                ]
             )
 
             chunk_info_list: List[ChunkInfoAndHash] = []
@@ -162,7 +171,9 @@ class RelevantChunksService:
 
             # handle code snippets
             code_snippets = [
-                chunk for chunk in payload.chunks if isinstance(chunk, CodeSnippetDetails)
+                chunk
+                for chunk in payload.chunks
+                if isinstance(chunk, CodeSnippetDetails)
             ]
 
             for code_snippet in code_snippets:
