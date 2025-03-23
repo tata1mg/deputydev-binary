@@ -9,7 +9,7 @@ from deputydev_core.services.repository.chunk_files_service import ChunkFilesSer
 from deputydev_core.services.repository.chunk_service import ChunkService
 from deputydev_core.utils.constants.constants import CHUNKFILE_KEYWORD_PROPERTY_MAP
 
-from app.models.dtos.batch_chunk_search_params import SearchTerm
+from app.models.dtos.batch_chunk_search_params import SearchTerm, BatchSearchParams
 from app.models.dtos.batch_chunk_search_response import BatchSearchResponse
 from app.services.shared_chunks_manager import SharedChunksManager
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
@@ -19,7 +19,7 @@ from deputydev_core.services.chunking.chunk_info import ChunkSourceDetails
 
 class BatchSearchService:
     @classmethod
-    async def search_code(cls, payload):
+    async def search_code(cls, payload: BatchSearchParams):
         """
         Search for code based on multiple search terms.
         """

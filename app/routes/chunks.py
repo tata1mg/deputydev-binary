@@ -64,7 +64,7 @@ async def update_vector_store(request, ws):
             """Sends progress updates to the WebSocket."""
             await ws.send(json.dumps({"status": "In Progress", "progress": progress}))
 
-        await InitializationService.update_vector_store(payload, progress_callback)
+        await InitializationService.update_chunks(payload, progress_callback)
         await ws.send(json.dumps({"status": "Completed", "progress": 100}))
 
     except Exception as e:
