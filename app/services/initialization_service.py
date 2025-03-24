@@ -129,7 +129,7 @@ class InitializationService:
                 if configs is None:
                     raise Exception("No configs fetched")
                 ConfigManager.set(configs)
-                SharedMemory.create(SharedMemoryKeys.BINARY_CONFIG.value, configs)
+                # SharedMemory.create(SharedMemoryKeys.BINARY_CONFIG.value, configs)
             except Exception as error:
                 print(f"Failed to fetch configs: {error}")
                 await cls.close_session_and_exit(one_dev_client)
