@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a5e97a2fda5bd9c6dc2d059ef3b3a5d99b4192912a787b5622fd774f6cb04d95"
+            "sha256": "47a898f2343779fd760035d0ea246ae2da8944f9fc88d73cf906e4d4101a93d2"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -389,7 +389,7 @@
         },
         "deputydev-core": {
             "git": "ssh://git@github.com/tata1mg/deputydev-core.git",
-            "ref": "a7ca0eafb1c3076448a057de23285784f896441a"
+            "ref": "44928e5ad12e1b1f753904c27cbf952f09715877"
         },
         "diff-match-patch": {
             "hashes": [
