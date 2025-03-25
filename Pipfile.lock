@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "96a5c2be4490ce2cc346a1860bc77ff1c61a49b982504739a900198eeb5e300e"
+            "sha256": "a06a7b660e40afb1c93e3826f498bf1ac8658e7e85492cbc8810db18039e076f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -389,7 +389,7 @@
         },
         "deputydev-core": {
             "git": "ssh://git@github.com/tata1mg/deputydev-core.git",
-            "ref": "51cdc39345eb7ab7439f5f8a6a0bbf513bf67b2b"
+            "ref": "caf7dc8a2c06d11645660ff9e919fc56089c1169"
         },
         "diff-match-patch": {
             "hashes": [
@@ -1316,11 +1316,11 @@
         },
         "setuptools": {
             "hashes": [
-                "sha256:1cc9b32ee94f93224d6c80193cbb768004667aa2f2732a473d6949b0236c1d4e",
-                "sha256:4321d2dc2157b976dee03e1037c9f2bc5fea503c0c47d3c9458e0e8e49e659ce"
+                "sha256:137525e6afb9022f019d6e884a319017f9bf879a0d8783985d32cbc8683cab93",
+                "sha256:4a612c80e1f1d71b80e4906ce730152e8dec23df439f82731d9d0b608d7b700d"
             ],
             "markers": "python_version >= '3.9'",
-            "version": "==78.0.1"
+            "version": "==78.0.2"
         },
         "smmap": {
             "hashes": [
