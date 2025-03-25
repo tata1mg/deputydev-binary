@@ -109,9 +109,9 @@ class RelevantChunksService:
 
     def get_file_chunk(self, file_path: str, start_line: int, end_line: int) -> str:
         abs_file_path = os.path.join(self.repo_path, file_path)
-        with open(abs_file_path, "r") as file:
+        with open(abs_file_path, "r", encoding="utf-8", errors="ignore") as file:
             lines = file.readlines()
-            return "".join(lines[start_line - 1 : end_line])
+            return "".join(lines[start_line - 1: end_line])
 
     async def get_focus_chunks(
         self, payload: FocusChunksParams
