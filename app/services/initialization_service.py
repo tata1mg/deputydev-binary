@@ -1,26 +1,26 @@
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
-from app.utils.constants import Headers
+
+from deputydev_core.services.auth_token_storage.auth_token_service import (
+    AuthTokenService,
+)
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
 )
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.auth import AuthStatus
-
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from deputydev_core.utils.context_vars import get_context_value
 from deputydev_core.utils.custom_progress_bar import CustomProgressBar
+from deputydev_core.utils.shared_memory import SharedMemory
+from sanic import Sanic
 
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from deputydev_core.services.auth_token_storage.auth_token_service import (
-    AuthTokenService,
-)
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
-from app.utils.util import weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
-from sanic import Sanic
-from deputydev_core.utils.shared_memory import SharedMemory
-from deputydev_core.utils.context_vars import get_context_value
+from app.utils.constants import Headers
+from app.utils.util import weaviate_connection
 
 
 class InitializationService:
@@ -79,7 +79,9 @@ class InitializationService:
                     cls._monitor_embedding_progress(progressbar, progress_callback)
                 )
             await initialization_manager.prefill_vector_store(
-                chunkable_files_and_hashes, progressbar=progressbar, enable_refresh=payload.sync
+                chunkable_files_and_hashes,
+                progressbar=progressbar,
+                enable_refresh=payload.sync,
             )
 
     @classmethod

@@ -1,7 +1,8 @@
-from concurrent.futures import ProcessPoolExecutor
 import os
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List
 
+from deputydev_core.services.chunking.chunk_info import ChunkInfo, ChunkSourceDetails
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.services.embedding.extension_embedding_manager import (
     ExtensionEmbeddingManager,
@@ -10,10 +11,12 @@ from deputydev_core.services.initialization.extension_initialisation_manager imp
     ExtensionInitialisationManager,
 )
 from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
+from deputydev_core.services.repository.chunk_service import ChunkService
 from deputydev_core.services.search.dataclasses.main import SearchTypes
+from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.utils.config_manager import ConfigManager
-
 from deputydev_core.utils.constants.enums import SharedMemoryKeys
+
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.focus_chunk_params import (
     ChunkDetails,
@@ -21,15 +24,10 @@ from app.models.dtos.focus_chunk_params import (
     CodeSnippetDetails,
     FocusChunksParams,
 )
-from app.models.dtos.relevant_chunks_params import (
-    RelevantChunksParams,
-)
+from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
-from app.utils.util import jsonify_chunks, weaviate_connection
 from app.services.shared_chunks_manager import SharedChunksManager
-from deputydev_core.services.chunking.chunk_info import ChunkInfo, ChunkSourceDetails
-from deputydev_core.services.repository.chunk_service import ChunkService
-from deputydev_core.utils.app_logger import AppLogger
+from app.utils.util import jsonify_chunks, weaviate_connection
 
 
 class RelevantChunksService:
@@ -111,7 +109,7 @@ class RelevantChunksService:
         abs_file_path = os.path.join(self.repo_path, file_path)
         with open(abs_file_path, "r", encoding="utf-8", errors="ignore") as file:
             lines = file.readlines()
-            return "".join(lines[start_line - 1: end_line])
+            return "".join(lines[start_line - 1 : end_line])
 
     async def get_focus_chunks(
         self, payload: FocusChunksParams

@@ -2,11 +2,12 @@ from typing import List
 
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
+from deputydev_core.utils.config_manager import ConfigManager
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from deputydev_core.utils.shared_memory import SharedMemory
+
 from app.clients.one_dev_client import OneDevClient
 from app.utils.util import filter_chunks_by_denotation, jsonify_chunks
-from deputydev_core.utils.shared_memory import SharedMemory
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
-from deputydev_core.utils.config_manager import ConfigManager
 
 
 class RerankerService:

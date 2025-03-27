@@ -1,6 +1,8 @@
 from typing import Dict
-from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
+
 from deputydev_core.services.repo.local_repo.dataclasses.main import DiffTypes
+from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
+from deputydev_core.utils.app_logger import AppLogger
 
 
 class DiffApplicatorService:
@@ -9,6 +11,12 @@ class DiffApplicatorService:
         repo_path: str,
         file_path_to_diff_map: Dict[str, str],
         diff_type: DiffTypes = DiffTypes.UDIFF,
-    ):
-        repo = LocalRepoFactory.get_local_repo(repo_path)
-        return repo.get_modified_file_content(file_path_to_diff_map, diff_type)
+    ) -> Dict[str, str]:
+        try:
+            repo = LocalRepoFactory.get_local_repo(repo_path)
+            return repo.get_modified_file_content(
+                diff=file_path_to_diff_map, diff_type=diff_type
+            )
+        except Exception as _ex:
+            AppLogger.log_error(f"Error while applying diff: {_ex}")
+            return {}

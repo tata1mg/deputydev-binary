@@ -1,4 +1,4 @@
-from sanic import Blueprint, response, Sanic
+from sanic import Blueprint, Sanic, response
 
 shutdown = Blueprint("shutdown", url_prefix="")
 

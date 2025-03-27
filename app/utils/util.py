@@ -4,9 +4,10 @@ from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.repository.dataclasses.main import (
     WeaviateSyncAndAsyncClients,
 )
-from app.utils.constants import Headers
-from sanic import Sanic
 from deputydev_core.utils.context_vars import get_context_value
+from sanic import Sanic
+
+from app.utils.constants import Headers
 
 
 def jsonify_chunks(chunks: List[ChunkInfo]) -> List[Dict[str, dict]]:

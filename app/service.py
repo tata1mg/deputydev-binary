@@ -2,6 +2,7 @@ import multiprocessing
 import sys
 
 from sanic import Sanic
+
 from app.listeners import listeners
 from app.routes import binary_blueprints
 

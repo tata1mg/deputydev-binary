@@ -1,10 +1,11 @@
 from functools import wraps
-from typing import Callable, Dict, Any, Optional, Awaitable
-from deputydev_core.utils.shared_memory import SharedMemory
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from typing import Any, Awaitable, Callable, Dict, Optional
+
 from deputydev_core.clients.http.adapters.http_response_adapter import (
     AiohttpToRequestsAdapter,
 )
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from deputydev_core.utils.shared_memory import SharedMemory
 
 
 def handle_client_response(

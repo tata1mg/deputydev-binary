@@ -1,8 +1,9 @@
 from functools import wraps
-from sanic import Request, Websocket
+
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
 from deputydev_core.utils.context_vars import set_context_values
 from deputydev_core.utils.shared_memory import SharedMemory
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from sanic import Request, Websocket
 
 REQUIRED_HEADERS = ["X-Client", "X-Client-Version"]
 
