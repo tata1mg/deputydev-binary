@@ -1,13 +1,15 @@
 import json
+
 from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
+
+from app.models.dtos.batch_chunk_search_params import BatchSearchParams
 from app.models.dtos.focus_chunk_params import FocusChunksParams
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
 from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
-from app.models.dtos.batch_chunk_search_params import BatchSearchParams
 from app.utils.request_handlers import request_handler
 
 chunks = Blueprint("chunks", url_prefix="")
@@ -62,10 +64,22 @@ async def update_vector_store(request, ws):
 
         async def progress_callback(progress):
             """Sends progress updates to the WebSocket."""
-            await ws.send(json.dumps({"status": "In Progress", "repo_path": payload.repo_path, "progress": progress}))
+            await ws.send(
+                json.dumps(
+                    {
+                        "status": "In Progress",
+                        "repo_path": payload.repo_path,
+                        "progress": progress,
+                    }
+                )
+            )
 
         await InitializationService.update_chunks(payload, progress_callback)
-        await ws.send(json.dumps({"status": "Completed", "repo_path": payload.repo_path, "progress": 100}))
+        await ws.send(
+            json.dumps(
+                {"status": "Completed", "repo_path": payload.repo_path, "progress": 100}
+            )
+        )
 
     except Exception as e:
         # uncomment for local debugging

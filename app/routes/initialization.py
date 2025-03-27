@@ -1,8 +1,8 @@
-from sanic import Blueprint, Request, json
-from app.services.initialization_service import InitializationService
-from sanic import HTTPResponse
 import json
 
+from sanic import Blueprint, HTTPResponse, Request
+
+from app.services.initialization_service import InitializationService
 from app.utils.request_handlers import request_handler
 
 initialization = Blueprint("initialization", url_prefix="")

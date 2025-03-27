@@ -1,10 +1,11 @@
-from sanic import Blueprint, Request, json
-from deputydev_core.utils.context_vars import get_context_value
 from deputydev_core.services.auth_token_storage.auth_token_service import (
     AuthTokenService,
 )
-from app.utils.request_handlers import request_handler
+from deputydev_core.utils.context_vars import get_context_value
+from sanic import Blueprint, Request, json
+
 from app.utils.constants import Headers
+from app.utils.request_handlers import request_handler
 
 auth_token = Blueprint("auth_token", url_prefix="auth")
 
@@ -25,6 +26,7 @@ async def load_token(_request: Request, **kwargs):
         get_context_value("headers").get(Headers.X_CLIENT)
     )
     return json(response)
+
 
 @auth_token.route("/delete_token", methods=["POST"])
 @request_handler

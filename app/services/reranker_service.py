@@ -1,22 +1,27 @@
-from typing import List
+from typing import List, Optional, Tuple
 
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
+from deputydev_core.utils.config_manager import ConfigManager
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from deputydev_core.utils.shared_memory import SharedMemory
+
 from app.clients.one_dev_client import OneDevClient
 from app.utils.util import filter_chunks_by_denotation, jsonify_chunks
-from deputydev_core.utils.shared_memory import SharedMemory
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
-from deputydev_core.utils.config_manager import ConfigManager
 
 
 class RerankerService:
+    def __init__(self, session_id: Optional[int] = None, session_type: Optional[str] = None) -> None:
+        self.session_id = session_id
+        self.session_type = session_type
+
     async def rerank(
         self,
         query: str,
         relevant_chunks: List[ChunkInfo],
         focus_chunks: List[ChunkInfo],
-        is_llm_reranking_enabled,
-    ) -> List[ChunkInfo]:
+        is_llm_reranking_enabled: bool,
+    ) -> Tuple[List[ChunkInfo], Optional[int]]:
         relevant_chunks = ChunkingManger.exclude_focused_chunks(
             relevant_chunks, focus_chunks
         )
@@ -30,17 +35,24 @@ class RerankerService:
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)}",
             }
-            filtered_and_ranked_chunks_denotations = await OneDevClient().llm_reranking(
+            if self.session_id:
+                headers["X-Session-Id"] = str(self.session_id)
+
+            if self.session_type:
+                headers["X-Session-Type"] = self.session_type
+            data = await OneDevClient().llm_reranking(
                 payload, headers=headers
             )
-            return filter_chunks_by_denotation(
+            filtered_and_ranked_chunks_denotations = data["reranked_denotations"]
+            returned_session_id = data["session_id"]
+            return (filter_chunks_by_denotation(
                 relevant_chunks + focus_chunks, filtered_and_ranked_chunks_denotations
-            )
+            ), returned_session_id)
         else:
             filtered_and_ranked_chunks = self.get_default_chunks(
                 focus_chunks, relevant_chunks
             )
-            return filtered_and_ranked_chunks
+            return (filtered_and_ranked_chunks, None)
 
     @classmethod
     def get_default_chunks(

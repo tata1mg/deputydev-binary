@@ -1,8 +1,8 @@
 from typing import List, Optional, Union
 
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
-from pydantic import BaseModel
 from deputydev_core.services.chunking.dataclass.main import ChunkMetadata
+from pydantic import BaseModel
 
 
 class ChunkDetails(BaseModel):

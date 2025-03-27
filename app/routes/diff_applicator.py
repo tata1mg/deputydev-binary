@@ -1,7 +1,6 @@
-from sanic import Blueprint, Request
+from sanic import Blueprint, Request, response
 
 from app.services.diff_applicator_service import DiffApplicatorService
-from sanic import response
 
 diff_applicator = Blueprint("diff_applicator", url_prefix="diff-applicator")
 

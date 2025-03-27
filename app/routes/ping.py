@@ -1,5 +1,6 @@
-from sanic import Blueprint, Request, HTTPResponse
 import json
+
+from sanic import Blueprint, HTTPResponse, Request
 
 ping = Blueprint("ping", url_prefix="")
 

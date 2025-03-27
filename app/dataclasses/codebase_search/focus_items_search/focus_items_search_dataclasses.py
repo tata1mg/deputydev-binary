@@ -1,10 +1,8 @@
 from enum import Enum
+from typing import List, Optional
 
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileData
 from pydantic import BaseModel
-
-
-from typing import List, Optional
 
 
 class SearchKeywordType(Enum):

@@ -2,6 +2,8 @@ import asyncio
 from typing import Dict, List, Set
 
 from deputydev_core.models.dto.chunk_dto import ChunkDTO
+from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
+from deputydev_core.services.chunking.chunk_info import ChunkInfo, ChunkSourceDetails
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
 )
@@ -9,12 +11,9 @@ from deputydev_core.services.repository.chunk_files_service import ChunkFilesSer
 from deputydev_core.services.repository.chunk_service import ChunkService
 from deputydev_core.utils.constants.constants import CHUNKFILE_KEYWORD_PROPERTY_MAP
 
-from app.models.dtos.batch_chunk_search_params import SearchTerm, BatchSearchParams
+from app.models.dtos.batch_chunk_search_params import BatchSearchParams, SearchTerm
 from app.models.dtos.batch_chunk_search_response import BatchSearchResponse
 from app.services.shared_chunks_manager import SharedChunksManager
-from deputydev_core.models.dto.chunk_file_dto import ChunkFileDTO
-from deputydev_core.services.chunking.chunk_info import ChunkInfo
-from deputydev_core.services.chunking.chunk_info import ChunkSourceDetails
 
 
 class BatchSearchService:
