@@ -36,7 +36,7 @@ class RelevantChunksService:
 
     async def get_relevant_chunks(
         self, payload: RelevantChunksParams
-    ) -> List[Dict[str, dict]]:
+    ) -> Dict[str, Any]:
         print(ConfigManager.configs)
         repo_path = payload.repo_path
         query = payload.query
@@ -93,7 +93,7 @@ class RelevantChunksService:
                 query_vector=query_vector[0][0],
                 search_type=SearchTypes.VECTOR_DB_BASED,
             )
-            reranked_chunks = await RerankerService().rerank(
+            reranked_chunks_data = await RerankerService(session_id=payload.session_id, session_type=payload.session_type).rerank(
                 query,
                 relevant_chunks=relevant_chunks,
                 is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][
@@ -103,7 +103,10 @@ class RelevantChunksService:
                 focus_chunks=focus_chunks_details,
             )
 
-        return jsonify_chunks(reranked_chunks)
+        return {
+            "relevant_chunks": jsonify_chunks(reranked_chunks_data[0]),
+            "session_id": reranked_chunks_data[1],
+        }
 
     def get_file_chunk(self, file_path: str, start_line: int, end_line: int) -> str:
         abs_file_path = os.path.join(self.repo_path, file_path)
