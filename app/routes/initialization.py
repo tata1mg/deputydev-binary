@@ -1,6 +1,6 @@
 import json
 
-from sanic import Blueprint, HTTPResponse, Request, json
+from sanic import Blueprint, HTTPResponse, Request
 
 from app.services.initialization_service import InitializationService
 from app.utils.request_handlers import request_handler

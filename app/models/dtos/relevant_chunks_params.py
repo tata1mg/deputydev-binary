@@ -10,3 +10,5 @@ class RelevantChunksParams(BaseModel):
     focus_files: Optional[List[str]] = []
     focus_directories: Optional[List[str]] = []
     perform_chunking: Optional[bool] = False
+    session_id: Optional[int] = None
+    session_type: Optional[str] = None
