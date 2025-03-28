@@ -25,11 +25,18 @@ class FilePathSearchService:
         Returns:
             List[str]: The list of matching files. Only the first 100 files are returned.
         """
-        abs_dir_path = os.path.join(self.repo_path, directory)
+        abs_dir_path = self.repo_path
+        if directory == "/" or directory == ".":
+            directory = ""
+
+        if directory.startswith("/"):
+            directory = directory[1:]
+
+        if directory:
+            abs_dir_path = os.path.join(abs_dir_path, directory)
+
         if not os.path.isdir(abs_dir_path):
             abs_dir_path = self.repo_path
-
-        print(abs_dir_path)
 
         matching_files: List[str] = []
 
