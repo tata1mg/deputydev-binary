@@ -93,7 +93,9 @@ class RelevantChunksService:
                 query_vector=query_vector[0][0],
                 search_type=SearchTypes.VECTOR_DB_BASED,
             )
-            reranked_chunks_data = await RerankerService(session_id=payload.session_id, session_type=payload.session_type).rerank(
+            reranked_chunks_data = await RerankerService(
+                session_id=payload.session_id, session_type=payload.session_type
+            ).rerank(
                 query,
                 relevant_chunks=relevant_chunks,
                 is_llm_reranking_enabled=ConfigManager.configs["CHUNKING"][

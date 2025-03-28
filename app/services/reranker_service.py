@@ -11,7 +11,9 @@ from app.utils.util import filter_chunks_by_denotation, jsonify_chunks
 
 
 class RerankerService:
-    def __init__(self, session_id: Optional[int] = None, session_type: Optional[str] = None) -> None:
+    def __init__(
+        self, session_id: Optional[int] = None, session_type: Optional[str] = None
+    ) -> None:
         self.session_id = session_id
         self.session_type = session_type
 
@@ -40,14 +42,16 @@ class RerankerService:
 
             if self.session_type:
                 headers["X-Session-Type"] = self.session_type
-            data = await OneDevClient().llm_reranking(
-                payload, headers=headers
-            )
+            data = await OneDevClient().llm_reranking(payload, headers=headers)
             filtered_and_ranked_chunks_denotations = data["reranked_denotations"]
             returned_session_id = data["session_id"]
-            return (filter_chunks_by_denotation(
-                relevant_chunks + focus_chunks, filtered_and_ranked_chunks_denotations
-            ), returned_session_id)
+            return (
+                filter_chunks_by_denotation(
+                    relevant_chunks + focus_chunks,
+                    filtered_and_ranked_chunks_denotations,
+                ),
+                returned_session_id,
+            )
         else:
             filtered_and_ranked_chunks = self.get_default_chunks(
                 focus_chunks, relevant_chunks
