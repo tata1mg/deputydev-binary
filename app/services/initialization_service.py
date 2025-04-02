@@ -1,5 +1,4 @@
 import asyncio
-import traceback
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
@@ -10,6 +9,7 @@ from deputydev_core.services.initialization.extension_initialisation_manager imp
     ExtensionInitialisationManager,
     WeaviateSyncAndAsyncClients,
 )
+from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.auth import AuthStatus
 from deputydev_core.utils.constants.enums import SharedMemoryKeys
@@ -122,8 +122,8 @@ class InitializationService:
         while True:
             try:
                 is_reachable = await cls.is_weaviate_ready()
-                print(f"Is Weaviate reachable: {is_reachable}")
                 if not is_reachable:
+                    AppLogger.log_info(f"Is Weaviate reachable: {is_reachable}")
                     app = Sanic.get_app()
                     existing_client: WeaviateSyncAndAsyncClients = (
                         app.ctx.weaviate_client
@@ -132,8 +132,7 @@ class InitializationService:
                     existing_client.sync_client.close()
                     await existing_client.ensure_connected()
             except Exception:
-                print("Failed to maintain weaviate heartbeat")
-                print(traceback.format_exc())
+                AppLogger.log_error("Failed to maintain weaviate heartbeat")
             await asyncio.sleep(3)
 
     @classmethod
@@ -177,13 +176,10 @@ class InitializationService:
                 ConfigManager.set(configs)
                 # SharedMemory.create(SharedMemoryKeys.BINARY_CONFIG.value, configs)
             except Exception as error:
-                import traceback
-
-                print(traceback.format_exc())
-                print(f"Failed to fetch configs: {error}")
+                AppLogger.log_error(f"Failed to fetch configs: {error}")
                 await cls.close_session_and_exit(one_dev_client)
 
     @staticmethod
     async def close_session_and_exit(one_dev_client):
-        print("Exiting ...")
+        AppLogger.log_info("Exiting ...")
         await one_dev_client.close_session()

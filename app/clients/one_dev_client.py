@@ -15,7 +15,7 @@ class OneDevClient(BaseHTTPClient):
     def __init__(self, config=None):
         if not config:
             self._host = ConfigManager.configs["DEPUTY_DEV"]["HOST"]
-            timeout = ConfigManager.configs["DEPUTY_DEV"].get("TIMEOUT") or 15
+            timeout = ConfigManager.configs["DEPUTY_DEV"].get("TIMEOUT") or 60
             # The total number of simultaneous connections allowed (default is 100). (set 0 for unlimited)
             limit = ConfigManager.configs["DEPUTY_DEV"].get("LIMIT") or 0
             # The maximum number of connections allowed per host (default is 0, meaning unlimited).
@@ -28,7 +28,7 @@ class OneDevClient(BaseHTTPClient):
             )
         else:
             self._host = config["DEPUTY_DEV"]["HOST"]
-            timeout = config["DEPUTY_DEV"].get("TIMEOUT") or 15
+            timeout = config["DEPUTY_DEV"].get("TIMEOUT") or 60
             limit = config["DEPUTY_DEV"].get("LIMIT") or 0
             limit_per_host = config["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
             ttl_dns_cache = config["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
