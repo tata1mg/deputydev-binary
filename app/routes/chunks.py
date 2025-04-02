@@ -1,4 +1,5 @@
 import json
+import traceback
 
 from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
@@ -28,12 +29,8 @@ async def relevant_chunks(request, ws):
         relevant_chunks_data = json.dumps(relevant_chunks_data)
         await ws.send(relevant_chunks_data)
     except Exception as e:
-        await ws.send(json.dumps({"error": "can not find relevant chunks"}))
-        # uncomment for local debugging
-        # import traceback
-        #
-        # print(traceback.format_exc())
-        print(f"Connection closed: {e}")
+        await ws.send(json.dumps({"error": "can not find relevant chunks", "message": str(traceback.format_exc())}))
+        print(traceback.format_exc())
 
 
 @chunks.route("/get-focus-chunks", methods=["POST"])
@@ -47,11 +44,8 @@ async def focus_chunks(_request: Request):
         )
         return HTTPResponse(body=json.dumps(focus_chunks))
     except Exception as e:
-        # uncomment for local debugging
-        # import traceback
-        #
-        # print(traceback.format_exc())
-        print(f"Connection closed: {e}")
+        print(traceback.format_exc())
+        raise Exception(traceback.format_exc())
 
 
 @chunks.websocket("/update_chunks")
@@ -82,10 +76,8 @@ async def update_vector_store(request, ws):
         )
 
     except Exception as e:
-        # uncomment for local debugging
-        # print(traceback.format_exc())
-        await ws.send(json.dumps({"status": "Failed"}))
-        print(f"Connection closed: {e}")
+        print(traceback.format_exc())
+        await ws.send(json.dumps({"status": "Failed", "message": traceback.format_exc()}))
 
 
 @chunks.route("/batch_chunks_search", methods=["POST"])
