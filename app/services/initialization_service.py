@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
+import time
 from typing import Dict, Optional
 
 from deputydev_core.services.auth_token_storage.auth_token_service import (
@@ -161,9 +162,11 @@ class InitializationService:
 
     @classmethod
     async def get_config(cls, base_config: Dict = {}) -> None:
+        time_start = time.perf_counter()
         if not ConfigManager.configs:
             ConfigManager.initialize(in_memory=True)
             one_dev_client = OneDevClient(base_config)
+            await one_dev_client.close_session()
             try:
                 configs: Optional[Dict[str, str]] = await one_dev_client.get_configs(
                     headers={
@@ -178,6 +181,9 @@ class InitializationService:
             except Exception as error:
                 AppLogger.log_error(f"Failed to fetch configs: {error}")
                 await cls.close_session_and_exit(one_dev_client)
+
+        time_end = time.perf_counter()
+        AppLogger.log_info(f"Time taken to fetch configs: {time_end - time_start}")
 
     @staticmethod
     async def close_session_and_exit(one_dev_client):

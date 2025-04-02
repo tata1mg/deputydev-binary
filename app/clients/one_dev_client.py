@@ -66,11 +66,18 @@ class OneDevClient(BaseHTTPClient):
     async def get_configs(self, headers: Dict[str, str]) -> AiohttpToRequestsAdapter:
         path = "/end_user/v1/configs/get-configs"
         headers = {**headers, **get_common_headers()}
+        print(dict(
+            url=self._host + path,
+            headers=headers,
+            params={"consumer": ConfigConsumer.BINARY.value},
+        ))
+
         result = await self.get(
             url=self._host + path,
             headers=headers,
             params={"consumer": ConfigConsumer.BINARY.value},
         )
+        print(result)
         return result
 
     @handle_client_response
