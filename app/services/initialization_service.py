@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
@@ -7,6 +8,7 @@ from deputydev_core.services.auth_token_storage.auth_token_service import (
 )
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
+    WeaviateSyncAndAsyncClients,
 )
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.auth import AuthStatus
@@ -107,14 +109,56 @@ class InitializationService:
         return auth_token
 
     @classmethod
-    async def initialization(cls, payload):
+    async def is_weaviate_ready(cls) -> bool:
         app = Sanic.get_app()
-        await cls.get_config(base_config=payload.get("config"))
         if not hasattr(app.ctx, "weaviate_client"):
+            return False
+        else:
+            existing_client: WeaviateSyncAndAsyncClients = app.ctx.weaviate_client
+            return await existing_client.is_ready()
+
+    @classmethod
+    async def maintain_weaviate_heartbeat(cls):
+        while True:
+            try:
+                is_reachable = await cls.is_weaviate_ready()
+                print(f"Is Weaviate reachable: {is_reachable}")
+                if not is_reachable:
+                    app = Sanic.get_app()
+                    existing_client: WeaviateSyncAndAsyncClients = (
+                        app.ctx.weaviate_client
+                    )
+                    await existing_client.async_client.close()
+                    existing_client.sync_client.close()
+                    await existing_client.ensure_connected()
+            except Exception:
+                print("Failed to maintain weaviate heartbeat")
+                print(traceback.format_exc())
+            await asyncio.sleep(3)
+
+    @classmethod
+    async def initialization(cls, payload):
+        class ExtentionWeaviateSyncAndAsyncClients(WeaviateSyncAndAsyncClients):
+            async def ensure_connected(self):
+                if not await self.is_ready():
+                    await cls.get_config(base_config=payload.get("config"))
+                    weaviate_client = (
+                        await ExtensionInitialisationManager().initialize_vector_db()
+                    )
+                    self.sync_client = weaviate_client.sync_client
+                    self.async_client = weaviate_client.async_client
+
+        app = Sanic.get_app()
+        if not hasattr(app.ctx, "weaviate_client"):
+            await cls.get_config(base_config=payload.get("config"))
             weaviate_client = (
                 await ExtensionInitialisationManager().initialize_vector_db()
             )
-            app.ctx.weaviate_client = weaviate_client
+            app.ctx.weaviate_client = ExtentionWeaviateSyncAndAsyncClients(
+                async_client=weaviate_client.async_client,
+                sync_client=weaviate_client.sync_client,
+            )
+            asyncio.create_task(cls.maintain_weaviate_heartbeat())
 
     @classmethod
     async def get_config(cls, base_config: Dict = {}) -> None:
@@ -133,6 +177,9 @@ class InitializationService:
                 ConfigManager.set(configs)
                 # SharedMemory.create(SharedMemoryKeys.BINARY_CONFIG.value, configs)
             except Exception as error:
+                import traceback
+
+                print(traceback.format_exc())
                 print(f"Failed to fetch configs: {error}")
                 await cls.close_session_and_exit(one_dev_client)
 

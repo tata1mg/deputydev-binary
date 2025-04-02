@@ -1,10 +1,10 @@
 import json
 
+from deputydev_core.utils.app_logger import AppLogger
 from sanic import Blueprint, HTTPResponse, Request
 
 from app.services.initialization_service import InitializationService
 from app.utils.request_handlers import request_handler
-from deputydev_core.utils.app_logger import AppLogger
 
 initialization = Blueprint("initialization", url_prefix="")
 
@@ -18,6 +18,7 @@ async def initialize_service(_request: Request, **kwargs):
         return HTTPResponse(body=json.dumps({"status": "Completed"}))
     except Exception as error:
         import traceback
+
         AppLogger.log_info(f"Error: {error}")
         AppLogger.log_info(f"Traceback: {traceback.format_exc()}")
         print(f"Error: {error}")
