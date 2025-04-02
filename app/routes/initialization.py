@@ -23,4 +23,4 @@ async def initialize_service(_request: Request, **kwargs):
         AppLogger.log_info(f"Traceback: {traceback.format_exc()}")
         print(f"Error: {error}")
         print(f"Traceback: {traceback.format_exc()}")
-        return HTTPResponse(body=json.dumps({"status": "Failed"}))
+        return HTTPResponse(body=json.dumps({"status": "Failed", "error": str(error)}))
