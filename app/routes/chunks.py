@@ -29,7 +29,14 @@ async def relevant_chunks(request, ws):
         relevant_chunks_data = json.dumps(relevant_chunks_data)
         await ws.send(relevant_chunks_data)
     except Exception as e:
-        await ws.send(json.dumps({"error": "can not find relevant chunks", "message": str(traceback.format_exc())}))
+        await ws.send(
+            json.dumps(
+                {
+                    "error": "can not find relevant chunks",
+                    "message": str(traceback.format_exc()),
+                }
+            )
+        )
         print(traceback.format_exc())
 
 
@@ -77,7 +84,9 @@ async def update_vector_store(request, ws):
 
     except Exception as e:
         print(traceback.format_exc())
-        await ws.send(json.dumps({"status": "Failed", "message": traceback.format_exc()}))
+        await ws.send(
+            json.dumps({"status": "Failed", "message": traceback.format_exc()})
+        )
 
 
 @chunks.route("/batch_chunks_search", methods=["POST"])
