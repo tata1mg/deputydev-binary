@@ -1,6 +1,6 @@
 import asyncio
-from concurrent.futures import ProcessPoolExecutor
 import time
+from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional
 
 from deputydev_core.services.auth_token_storage.auth_token_service import (
