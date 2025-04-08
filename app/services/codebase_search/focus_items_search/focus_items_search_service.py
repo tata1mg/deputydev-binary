@@ -176,6 +176,9 @@ class FocusSearchService:
 
     @classmethod
     async def get_search_results(cls, payload: FocusSearchParams) -> List[FocusItem]:
+        if not payload.keyword:
+            return []
+
         start_time = time.perf_counter()
         result: List[FocusItem] = []
         try:
