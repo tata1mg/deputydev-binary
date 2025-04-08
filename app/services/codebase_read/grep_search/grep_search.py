@@ -61,21 +61,34 @@ class GrepSearchService:
                 file_path = match.group(1).strip()
                 matched_line = int(match.group(2))  # Convert line number to int
 
-                # Calculate start and end lines
-                start_line = max(matched_line - 5, 0)  # Ensure start_line is not negative
-                end_line = matched_line + 5
-
-                # Read the file to get the content from start_line to end_line
+                # Read the file to get all lines first
                 try:
                     with open(file_path, 'r') as f:
                         file_lines = f.readlines()
-                        content = ''.join(file_lines[start_line:end_line])
+
+                    total_lines = len(file_lines)
+                    matched_line_index = matched_line - 1  # Convert to zero-based index
+
+                    # Calculate start line
+                    if matched_line_index < 5:
+                        start_line = 0  # If there are fewer than 5 lines above, start from the beginning
+                    else:
+                        start_line = matched_line_index - 5  # Otherwise, start 5 lines above
+
+                    # Calculate end line
+                    if matched_line_index + 5 >= total_lines:
+                        end_line = total_lines - 1  # If there are fewer than 5 lines below, end at the last line
+                    else:
+                        end_line = matched_line_index + 5  # Otherwise, end 5 lines below
+
+                    # Get the content from start_line to end_line
+                    content = ''.join(file_lines[start_line:end_line + 1])  # Include end_line in the slice
 
                     # Create a response object using GrepSearchResponse
                     response = {
                         "file_path": file_path,
-                        "start_line": start_line,
-                        "end_line": end_line,
+                        "start_line": start_line + 1,  # Convert back to one-based index for response
+                        "end_line": end_line + 1,  # Convert back to one-based index for response
                         "matched_line": matched_line,
                         "content": content
                     }
