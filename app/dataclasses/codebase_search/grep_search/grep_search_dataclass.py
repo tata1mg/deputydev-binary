@@ -14,5 +14,5 @@ class GrepSearchResponse(BaseModel):
     file_path: str
     start_line: int
     end_line: int
-    matched_line: int
+    match_line: int
     content: str
