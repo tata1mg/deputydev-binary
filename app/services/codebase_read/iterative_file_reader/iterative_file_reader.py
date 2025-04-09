@@ -32,7 +32,7 @@ class IterativeFileReader:
         Reads the file asynchronously in chunks of max_lines.
         """
 
-        if not (end_line) or not (start_line) or not (end_line > start_line):
+        if start_line < 1 or end_line < 1 or end_line < start_line:
             raise ValueError("Invalid start_line or end_line")
 
         async with aiofiles.open(self.file_path, mode="r", encoding="utf-8") as file:
