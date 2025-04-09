@@ -137,7 +137,6 @@ class GrepSearchService:
             # Step 7: Join into a clean block of code
             chunk_text = "\n".join(code_lines)
             if not is_git_repo:
-                print(f"File path: {file_path}")
                 # get relative path
                 file_path = os.path.relpath(file_path, self.repo_path)
 
