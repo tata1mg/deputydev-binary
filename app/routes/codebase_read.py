@@ -20,8 +20,8 @@ async def read_file(_request: Request):
     validated_body = IterativeFileReaderRequestParams(**json_body)
     file_content = await IterativeFileReader(
         file_path=os.path.join(validated_body.repo_path, validated_body.file_path)
-    ).read_lines(offset_line=validated_body.offset_line)
+    ).read_lines(start_line=validated_body.start_line, end_line=validated_body.end_line)
     response = {
-        "data": file_content,
+        "data": file_content.model_dump(mode="json"),
     }
     return HTTPResponse(body=json.dumps(response))
