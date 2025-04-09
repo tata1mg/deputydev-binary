@@ -30,7 +30,7 @@ class GrepSearchService:
         results = []
         is_git_repo = LocalRepoFactory._is_git_repo(self.repo_path)
         if is_git_repo:
-            command_template = "git --git-dir={repo_path}/.git --work-tree={repo_path} grep -rnC 5 '{search_term}'"
+            command_template = "git --git-dir={repo_path}/.git --work-tree={repo_path} grep -rnC 5 '{search_term}' -- {directory_path}"
         else:
             command_template = "grep -rnC 5 '{search_term}' {directory_path} {exclude_flags}"
 
