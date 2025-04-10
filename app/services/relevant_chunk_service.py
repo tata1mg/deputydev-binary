@@ -37,7 +37,6 @@ class RelevantChunksService:
     async def get_relevant_chunks(
         self, payload: RelevantChunksParams
     ) -> Dict[str, Any]:
-        print(ConfigManager.configs)
         repo_path = payload.repo_path
         query = payload.query
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
