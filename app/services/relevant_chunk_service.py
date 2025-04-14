@@ -144,7 +144,7 @@ class RelevantChunksService:
 
             if payload.search_item_type != "directory" and isinstance(
                 payload.chunks[0], ChunkDetails
-            ):
+            ) and payload.search_item_name and payload.search_item_type:
                 revised_relevant_chunks = await ChunkFilesService(
                     weaviate_client=weaviate_client
                 ).get_chunk_files_matching_exact_search_key_on_file_hash(
