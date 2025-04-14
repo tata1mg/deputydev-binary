@@ -141,15 +141,6 @@ class RelevantChunksService:
                 weaviate_client = weaviate_client
             else:
                 weaviate_client = await initialization_manager.initialize_vector_db()
-            chunks = await ChunkService(
-                weaviate_client=weaviate_client
-            ).get_chunks_by_chunk_hashes(
-                chunk_hashes=[
-                    chunk.chunk_hash
-                    for chunk in payload.chunks
-                    if isinstance(chunk, ChunkDetails)
-                ]
-            )
 
             if payload.search_item_type != "directory" and isinstance(
                 payload.chunks[0], ChunkDetails
@@ -174,6 +165,16 @@ class RelevantChunksService:
                 ]
 
             print([cnk.model_dump(mode="json") for cnk in payload.chunks])
+
+            chunks = await ChunkService(
+                weaviate_client=weaviate_client
+            ).get_chunks_by_chunk_hashes(
+                chunk_hashes=[
+                    chunk.chunk_hash
+                    for chunk in payload.chunks
+                    if isinstance(chunk, ChunkDetails)
+                ]
+            )
 
             chunk_info_list: List[ChunkInfoAndHash] = []
             for chunk_dto, _vector in chunks:
