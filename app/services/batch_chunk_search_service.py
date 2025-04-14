@@ -13,6 +13,8 @@ from deputydev_core.utils.constants.constants import CHUNKFILE_KEYWORD_PROPERTY_
 
 from app.models.dtos.batch_chunk_search_params import BatchSearchParams, SearchTerm
 from app.models.dtos.batch_chunk_search_response import BatchSearchResponse
+from app.models.dtos.focus_chunk_params import ChunkDetails, ChunkInfoAndHash, FocusChunksParams
+from app.services.relevant_chunk_service import RelevantChunksService
 from app.services.shared_chunks_manager import SharedChunksManager
 
 
@@ -51,12 +53,49 @@ class BatchSearchService:
                 search_terms, chunk_files_results, chunks_by_hash
             )
 
+            # update final chunks in results
+            updated_results = asyncio.gather(
+                *[
+                    cls.update_chunks_list(result, repo_path)
+                    for result in final_results
+                ]
+            )
+            final_results = await updated_results
+            
+            print([chunk.source_details.model_dump(mode="json") for result in final_results for chunk in result.chunks])
             return {"response": [result.model_dump() for result in final_results]}
 
         finally:
             if weaviate_client:
                 weaviate_client.sync_client.close()
                 await weaviate_client.async_client.close()
+
+    @classmethod
+    async def update_chunks_list(
+        cls, payload: BatchSearchResponse, repo_path: str
+    ) -> BatchSearchResponse:
+        if payload.type not in ["class", "function"] or not payload.chunks:
+            return payload
+        
+        # get focus chunks
+        new_chunks = await RelevantChunksService(
+            repo_path=repo_path
+        ).get_focus_chunks(
+            FocusChunksParams(
+                repo_path=repo_path,
+                search_item_name=payload.keyword,
+                search_item_type=payload.type,
+                chunks=[ChunkDetails(start_line=_.source_details.start_line, end_line=_.source_details.end_line, chunk_hash=_.content_hash, file_path=_.source_details.file_path, file_hash=_.source_details.file_hash) for _ in payload.chunks],
+            )
+        )
+
+        if not new_chunks:
+            return payload
+
+        # update chunks with chunk text
+        all_new_chunks = [ChunkInfoAndHash(**new_chunk) for new_chunk in new_chunks]
+        payload.chunks = [_.chunk_info for _ in all_new_chunks]
+        return payload
 
     @classmethod
     async def search_chunk_files(

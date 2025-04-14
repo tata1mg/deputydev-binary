@@ -232,4 +232,9 @@ class RelevantChunksService:
                         f"Error occurred while fetching code snippet: {ex}"
                     )
 
+        # sort chunk_info_list based on start_line
+        chunk_info_list.sort(
+            key=lambda x:
+                x.chunk_info.source_details.start_line,
+        )
         return [chunk_info.model_dump(mode="json") for chunk_info in chunk_info_list]
