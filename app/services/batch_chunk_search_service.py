@@ -62,14 +62,6 @@ class BatchSearchService:
                 *[cls.update_chunks_list(result, repo_path) for result in final_results]
             )
             final_results = await updated_results
-
-            print(
-                [
-                    chunk.source_details.model_dump(mode="json")
-                    for result in final_results
-                    for chunk in result.chunks
-                ]
-            )
             return {"response": [result.model_dump() for result in final_results]}
 
         finally:
