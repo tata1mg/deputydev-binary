@@ -164,8 +164,6 @@ class RelevantChunksService:
                     for chunk_file_obj in revised_relevant_chunks
                 ]
 
-            print([cnk.model_dump(mode="json") for cnk in payload.chunks])
-
             chunks = await ChunkService(
                 weaviate_client=weaviate_client
             ).get_chunks_by_chunk_hashes(
