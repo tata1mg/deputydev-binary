@@ -23,6 +23,8 @@ class CodeSnippetDetails(BaseModel):
 
 class FocusChunksParams(BaseModel):
     repo_path: str
+    search_item_name: str
+    search_item_type: str
     chunks: List[Union[ChunkDetails, CodeSnippetDetails]]
 
 

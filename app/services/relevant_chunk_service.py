@@ -124,6 +124,9 @@ class RelevantChunksService:
         chunkable_files_and_hashes = (
             await local_repo.get_chunkable_files_and_commit_hashes()
         )
+
+        print([cnk.model_dump(mode="json") for cnk in payload.chunks])
+
         await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes)
         with ProcessPoolExecutor(
             max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
