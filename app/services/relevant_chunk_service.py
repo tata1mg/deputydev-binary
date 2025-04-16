@@ -236,7 +236,7 @@ class RelevantChunksService:
 
         # Get import-only chunk files from Weaviate
         # This retrieves all chunk files that have imports
-        import_only_chunk_files = await ChunkService(
+        import_only_chunk_files = await ChunkFilesService(
             weaviate_client=weaviate_client
         ).get_import_only_chunk_files_matching_exact_search_key_on_file_hash(
             search_key=payload.search_item_name,
@@ -244,6 +244,8 @@ class RelevantChunksService:
             file_path=payload.chunks[0].file_path,
             file_hash=payload.chunks[0].file_hash,
         )
+
+        print("***********import_only_chunk_files************",import_only_chunk_files)
 
         # Extract chunk details from import-only chunk files
         # This creates a list of chunk details that have imports
@@ -258,6 +260,7 @@ class RelevantChunksService:
             for chunk_file_obj in import_only_chunk_files
         ]
 
+        print("***********import_only_chunks_details************",import_only_chunks_details)
         # This retrieves the most relevant import-only chunks based on the query
         import_only_chunks = await ChunkService(
             weaviate_client=weaviate_client
@@ -268,18 +271,19 @@ class RelevantChunksService:
             ]
         )
 
+        print("***********import_only_chunks************",import_only_chunks)
         # Create mapping of file paths to their import-only chunk infos and hashes
-        # This creates a dictionary where each file path maps to a set of ChunkInfoAndHash objects
+        # This creates a dictionary where each file path maps to a list of ChunkInfoAndHash objects
         # that contain import-related content
-        import_only_file_path_to_chunk_info_and_hash: Dict[str, set[ChunkInfoAndHash]] = {}
+        import_only_file_path_to_chunk_info_and_hash: Dict[str, List[ChunkInfoAndHash]] = {}
         for chunk_dto, _vector in import_only_chunks:
             for chunk_file in import_only_chunks_details:
                 if chunk_file.chunk_hash == chunk_dto.chunk_hash:
                     file_path = chunk_file.file_path
                     if file_path not in import_only_file_path_to_chunk_info_and_hash:
-                        import_only_file_path_to_chunk_info_and_hash[file_path] = set()
+                        import_only_file_path_to_chunk_info_and_hash[file_path]: List[ChunkInfoAndHash] = []
 
-                    import_only_file_path_to_chunk_info_and_hash[file_path].add(
+                    import_only_file_path_to_chunk_info_and_hash[file_path].append(
                         ChunkInfoAndHash(
                             chunk_info=ChunkInfo(
                                 content=chunk_dto.text,
@@ -297,17 +301,24 @@ class RelevantChunksService:
                     )
                     break
 
+        print("***********import_only_file_path_to_chunk_info_and_hash************",import_only_file_path_to_chunk_info_and_hash)
+
         for chunk_info in chunk_info_list:
             file_path = chunk_info.chunk_info.source_details.file_path
             if file_path in import_only_file_path_to_chunk_info_and_hash:
-                import_only_file_path_to_chunk_info_and_hash[file_path].add(chunk_info)
+                # Check if chunk already exists by comparing chunk_hash
+                if not any(existing.chunk_hash == chunk_info.chunk_hash
+                        for existing in import_only_file_path_to_chunk_info_and_hash[file_path]):
+                    import_only_file_path_to_chunk_info_and_hash[file_path].append(chunk_info)
 
         updated_chunk_info_list: List[ChunkInfoAndHash] = []
-        for chunk_info_set in import_only_file_path_to_chunk_info_and_hash.values():
-            updated_chunk_info_list.extend(list(chunk_info_set))
+        for chunk_info_list in import_only_file_path_to_chunk_info_and_hash.values():
+            updated_chunk_info_list.extend(chunk_info_list)
 
         # sort updated_chunk_info_list based on start_line
         updated_chunk_info_list.sort(
             key=lambda x: x.chunk_info.source_details.start_line,
         )
+
+        print("***********updated_chunk_info_list************",updated_chunk_info_list)
         return [chunk_info.model_dump(mode="json") for chunk_info in updated_chunk_info_list]
