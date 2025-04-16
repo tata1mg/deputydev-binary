@@ -31,3 +31,6 @@ class FocusChunksParams(BaseModel):
 class ChunkInfoAndHash(BaseModel):
     chunk_info: ChunkInfo
     chunk_hash: str
+
+    def __hash__(self):
+        return hash((self.chunk_info, self.chunk_hash))

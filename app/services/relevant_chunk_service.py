@@ -1,6 +1,6 @@
 import os
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 from deputydev_core.services.chunking.chunk_info import ChunkInfo, ChunkSourceDetails
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
@@ -273,17 +273,17 @@ class RelevantChunksService:
 
         print("***********import_only_chunks************",import_only_chunks)
         # Create mapping of file paths to their import-only chunk infos and hashes
-        # This creates a dictionary where each file path maps to a list of ChunkInfoAndHash objects
+        # This creates a dictionary where each file path maps to a set of ChunkInfoAndHash objects
         # that contain import-related content
-        import_only_file_path_to_chunk_info_and_hash: Dict[str, List[ChunkInfoAndHash]] = {}
+        import_only_file_path_to_chunk_info_and_hash: Dict[str, Set[ChunkInfoAndHash]] = {}
         for chunk_dto, _vector in import_only_chunks:
             for chunk_file in import_only_chunks_details:
                 if chunk_file.chunk_hash == chunk_dto.chunk_hash:
                     file_path = chunk_file.file_path
                     if file_path not in import_only_file_path_to_chunk_info_and_hash:
-                        import_only_file_path_to_chunk_info_and_hash[file_path]: List[ChunkInfoAndHash] = []
+                        import_only_file_path_to_chunk_info_and_hash[file_path] = set()
 
-                    import_only_file_path_to_chunk_info_and_hash[file_path].append(
+                    import_only_file_path_to_chunk_info_and_hash[file_path].add(
                         ChunkInfoAndHash(
                             chunk_info=ChunkInfo(
                                 content=chunk_dto.text,
@@ -306,14 +306,11 @@ class RelevantChunksService:
         for chunk_info in chunk_info_list:
             file_path = chunk_info.chunk_info.source_details.file_path
             if file_path in import_only_file_path_to_chunk_info_and_hash:
-                # Check if chunk already exists by comparing chunk_hash
-                if not any(existing.chunk_hash == chunk_info.chunk_hash
-                        for existing in import_only_file_path_to_chunk_info_and_hash[file_path]):
-                    import_only_file_path_to_chunk_info_and_hash[file_path].append(chunk_info)
+                import_only_file_path_to_chunk_info_and_hash[file_path].add(chunk_info)
 
         updated_chunk_info_list: List[ChunkInfoAndHash] = []
-        for chunk_info_list in import_only_file_path_to_chunk_info_and_hash.values():
-            updated_chunk_info_list.extend(chunk_info_list)
+        for chunk_info_set in import_only_file_path_to_chunk_info_and_hash.values():
+            updated_chunk_info_list.extend(list(chunk_info_set))
 
         # sort updated_chunk_info_list based on start_line
         updated_chunk_info_list.sort(
