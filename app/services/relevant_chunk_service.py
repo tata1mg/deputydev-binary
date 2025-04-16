@@ -11,8 +11,8 @@ from deputydev_core.services.initialization.extension_initialisation_manager imp
     ExtensionInitialisationManager,
 )
 from deputydev_core.services.repo.local_repo.local_repo_factory import LocalRepoFactory
-from deputydev_core.services.repository.chunk_service import ChunkService
 from deputydev_core.services.repository.chunk_files_service import ChunkFilesService
+from deputydev_core.services.repository.chunk_service import ChunkService
 from deputydev_core.services.search.dataclasses.main import SearchTypes
 from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.utils.config_manager import ConfigManager
@@ -150,11 +150,10 @@ class RelevantChunksService:
             ):
                 revised_relevant_chunks = await ChunkFilesService(
                     weaviate_client=weaviate_client
-                ).get_chunk_files_matching_exact_search_key_on_file_hash(
+                ).get_chunk_files_matching_exact_search_key(
                     search_key=payload.search_item_name,
                     search_type=payload.search_item_type,
-                    file_path=payload.chunks[0].file_path,
-                    file_hash=payload.chunks[0].file_hash,
+                    file_path_to_hash_map=chunkable_files_and_hashes,
                 )
                 payload.chunks = [
                     ChunkDetails(
