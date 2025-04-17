@@ -21,6 +21,11 @@ class PublicUrlReaderManager(UrlReaderManager):
                     results[fetched_url] = urls_data[index]
                 tasks = []
                 current_urls = []
+        if tasks:
+            urls_data = await asyncio.gather(*tasks)
+            for index, fetched_url in enumerate(current_urls):
+                results[fetched_url] = urls_data[index]
+
         return results
 
 
