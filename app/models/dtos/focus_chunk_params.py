@@ -33,4 +33,4 @@ class ChunkInfoAndHash(BaseModel):
     chunk_hash: str
 
     def __hash__(self):
-        return hash((self.chunk_info, self.chunk_hash))
+        return int.from_bytes(self.chunk_hash.encode(), byteorder='big')
