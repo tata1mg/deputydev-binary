@@ -8,6 +8,7 @@ from app.routes.initialization import initialization
 from app.routes.ping import ping
 from app.routes.search import focus_search
 from app.routes.shutdown import shutdown
+from app.routes.url_reader import url_reader
 
 blueprints = [
     chunks,
@@ -17,6 +18,7 @@ blueprints = [
     focus_search,
     shutdown,
     codebase_read,
+    url_reader
 ]
 
 v1_binary_blueprints = Blueprint.group(*blueprints, url_prefix="v1")
