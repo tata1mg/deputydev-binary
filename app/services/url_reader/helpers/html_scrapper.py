@@ -15,8 +15,6 @@ class HtmlScrapper:
 
     def clean_html(self, raw_html: str, url: str) -> BeautifulSoup:
         soup = BeautifulSoup(raw_html, "html.parser")
-        # for tag in soup(["script", "style", "noscript", "iframe"]):
-        #     tag.decompose()
         return soup
 
     def convert_html_to_markdown(self, cleaned_html: str) -> str:
