@@ -1,6 +1,6 @@
 import os
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 from deputydev_core.services.chunking.chunk_info import ChunkInfo, ChunkSourceDetails
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
@@ -234,11 +234,49 @@ class RelevantChunksService:
                         f"Error occurred while fetching code snippet: {ex}"
                     )
 
-        # sort chunk_info_list based on file_path and start_line
-        chunk_info_list.sort(
-            key=lambda x: (
-                x.chunk_info.source_details.file_path,
-                x.chunk_info.source_details.start_line,
+            new_file_path_to_hash_map_for_import_only = {
+                chunk_info_and_hash.chunk_info.source_details.file_path: chunk_info_and_hash.chunk_info.source_details.file_hash
+                for chunk_info_and_hash in chunk_info_list
+            }
+
+            import_only_chunk_files = await ChunkFilesService(weaviate_client).get_only_import_chunk_files_by_commit_hashes(
+                file_to_commit_hashes=new_file_path_to_hash_map_for_import_only
             )
+
+            import_only_chunk_hashes = [chunk_file.chunk_hash for chunk_file in import_only_chunk_files]
+
+            import_only_chunk_dtos = await ChunkService(weaviate_client).get_chunks_by_chunk_hashes(
+                chunk_hashes=import_only_chunk_hashes,
+            )
+
+            chunk_info_set = set(chunk_info_list)
+
+            for chunk_dto, _vector in import_only_chunk_dtos:
+                for chunk_file in import_only_chunk_files:
+                    if chunk_file.chunk_hash == chunk_dto.chunk_hash:
+                        chunk_info_set.add(
+                            ChunkInfoAndHash(
+                                chunk_info=ChunkInfo(
+                                    content=chunk_dto.text,
+                                    source_details=ChunkSourceDetails(
+                                        file_path=chunk_file.file_path,
+                                        file_hash=chunk_file.file_hash,
+                                        start_line=chunk_file.start_line,
+                                        end_line=chunk_file.end_line,
+                                    ),
+                                    embedding=None,
+                                    metadata=chunk_file.meta_info,
+                                ),
+                                chunk_hash=chunk_file.chunk_hash,
+                            )
+                        )
+                        break
+
+        updated_chunk_info_list = list(chunk_info_set)
+
+        # sort updated_chunk_info_list based on start_line
+        updated_chunk_info_list.sort(
+            key=lambda x: (x.chunk_info.source_details.file_path, x.chunk_info.source_details.start_line)
         )
-        return [chunk_info.model_dump(mode="json") for chunk_info in chunk_info_list]
+
+        return [chunk_info.model_dump(mode="json") for chunk_info in updated_chunk_info_list]
