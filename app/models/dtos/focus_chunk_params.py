@@ -32,5 +32,10 @@ class ChunkInfoAndHash(BaseModel):
     chunk_info: ChunkInfo
     chunk_hash: str
 
-    def __hash__(self):
-        return int.from_bytes(self.chunk_hash.encode(), byteorder='big')
+    def __hash__(self) -> int:
+        return hash(self.chunk_hash)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, ChunkInfoAndHash):
+            return False
+        return self.chunk_hash == other.chunk_hash
