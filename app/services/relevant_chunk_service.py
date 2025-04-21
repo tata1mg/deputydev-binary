@@ -278,6 +278,4 @@ class RelevantChunksService:
             key=lambda x: (x.chunk_info.source_details.file_path, x.chunk_info.source_details.start_line)
         )
 
-        print([chunk_info.model_dump(mode="json") for chunk_info in updated_chunk_info_list])
-
         return [chunk_info.model_dump(mode="json") for chunk_info in updated_chunk_info_list]
