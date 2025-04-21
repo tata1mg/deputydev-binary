@@ -236,13 +236,12 @@ class RelevantChunksService:
 
             new_file_path_to_hash_map_for_import_only = {
                 chunk_info_and_hash.chunk_info.source_details.file_path: chunk_info_and_hash.chunk_info.source_details.file_hash
-                for chunk_info_and_hash in chunk_info_list
+                for chunk_info_and_hash in chunk_info_list if chunk_info_and_hash.chunk_info.source_details.file_hash
             }
 
             import_only_chunk_files = await ChunkFilesService(weaviate_client).get_only_import_chunk_files_by_commit_hashes(
                 file_to_commit_hashes=new_file_path_to_hash_map_for_import_only
             )
-
             import_only_chunk_hashes = [chunk_file.chunk_hash for chunk_file in import_only_chunk_files]
 
             import_only_chunk_dtos = await ChunkService(weaviate_client).get_chunks_by_chunk_hashes(
