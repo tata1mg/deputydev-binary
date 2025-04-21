@@ -8,6 +8,8 @@ sanic = "==22.12.0"
 deputydev-core = { ref = "1.2.0", git = "ssh://git@github.com/tata1mg/deputydev-core.git" }
 websockets = "==12.0"
 fuzzywuzzy = "==0.18.0"
+bs4 = "==0.0.2"
+html2text = "==2025.4.15"
 
 [dev-packages]
 flake8 = "==7.1.1"
