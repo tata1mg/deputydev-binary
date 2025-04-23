@@ -35,13 +35,13 @@ class InitializationService:
 
     @classmethod
     async def update_vector_store(
-        cls, payload: UpdateVectorStoreParams, progress_callback
+            cls, payload: UpdateVectorStoreParams, progress_callback
     ) -> None:
         repo_path = payload.repo_path
         auth_token = SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
         with ProcessPoolExecutor(
-            max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
+                max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
         ) as executor:
             one_dev_client = OneDevClient()
             body = {

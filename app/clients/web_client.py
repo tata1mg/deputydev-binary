@@ -26,5 +26,5 @@ class WebClient(BaseHTTPClient):
 
     async def get_content(self, url, headers):
         content = await self.get(url, headers=headers)
-        content = content.text
-        return content
+        content_text, response_headers, status_code = content.text, content.headers, content.status_code
+        return content_text, response_headers, status_code

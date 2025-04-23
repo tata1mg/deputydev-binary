@@ -28,7 +28,7 @@ from app.models.dtos.focus_chunk_params import (
 from app.models.dtos.relevant_chunks_params import RelevantChunksParams
 from app.services.reranker_service import RerankerService
 from app.services.shared_chunks_manager import SharedChunksManager
-from app.utils.util import jsonify_chunks, weaviate_connection
+from app.utils.util import jsonify_chunks, initialise_weaviate_client
 
 
 class RelevantChunksService:
@@ -62,11 +62,7 @@ class RelevantChunksService:
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
-            weaviate_client = await weaviate_connection()
-            if weaviate_client:
-                weaviate_client = weaviate_client
-            else:
-                weaviate_client = await initialization_manager.initialize_vector_db()
+            weaviate_client = await initialise_weaviate_client(initialization_manager)
             if (
                 payload.perform_chunking
                 and ConfigManager.configs["RELEVANT_CHUNKS"]["CHUNKING_ENABLED"]
@@ -136,12 +132,7 @@ class RelevantChunksService:
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
-            weaviate_client = await weaviate_connection()
-            if weaviate_client:
-                weaviate_client = weaviate_client
-            else:
-                weaviate_client = await initialization_manager.initialize_vector_db()
-
+            weaviate_client = await initialise_weaviate_client(initialization_manager)
             if (
                 payload.search_item_type != "directory"
                 and isinstance(payload.chunks[0], ChunkDetails)
