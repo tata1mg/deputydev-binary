@@ -196,7 +196,10 @@ class RelevantChunksService:
                     file_path_to_hash_map={
                         k: v
                         for k, v in chunkable_files_and_hashes.items()
-                        if ((k == payload.search_item_path) or (not payload.search_item_path))
+                        if (
+                            (k == payload.search_item_path)
+                            or (not payload.search_item_path)
+                        )
                     },
                 )
 
