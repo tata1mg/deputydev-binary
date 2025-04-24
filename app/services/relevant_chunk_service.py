@@ -116,9 +116,44 @@ class RelevantChunksService:
             lines = file.readlines()
             return "".join(lines[start_line - 1 : end_line])
 
+    def _refilter_chunk_info_list(
+        self,
+        chunk_info_list: List[ChunkInfoAndHash],
+        payload: FocusChunksParams,
+    ) -> List[ChunkInfoAndHash]:
+        """
+        Refine the chunk info list based on the focus chunks and directories.
+        """
+        if not payload.search_item_name:
+            raise ValueError("search_item_name is required")
+        search_type = payload.search_item_type
+        if search_type == "file":
+            # Filter by file path
+            chunk_info_list = [
+                chunk_info_and_hash
+                for chunk_info_and_hash in chunk_info_list
+                if chunk_info_and_hash.chunk_info.source_details.file_path == payload.search_item_name
+            ]
+        elif search_type == "class":
+            # Filter by class name
+            chunk_info_list = [
+                chunk_info_and_hash
+                for chunk_info_and_hash in chunk_info_list
+                if payload.search_item_name in chunk_info_and_hash.chunk_info.metadata.all_classes
+            ]
+        elif search_type == "function":
+            # Filter by function name
+            chunk_info_list = [
+                chunk_info_and_hash
+                for chunk_info_and_hash in chunk_info_list
+                if payload.search_item_name in chunk_info_and_hash.chunk_info.metadata.all_functions
+            ]
+        return chunk_info_list
+
     async def get_focus_chunks(
         self, payload: FocusChunksParams
     ) -> List[Dict[str, Any]]:
+        print(payload)
         repo_path = payload.repo_path
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
         one_dev_client = OneDevClient()
@@ -236,15 +271,22 @@ class RelevantChunksService:
 
             new_file_path_to_hash_map_for_import_only = {
                 chunk_info_and_hash.chunk_info.source_details.file_path: chunk_info_and_hash.chunk_info.source_details.file_hash
-                for chunk_info_and_hash in chunk_info_list if chunk_info_and_hash.chunk_info.source_details.file_hash
+                for chunk_info_and_hash in chunk_info_list
+                if chunk_info_and_hash.chunk_info.source_details.file_hash
             }
 
-            import_only_chunk_files = await ChunkFilesService(weaviate_client).get_only_import_chunk_files_by_commit_hashes(
+            import_only_chunk_files = await ChunkFilesService(
+                weaviate_client
+            ).get_only_import_chunk_files_by_commit_hashes(
                 file_to_commit_hashes=new_file_path_to_hash_map_for_import_only
             )
-            import_only_chunk_hashes = [chunk_file.chunk_hash for chunk_file in import_only_chunk_files]
+            import_only_chunk_hashes = [
+                chunk_file.chunk_hash for chunk_file in import_only_chunk_files
+            ]
 
-            import_only_chunk_dtos = await ChunkService(weaviate_client).get_chunks_by_chunk_hashes(
+            import_only_chunk_dtos = await ChunkService(
+                weaviate_client
+            ).get_chunks_by_chunk_hashes(
                 chunk_hashes=import_only_chunk_hashes,
             )
 
@@ -275,7 +317,21 @@ class RelevantChunksService:
 
         # sort updated_chunk_info_list based on start_line
         updated_chunk_info_list.sort(
-            key=lambda x: (x.chunk_info.source_details.file_path, x.chunk_info.source_details.start_line)
+            key=lambda x: (
+                x.chunk_info.source_details.file_path,
+                x.chunk_info.source_details.start_line,
+            )
         )
 
-        return [chunk_info.model_dump(mode="json") for chunk_info in updated_chunk_info_list]
+        # refilter the chunk_info_list to remove extra junk
+        updated_chunk_info_list = self._refilter_chunk_info_list(
+            chunk_info_list=updated_chunk_info_list, payload=payload
+        )
+
+        print([
+            chunk_info.model_dump(mode="json") for chunk_info in updated_chunk_info_list
+        ])
+
+        return [
+            chunk_info.model_dump(mode="json") for chunk_info in updated_chunk_info_list
+        ]
