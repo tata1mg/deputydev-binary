@@ -124,8 +124,6 @@ class RelevantChunksService:
         """
         Refine the chunk info list based on the focus chunks and directories.
         """
-        if not payload.search_item_name:
-            raise ValueError("search_item_name is required")
         search_type = payload.search_item_type
         if search_type == "file" and payload.search_item_path:
             # Filter by file path
