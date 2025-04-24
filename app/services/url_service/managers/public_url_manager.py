@@ -1,4 +1,7 @@
 import asyncio
+from deputydev_core.utils.shared_memory import SharedMemory
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from app.clients.one_dev_client import OneDevClient
 from app.services.url_service.managers.url_manager import UrlManager
 from typing import List, TYPE_CHECKING, Dict
 from app.services.url_service.helpers.html_scrapper import HtmlScrapper
@@ -11,13 +14,15 @@ from deputydev_core.utils.config_manager import ConfigManager
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
 
 if TYPE_CHECKING:
-    from app.models.dtos.url_dtos.save_url_params import SaveUrlParams
+    from app.models.dtos.url_dtos.save_url_params import SaveUrlParams, Url
+    from app.models.dtos.url_dtos.url_reader_params import UrlReaderParams
 
 
 class PublicUrlManager(UrlManager):
     def __init__(self):
         self.batch_size = ConfigManager.configs["URL_CONTENT_READER"]["BATCH_SIZE"]
         self.validate_content_updation = ConfigManager.configs["URL_CONTENT_READER"]["VALIDATE_CONTENT_UPDATION"]
+        self.max_content_size = ConfigManager.configs["URL_CONTENT_READER"]["MAX_CONTENT_SIZE"]
 
     async def _read_urls(self, urls: List[str]) -> Dict[str, UrlsContentDto]:
         """
@@ -73,17 +78,41 @@ class PublicUrlManager(UrlManager):
         asyncio.create_task(UrlsContentRepository(weaviate_client).bulk_update(updated_objects))
         return results
 
-    async def fetch_urls_content(self, urls: List[str]):
+    async def fetch_urls_content(self, payload: "UrlReaderParams") -> dict:
+        urls = payload.urls
         results = await self._read_urls(urls)
         url_contents = {url: obj.content for url, obj in results.items()}
-        return url_contents
+        formatted_content = self._format_urls_content(url_contents)
+        if len(formatted_content) > self.max_content_size:
+            summarized_content = await self._summarize_content(formatted_content, payload)
+            return {"content": summarized_content}
+        else:
+            return {"content": formatted_content}
 
-    async def save_url(self, payload: "SaveUrlParams"):
+    async def _summarize_content(self, content, payload):
+        headers = self.common_headers()
+        if payload.session_id:
+            headers["X-Session-Id"] = str(payload.session_id)
+        if payload.session_type:
+            headers["X-Session-Type"] = payload.session_type
+        payload = {"content": content}
+        summarize_content = await OneDevClient().summarize_url_content(headers, payload)
+        return summarize_content
+
+    def _format_urls_content(self, url_contents: Dict[str, str]) -> str:
+        formatted_content = ""
+        for url, content in url_contents.items():
+            formatted_content += f"Content of URL {url}: \n {content} \n\n"
+        return formatted_content
+
+    async def save_url(self, payload: "SaveUrlParams") -> dict:
+        url_data = await self._save_url_in_backend(payload)
         initialization_manager = ExtensionInitialisationManager()
         weaviate_client = await initialise_weaviate_client(initialization_manager)
-        url = UrlsContentDto(name=payload.url.name, url=payload.url.url)
+        url = UrlsContentDto(name=payload.url.name, url=payload.url.url, backend_id=url_data["id"])
         await UrlsContentRepository(weaviate_client).save_url_content(url)
         asyncio.create_task(self._save_url_content(url, weaviate_client))
+        return self.parse_url_model(url)
 
     async def _save_url_content(self, url_content: UrlsContentDto, weaviate_client):
         # If user is creating a different record for already saved url with different name
@@ -91,8 +120,7 @@ class PublicUrlManager(UrlManager):
         results = await self._read_urls([url_content.url])
         content: UrlsContentDto = results.get(url_content.url)
         if content:
-            content.name = url_content.name
-            await UrlsContentRepository(weaviate_client).save_url_content(url_content)
+            await UrlsContentRepository(weaviate_client).save_url_content(content)
             print("Successfully Updated Content")
 
     async def _gather_batch(self, tasks, urls: List[str], existing_contents: Dict[str, UrlsContentDto],
@@ -109,3 +137,20 @@ class PublicUrlManager(UrlManager):
             if not is_saved_content_matched and fetched_url in existing_contents:
                 updated_urls.append(existing_contents[fetched_url])
         return results
+
+    async def _save_url_in_backend(self, payload: "SaveUrlParams") -> dict:
+        headers = self.common_headers()
+        url = await OneDevClient().save_url(headers, payload.url.model_dump())
+        return url
+
+    def common_headers(self):
+        return {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)}",
+        }
+
+    def parse_url_model(self, url_obj: UrlsContentDto, extra_fields=[]):
+        default_fields = ["id", "name", "url", "last_indexed"]
+        data = url_obj.model_dump(include=set(default_fields + extra_fields))
+        data["id"] = url_obj.backend_id
+        return data

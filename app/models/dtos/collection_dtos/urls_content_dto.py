@@ -17,5 +17,6 @@ class UrlsContentDto(BaseModel):
     last_indexed: Optional[datetime] = None
     cache_headers: Optional[CacheHeaders] = None
     content_hash: Optional[str] = None
+    backend_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)

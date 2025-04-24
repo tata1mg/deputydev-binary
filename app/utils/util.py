@@ -6,7 +6,7 @@ from deputydev_core.services.repository.dataclasses.main import (
 )
 from deputydev_core.utils.context_vars import get_context_value
 from sanic import Sanic
-
+from sanic.request import Request
 from app.utils.constants import Headers
 
 if TYPE_CHECKING:
@@ -60,3 +60,22 @@ def get_common_headers() -> Dict[str, str]:
         Headers.X_CLIENT: headers.get(Headers.X_CLIENT),
         Headers.X_Client_Version: headers.get(Headers.X_Client_Version),
     }
+
+
+def parse_request_params(req: Request):
+    """
+    function to get all query params and match_info params as query params
+    :return: a dictionary of query params
+    """
+    args = req.args
+    params = {}
+    for key, value in args.items():
+        modified_key = key.replace("[]", "")
+        if "[]" in key:
+            params[modified_key] = value
+        else:
+            params[key] = value if len(value) > 1 else value[0]
+
+    for key, value in req.match_info.items():
+        params[key] = value
+    return params

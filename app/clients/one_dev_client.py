@@ -20,11 +20,11 @@ class OneDevClient(BaseHTTPClient):
             limit = ConfigManager.configs["DEPUTY_DEV"].get("LIMIT") or 0
             # The maximum number of connections allowed per host (default is 0, meaning unlimited).
             limit_per_host = (
-                ConfigManager.configs["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
+                    ConfigManager.configs["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
             )
             # ttl_dns_cache: Time-to-live (TTL) for DNS cache entries, in seconds (default is 10).
             ttl_dns_cache = (
-                ConfigManager.configs["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
+                    ConfigManager.configs["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
             )
         else:
             self._host = config["DEPUTY_DEV"]["HOST"]
@@ -41,7 +41,7 @@ class OneDevClient(BaseHTTPClient):
 
     @handle_client_response
     async def create_embedding(
-        self, payload: Dict[str, Any], headers: Dict[str, str]
+            self, payload: Dict[str, Any], headers: Dict[str, str]
     ) -> Dict[str, Any]:
         path = "/end_user/v1/code-gen/create-embedding"
         payload.update(
@@ -76,7 +76,7 @@ class OneDevClient(BaseHTTPClient):
 
     @handle_client_response
     async def verify_auth_token(
-        self, headers: Dict[str, str], payload: Dict[str, Any]
+            self, headers: Dict[str, str], payload: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Verify the authentication token for the user.
@@ -91,6 +91,20 @@ class OneDevClient(BaseHTTPClient):
             Exception: Raises an exception if the request fails or the response is not valid.
         """
         path = "/end_user/v1/auth/verify-auth-token"
+        headers = {**headers, **get_common_headers()}
+        result = await self.post(url=self._host + path, headers=headers, json=payload)
+        return result
+
+    @handle_client_response
+    async def summarize_url_content(self, headers: Dict[str, str], payload: dict):
+        path = "/end_user/v1/urls/summarize_url"
+        headers = {**headers, **get_common_headers()}
+        result = await self.post(url=self._host + path, headers=headers, json=payload)
+        return result
+
+    @handle_client_response
+    async def save_url(self, headers: Dict[str, str], payload: dict):
+        path = "/end_user/v1/urls/save_url"
         headers = {**headers, **get_common_headers()}
         result = await self.post(url=self._host + path, headers=headers, json=payload)
         return result
