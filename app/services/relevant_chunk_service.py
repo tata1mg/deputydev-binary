@@ -127,33 +127,36 @@ class RelevantChunksService:
         if not payload.search_item_name:
             raise ValueError("search_item_name is required")
         search_type = payload.search_item_type
-        if search_type == "file":
+        if search_type == "file" and payload.search_item_path:
             # Filter by file path
             chunk_info_list = [
                 chunk_info_and_hash
                 for chunk_info_and_hash in chunk_info_list
-                if chunk_info_and_hash.chunk_info.source_details.file_path == payload.search_item_name
+                if chunk_info_and_hash.chunk_info.source_details.file_path
+                == payload.search_item_path
             ]
-        elif search_type == "class":
-            # Filter by class name
-            chunk_info_list = [
-                chunk_info_and_hash
-                for chunk_info_and_hash in chunk_info_list
-                if payload.search_item_name in chunk_info_and_hash.chunk_info.metadata.all_classes
-            ]
-        elif search_type == "function":
-            # Filter by function name
-            chunk_info_list = [
-                chunk_info_and_hash
-                for chunk_info_and_hash in chunk_info_list
-                if payload.search_item_name in chunk_info_and_hash.chunk_info.metadata.all_functions
-            ]
+        # TODO: uncomment this kachra
+        # elif search_type == "class":
+        #     # Filter by class name
+        #     chunk_info_list = [
+        #         chunk_info_and_hash
+        #         for chunk_info_and_hash in chunk_info_list
+        #         if payload.search_item_name
+        #         in chunk_info_and_hash.chunk_info.metadata.all_classes
+        #     ]
+        # elif search_type == "function":
+        #     # Filter by function name
+        #     chunk_info_list = [
+        #         chunk_info_and_hash
+        #         for chunk_info_and_hash in chunk_info_list
+        #         if payload.search_item_name
+        #         in chunk_info_and_hash.chunk_info.metadata.all_functions
+        #     ]
         return chunk_info_list
 
     async def get_focus_chunks(
         self, payload: FocusChunksParams
     ) -> List[Dict[str, Any]]:
-        print(payload)
         repo_path = payload.repo_path
         local_repo = LocalRepoFactory.get_local_repo(repo_path)
         one_dev_client = OneDevClient()
@@ -186,10 +189,17 @@ class RelevantChunksService:
                 revised_relevant_chunks = await ChunkFilesService(
                     weaviate_client=weaviate_client
                 ).get_chunk_files_matching_exact_search_key(
-                    search_key=payload.search_item_name,
+                    search_key=payload.search_item_name
+                    if payload.search_item_type != "file"
+                    else payload.search_item_path or payload.search_item_name,
                     search_type=payload.search_item_type,
-                    file_path_to_hash_map=chunkable_files_and_hashes,
+                    file_path_to_hash_map={
+                        k: v
+                        for k, v in chunkable_files_and_hashes.items()
+                        if ((k == payload.search_item_path) or (not payload.search_item_path))
+                    },
                 )
+
                 payload.chunks = [
                     ChunkDetails(
                         start_line=chunk_file_obj.start_line,
@@ -197,6 +207,7 @@ class RelevantChunksService:
                         chunk_hash=chunk_file_obj.chunk_hash,
                         file_path=chunk_file_obj.file_path,
                         file_hash=chunk_file_obj.file_hash,
+                        meta_info=chunk_file_obj.meta_info,
                     )
                     for chunk_file_obj in revised_relevant_chunks
                 ]
@@ -327,10 +338,6 @@ class RelevantChunksService:
         updated_chunk_info_list = self._refilter_chunk_info_list(
             chunk_info_list=updated_chunk_info_list, payload=payload
         )
-
-        print([
-            chunk_info.model_dump(mode="json") for chunk_info in updated_chunk_info_list
-        ])
 
         return [
             chunk_info.model_dump(mode="json") for chunk_info in updated_chunk_info_list
