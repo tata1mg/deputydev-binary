@@ -62,7 +62,7 @@ async def search(_request: Request, **kwargs):
 @request_handler
 async def delete(_request: Request, **kwargs):
     query_params = parse_request_params(_request)
-    url_id = int(query_params.get("url_id"))
+    url_id = int(query_params.get("id"))
     await UrlService().delete_url(url_id)
     result = {"status": "deleted"}
     return HTTPResponse(body=json.dumps(result))
