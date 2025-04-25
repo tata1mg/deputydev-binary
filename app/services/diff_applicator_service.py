@@ -4,8 +4,8 @@ from deputydev_core.services.diff.dataclasses.main import (
     FileDiffApplicationRequest,
     FileDiffApplicationResponse,
 )
-from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.services.diff.diff_applicator import DiffApplicator
+from deputydev_core.utils.app_logger import AppLogger
 
 
 class DiffApplicatorService:
