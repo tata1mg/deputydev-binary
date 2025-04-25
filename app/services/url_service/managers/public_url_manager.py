@@ -12,6 +12,7 @@ from app.utils.util import initialise_weaviate_client
 from app.repository.urls_content_repository import UrlsContentRepository
 from deputydev_core.utils.config_manager import ConfigManager
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
+from datetime import datetime, timezone, timedelta
 
 if TYPE_CHECKING:
     from app.models.dtos.url_dtos.save_url_params import SaveUrlParams, Url
@@ -19,6 +20,8 @@ if TYPE_CHECKING:
 
 
 class PublicUrlManager(UrlManager):
+    BACKEND_FIELDS = ["name", "url", "last_indexed"]
+
     def __init__(self):
         self.batch_size = ConfigManager.configs["URL_CONTENT_READER"]["BATCH_SIZE"]
         self.validate_content_updation = ConfigManager.configs["URL_CONTENT_READER"]["VALIDATE_CONTENT_UPDATION"]
@@ -105,11 +108,17 @@ class PublicUrlManager(UrlManager):
             formatted_content += f"Content of URL {url}: \n {content} \n\n"
         return formatted_content
 
+    @classmethod
+    def _last_indexed(cls):
+        return datetime.now(timezone.utc)
+
     async def save_url(self, payload: "SaveUrlParams") -> dict:
-        url_data = await self._save_url_in_backend(payload)
+        last_indexed = self._last_indexed()
+        url = UrlsContentDto(name=payload.url.name, url=payload.url.url, last_indexed=last_indexed)
+        url_data = await self._save_url_in_backend(url)
         initialization_manager = ExtensionInitialisationManager()
         weaviate_client = await initialise_weaviate_client(initialization_manager)
-        url = UrlsContentDto(name=payload.url.name, url=payload.url.url, backend_id=url_data["id"])
+        url.backend_id = url_data["id"]
         await UrlsContentRepository(weaviate_client).save_url_content(url)
         asyncio.create_task(self._save_url_content(url, weaviate_client))
         return self.parse_url_model(url)
@@ -138,9 +147,11 @@ class PublicUrlManager(UrlManager):
                 updated_urls.append(existing_contents[fetched_url])
         return results
 
-    async def _save_url_in_backend(self, payload: "SaveUrlParams") -> dict:
+    async def _save_url_in_backend(self, payload: "UrlsContentDto") -> dict:
         headers = self.common_headers()
-        url = await OneDevClient().save_url(headers, payload.url.model_dump())
+        data = payload.model_dump(include=set(self.BACKEND_FIELDS))
+        data["last_indexed"] = data["last_indexed"].isoformat() if data["last_indexed"] else None
+        url = await OneDevClient().save_url(headers, data)
         return url
 
     def common_headers(self):
@@ -149,8 +160,15 @@ class PublicUrlManager(UrlManager):
             "Authorization": f"Bearer {SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)}",
         }
 
-    def parse_url_model(self, url_obj: UrlsContentDto, extra_fields=[]):
+    @classmethod
+    def parse_url_model(cls, url_obj: UrlsContentDto, extra_fields=[]):
         default_fields = ["id", "name", "url", "last_indexed"]
         data = url_obj.model_dump(include=set(default_fields + extra_fields))
         data["id"] = url_obj.backend_id
+        # data["last_indexed"] = data["last_indexed"].isoformat() if data["last_indexed"] else None
+        if data["last_indexed"]:
+            ist_offset = timedelta(hours=5, minutes=30)
+            dt_ist = data["last_indexed"].astimezone(timezone(ist_offset))
+            formatted_dt = dt_ist.strftime("%d/%m/%y %I:%M %p").lower()
+            data["last_indexed"] = formatted_dt
         return data

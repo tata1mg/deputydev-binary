@@ -36,8 +36,21 @@ class UrlsContentRepository(BaseWeaviateRepository):
         }
         return results
 
+    async def fetch_urls_objects_by_backend_id(self, backend_id: int):
+        await self.ensure_collection_connections()
+        filters = Filter.any_of(filters=[Filter.by_property("backend_id").equal(backend_id)])
+        obj = await self.async_collection.query.fetch_objects(
+            filters=filters
+        )
+        if not obj.objects:
+            return {}
+        results = {
+            item.properties["backend_id"]: UrlsContentDto(**item.properties, id=str(item.uuid))
+            for item in obj.objects
+        }
+        return results
+
     def _prepare_properties(self, payload: UrlsContentDto) -> dict:
-        payload.last_indexed = datetime.now().replace(tzinfo=timezone.utc)
         return payload.model_dump(mode="json", exclude={"id"})
 
     async def save_url_content(self, payload: UrlsContentDto):
@@ -81,12 +94,26 @@ class UrlsContentRepository(BaseWeaviateRepository):
                 filters=content_filters,
                 limit=limit,
             )
-            return results
         else:
             results = await self.async_collection.query.bm25(
                 query=keyword,
                 query_properties=["url", "name"],
-                return_properties=["url", "name", "last_indexed"],
+                return_properties=["url", "name", "last_indexed", "backend_id"],
                 limit=limit
             )
-            return results
+        formatted_urls = [UrlsContentDto(**url.properties) for url in results.objects]
+        return formatted_urls
+
+    async def delete_url(self, url_id: int) -> None:
+        await self.async_collection.data.delete_many(
+            where=Filter.by_property("backend_id").equal(url_id)
+        )
+
+    async def update_url(self, url) -> UrlsContentDto:
+        urls = await self.fetch_urls_objects_by_backend_id(url.id)
+        if urls and url.id in urls:
+            url_obj = urls.get(url.id)
+            url_obj.name = url.name
+            properties = self._prepare_properties(url_obj)
+            await self.async_collection.data.update(uuid=url_obj.id, properties=properties)
+            return url_obj

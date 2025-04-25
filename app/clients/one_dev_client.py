@@ -108,3 +108,32 @@ class OneDevClient(BaseHTTPClient):
         headers = {**headers, **get_common_headers()}
         result = await self.post(url=self._host + path, headers=headers, json=payload)
         return result
+
+    @handle_client_response
+    async def delete_url(self, headers: Dict[str, str], url_id: int):
+        path = "/end_user/v1/urls/delete_url"
+        headers = {**headers, **get_common_headers()}
+        result = await self.get(
+            url=self._host + path,
+            headers=headers,
+            params={"url_id": str(url_id)},
+        )
+        return result
+
+    @handle_client_response
+    async def list_urls(self, headers: Dict[str, str], params: dict):
+        path = "/end_user/v1/urls/saved_url/list"
+        headers = {**headers, **get_common_headers()}
+        result = await self.get(
+            url=self._host + path,
+            headers=headers,
+            params=params,
+        )
+        return result
+
+    @handle_client_response
+    async def update_url(self, headers: Dict[str, str], payload):
+        path = "/end_user/v1/urls/update_url"
+        headers = {**headers, **get_common_headers()}
+        result = await self.put(url=self._host + path, headers=headers, json=payload)
+        return result
