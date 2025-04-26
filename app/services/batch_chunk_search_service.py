@@ -79,6 +79,7 @@ class BatchSearchService:
         # get focus chunks
         new_chunks = await RelevantChunksService(repo_path=repo_path).get_focus_chunks(
             FocusChunksParams(
+                search_item_path=payload.file_path,
                 repo_path=repo_path,
                 search_item_name=payload.keyword,
                 search_item_type=payload.type,
