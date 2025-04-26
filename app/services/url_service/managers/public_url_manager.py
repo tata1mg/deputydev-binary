@@ -25,7 +25,7 @@ class PublicUrlManager(UrlManager):
         self.batch_size = ConfigManager.configs["URL_CONTENT_READER"]["BATCH_SIZE"]
         self.validate_content_updation = ConfigManager.configs["URL_CONTENT_READER"]["VALIDATE_CONTENT_UPDATION"]
         self.max_content_size = ConfigManager.configs["URL_CONTENT_READER"]["MAX_CONTENT_SIZE"]
-        self.summarize_large_content = ConfigManager["URL_CONTENT_READER"]["SUMMARIZE_LARGE_CONTENT"]
+        self.summarize_large_content = ConfigManager.configs["URL_CONTENT_READER"]["SUMMARIZE_LARGE_CONTENT"]
 
     async def _read_urls(self, urls: List[str]) -> Dict[str, UrlsContentDto]:
         """
