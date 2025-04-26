@@ -5,8 +5,8 @@ from pydantic import BaseModel, ConfigDict
 
 
 class CacheHeaders(BaseModel):
-    etag: Optional[str] = None
-    last_modified: Optional[str] = None
+    etag: Optional[str] = ""
+    last_modified: Optional[str] = ""
 
 
 class UrlsContentDto(BaseModel):

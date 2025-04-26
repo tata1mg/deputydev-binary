@@ -5,9 +5,7 @@ from urllib.parse import urlparse
 from typing import TYPE_CHECKING, Tuple
 import hashlib
 from requests.structures import CaseInsensitiveDict
-
-if TYPE_CHECKING:
-    from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
+from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto, CacheHeaders
 
 
 class HtmlScrapper:
@@ -48,8 +46,8 @@ class HtmlScrapper:
 
         raw_html, response_headers, status = await self.fetch_html(base_url, headers)
 
+        content_hash = self.string_to_hash(raw_html)
         if is_content_cached and existing_content:
-            content_hash = self.string_to_hash(raw_html)
             if self.should_use_cached_content(status, existing_content, content_hash):
                 is_cached_content_matched = True
                 return existing_content.content, is_cached_content_matched
@@ -89,6 +87,5 @@ class HtmlScrapper:
             if last_modified:
                 headers_resp["last_modified"] = last_modified
             if headers_resp:
-                existing_content.cache_headers = headers_resp
-        if not headers_resp:
-            existing_content.content_hash = content_hash
+                existing_content.cache_headers = CacheHeaders(**headers_resp)
+        existing_content.content_hash = content_hash
