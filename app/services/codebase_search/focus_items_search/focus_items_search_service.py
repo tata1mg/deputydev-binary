@@ -26,20 +26,16 @@ from app.dataclasses.codebase_search.focus_items_search.focus_items_search_datac
     SearchKeywordType,
 )
 from app.services.shared_chunks_manager import SharedChunksManager
-from app.utils.util import weaviate_connection
+from app.utils.util import initialise_weaviate_client
 
 
 class FocusSearchService:
     @classmethod
     async def initialise_weaviate_client(
-        cls, repo_path: str
+            cls, repo_path: str
     ) -> WeaviateSyncAndAsyncClients:
         initialization_manager = ExtensionInitialisationManager(repo_path=repo_path)
-        weaviate_client = await weaviate_connection()
-        if weaviate_client:
-            weaviate_client = weaviate_client
-        else:
-            weaviate_client = await initialization_manager.initialize_vector_db()
+        weaviate_client = await initialise_weaviate_client(initialization_manager)
         return weaviate_client
 
     @classmethod
@@ -78,8 +74,8 @@ class FocusSearchService:
                     rel_dir_path = os.path.relpath(abs_current_dir_path, abs_repo_path)
 
                     if (
-                        last_path_component.lower() in dir_name.lower()
-                        and rel_dir_path not in seen_dirs
+                            last_path_component.lower() in dir_name.lower()
+                            and rel_dir_path not in seen_dirs
                     ):
                         seen_dirs.add(rel_dir_path)
 
@@ -106,11 +102,11 @@ class FocusSearchService:
 
     @classmethod
     def add_chunk_file_to_focus_item_map(
-        cls,
-        focus_item_map: Dict[str, FocusItem],
-        chunk_file_dto: ChunkFileDTO,
-        score: float,
-        search_type: Optional[SearchKeywordType] = None,
+            cls,
+            focus_item_map: Dict[str, FocusItem],
+            chunk_file_dto: ChunkFileDTO,
+            score: float,
+            search_type: Optional[SearchKeywordType] = None,
     ):
 
         search_types_to_consider = (
@@ -155,9 +151,9 @@ class FocusSearchService:
 
     @classmethod
     def get_focus_items(
-        cls,
-        raw_search_result: List[Any],
-        search_type: Optional[SearchKeywordType] = None,
+            cls,
+            raw_search_result: List[Any],
+            search_type: Optional[SearchKeywordType] = None,
     ) -> List[FocusItem]:
         focus_items_map: Dict[str, FocusItem] = {}
         for chunk_file_properties in raw_search_result:
