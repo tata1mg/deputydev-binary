@@ -13,3 +13,4 @@ class ListenerEventTypes(Enum):
 class Headers:
     X_CLIENT = "X-Client"
     X_Client_Version = "X-Client-Version"
+    AUTHORIZATION = "Authorization"

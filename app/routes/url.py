@@ -21,6 +21,7 @@ async def read_url(_request: Request, **kwargs):
     return HTTPResponse(body=json.dumps(content))
 
 
+# TODO: remove index url method and reuse saved_url
 async def save_url_or_index_url(_request: Request, **kwargs):
     payload = _request.json
     payload = SaveUrlParams(**payload)

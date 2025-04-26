@@ -1,6 +1,4 @@
 import asyncio
-from deputydev_core.utils.shared_memory import SharedMemory
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
 from app.clients.one_dev_client import OneDevClient
 from app.services.url_service.managers.url_manager import UrlManager
 from typing import List, TYPE_CHECKING, Dict
@@ -13,6 +11,7 @@ from app.repository.urls_content_repository import UrlsContentRepository
 from deputydev_core.utils.config_manager import ConfigManager
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
 from datetime import datetime, timezone, timedelta
+from app.services.url_service.helpers.url_serializer import UrlSerializer
 
 if TYPE_CHECKING:
     from app.models.dtos.url_dtos.save_url_params import SaveUrlParams, Url
@@ -93,13 +92,13 @@ class PublicUrlManager(UrlManager):
             return {"content": formatted_content}
 
     async def _summarize_content(self, content, payload):
-        headers = self.common_headers()
+        headers = {}
         if payload.session_id:
             headers["X-Session-Id"] = str(payload.session_id)
         if payload.session_type:
             headers["X-Session-Type"] = payload.session_type
         payload = {"content": content}
-        summarize_content = await OneDevClient().summarize_url_content(headers, payload)
+        summarize_content = await OneDevClient().summarize_url_content(payload, headers)
         return summarize_content
 
     def _format_urls_content(self, url_contents: Dict[str, str]) -> str:
@@ -121,7 +120,7 @@ class PublicUrlManager(UrlManager):
         url.backend_id = url_data["id"]
         await UrlsContentRepository(weaviate_client).save_url_content(url)
         asyncio.create_task(self._save_url_content(url, weaviate_client))
-        return self.parse_url_model(url)
+        return UrlSerializer.parse_url_model(url)
 
     async def _save_url_content(self, url_content: UrlsContentDto, weaviate_client):
         # If user is creating a different record for already saved url with different name
@@ -148,27 +147,7 @@ class PublicUrlManager(UrlManager):
         return results
 
     async def _save_url_in_backend(self, payload: "UrlsContentDto") -> dict:
-        headers = self.common_headers()
         data = payload.model_dump(include=set(self.BACKEND_FIELDS))
         data["last_indexed"] = data["last_indexed"].isoformat() if data["last_indexed"] else None
-        url = await OneDevClient().save_url(headers, data)
+        url = await OneDevClient().save_url(data)
         return url
-
-    def common_headers(self):
-        return {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)}",
-        }
-
-    @classmethod
-    def parse_url_model(cls, url_obj: UrlsContentDto, extra_fields=[]):
-        default_fields = ["id", "name", "url", "last_indexed"]
-        data = url_obj.model_dump(include=set(default_fields + extra_fields))
-        data["id"] = url_obj.backend_id
-        # data["last_indexed"] = data["last_indexed"].isoformat() if data["last_indexed"] else None
-        if data["last_indexed"]:
-            ist_offset = timedelta(hours=5, minutes=30)
-            dt_ist = data["last_indexed"].astimezone(timezone(ist_offset))
-            formatted_dt = dt_ist.strftime("%d/%m/%y %I:%M %p").lower()
-            data["last_indexed"] = formatted_dt
-        return data

@@ -96,23 +96,23 @@ class OneDevClient(BaseHTTPClient):
         return result
 
     @handle_client_response
-    async def summarize_url_content(self, headers: Dict[str, str], payload: dict):
+    async def summarize_url_content(self, payload: dict, headers: Dict[str, str] = {}):
         path = "/end_user/v1/urls/summarize_url"
-        headers = {**headers, **get_common_headers()}
+        headers = {**headers, **get_common_headers(add_auth=True)}
         result = await self.post(url=self._host + path, headers=headers, json=payload)
         return result
 
     @handle_client_response
-    async def save_url(self, headers: Dict[str, str], payload: dict):
+    async def save_url(self, payload: dict, headers: Dict[str, str] = {}):
         path = "/end_user/v1/urls/save_url"
-        headers = {**headers, **get_common_headers()}
+        headers = {**headers, **get_common_headers(add_auth=True)}
         result = await self.post(url=self._host + path, headers=headers, json=payload)
         return result
 
     @handle_client_response
-    async def delete_url(self, headers: Dict[str, str], url_id: int):
+    async def delete_url(self, url_id: int, headers: Dict[str, str] = {}):
         path = "/end_user/v1/urls/delete_url"
-        headers = {**headers, **get_common_headers()}
+        headers = {**headers, **get_common_headers(add_auth=True)}
         result = await self.get(
             url=self._host + path,
             headers=headers,
@@ -121,9 +121,9 @@ class OneDevClient(BaseHTTPClient):
         return result
 
     @handle_client_response
-    async def list_urls(self, headers: Dict[str, str], params: dict):
+    async def list_urls(self, params: dict, headers: Dict[str, str] = {}):
         path = "/end_user/v1/urls/saved_url/list"
-        headers = {**headers, **get_common_headers()}
+        headers = {**headers, **get_common_headers(add_auth=True)}
         result = await self.get(
             url=self._host + path,
             headers=headers,
@@ -132,8 +132,8 @@ class OneDevClient(BaseHTTPClient):
         return result
 
     @handle_client_response
-    async def update_url(self, headers: Dict[str, str], payload):
+    async def update_url(self, payload, headers: Dict[str, str] = {}):
         path = "/end_user/v1/urls/update_url"
-        headers = {**headers, **get_common_headers()}
+        headers = {**headers, **get_common_headers(add_auth=True)}
         result = await self.put(url=self._host + path, headers=headers, json=payload)
         return result

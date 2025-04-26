@@ -117,3 +117,15 @@ class UrlsContentRepository(BaseWeaviateRepository):
             properties = self._prepare_properties(url_obj)
             await self.async_collection.data.update(uuid=url_obj.id, properties=properties)
             return url_obj
+
+    async def bulk_insert(self, urls: List[UrlsContentDto]) -> None:
+        await self.ensure_collection_connections()
+        with self.sync_collection.batch.dynamic() as _batch:
+            for url in urls:
+                properties = url.model_dump(mode="json", exclude={"id"})
+                properties["last_indexed"] = datetime.fromisoformat(properties["last_indexed"])
+                properties["last_indexed"] = properties["last_indexed"].replace(tzinfo=timezone.utc)
+                _batch.add_object(
+                    properties=properties,
+                    uuid=generate_uuid5(url.url),
+                )

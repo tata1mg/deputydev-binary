@@ -1,9 +1,8 @@
 from typing import Dict, List, TYPE_CHECKING
 
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
-from deputydev_core.services.repository.dataclasses.main import (
-    WeaviateSyncAndAsyncClients,
-)
+from deputydev_core.utils.shared_memory import SharedMemory
+from deputydev_core.utils.constants.enums import SharedMemoryKeys
 from deputydev_core.utils.context_vars import get_context_value
 from sanic import Sanic
 from sanic.request import Request
@@ -35,7 +34,7 @@ def filter_chunks_by_denotation(
 async def weaviate_connection():
     app = Sanic.get_app()
     if app.ctx.weaviate_client:
-        weaviate_clients: WeaviateSyncAndAsyncClients = app.ctx.weaviate_client
+        weaviate_clients: "WeaviateSyncAndAsyncClients" = app.ctx.weaviate_client
         if not weaviate_clients.async_client.is_connected():
             print(f"Async Connection was dropped, Reconnecting")
             await weaviate_clients.async_client.connect()
@@ -54,12 +53,19 @@ async def initialise_weaviate_client(initialization_manager: "InitializationMana
     return weaviate_client
 
 
-def get_common_headers() -> Dict[str, str]:
+def get_extension_auth_token():
+    return SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)
+
+
+def get_common_headers(add_auth=False) -> Dict[str, str]:
     headers = get_context_value("headers")
-    return {
+    formatted_headers = {
         Headers.X_CLIENT: headers.get(Headers.X_CLIENT),
         Headers.X_Client_Version: headers.get(Headers.X_Client_Version),
     }
+    if add_auth:
+        formatted_headers[Headers.AUTHORIZATION] = f"Bearer {get_extension_auth_token()}"
+    return formatted_headers
 
 
 def parse_request_params(req: Request):

@@ -8,7 +8,7 @@ from app.routes.initialization import initialization
 from app.routes.ping import ping
 from app.routes.search import focus_search
 from app.routes.shutdown import shutdown
-from app.routes.url_reader import url_reader
+from app.routes.url import url_reader
 
 blueprints = [
     chunks,

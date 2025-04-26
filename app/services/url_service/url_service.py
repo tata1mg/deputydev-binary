@@ -6,10 +6,9 @@ from deputydev_core.services.initialization.extension_initialisation_manager imp
     ExtensionInitialisationManager,
 )
 from app.utils.util import initialise_weaviate_client
-from deputydev_core.utils.shared_memory import SharedMemory
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from app.services.url_service.helpers.url_serializer import UrlSerializer
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
-from datetime import datetime, timedelta, timezone
+
 if TYPE_CHECKING:
     from app.models.dtos.url_dtos.url_reader_params import UrlReaderParams
     from app.models.dtos.url_dtos.save_url_params import SaveUrlParams
@@ -19,6 +18,11 @@ if TYPE_CHECKING:
 
 
 class UrlService:
+    async def get_weaviate_client(self):
+        initialization_manager = ExtensionInitialisationManager()
+        weaviate_client = await initialise_weaviate_client(initialization_manager)
+        return weaviate_client
+
     async def fetch_urls_content(self, payload: "UrlReaderParams") -> dict:
         url_manager = UrlManagerFactory.url_manager(payload.url_type)()
         content = await url_manager.fetch_urls_content(payload)
@@ -30,56 +34,52 @@ class UrlService:
 
     async def search_url(self, payload: "SearchUrlParams"):
         keyword = payload.keyword
-        initialization_manager = ExtensionInitialisationManager()
-        weaviate_client = await initialise_weaviate_client(initialization_manager)
+        weaviate_client = await self.get_weaviate_client()
         urls = await UrlsContentRepository(weaviate_client).search_urls(keyword, payload.limit)
-        formatted_urls = [self.parse_url_model(url) for url in urls]
+        formatted_urls = [UrlSerializer.parse_url_model(url) for url in urls]
         return {"urls": formatted_urls}
 
     async def delete_url(self, url_id: int):
         await self.delete_url_from_backend(url_id)
-        initialization_manager = ExtensionInitialisationManager()
-        weaviate_client = await initialise_weaviate_client(initialization_manager)
+        weaviate_client = await self.get_weaviate_client()
         await UrlsContentRepository(weaviate_client).delete_url(url_id)
 
     async def delete_url_from_backend(self, url_id: int):
-        headers = self.common_header()
-        await OneDevClient().delete_url(headers, url_id)
+        await OneDevClient().delete_url(url_id)
 
     async def list_urls(self, payload: "ListUrlParams"):
-        headers = self.common_header()
-        urls_objects = await OneDevClient().list_urls(headers, payload.model_dump())
-        return urls_objects
+        urls_objects = await OneDevClient().list_urls(payload.model_dump())
+        return urls_objects if urls_objects else []
 
     async def update_url(self, payload: "UpdateUrlParams"):
         await self.update_url_in_backend(payload)
-        initialization_manager = ExtensionInitialisationManager()
-        weaviate_client = await initialise_weaviate_client(initialization_manager)
+        weaviate_client = await self.get_weaviate_client()
         url_obj = await UrlsContentRepository(weaviate_client).update_url(payload.url)
-        parsed_url_model = self.parse_url_model(url_obj)
+        parsed_url_model = UrlSerializer.parse_url_model(url_obj)
         return parsed_url_model
 
     async def update_url_in_backend(self, payload: "UpdateUrlParams") -> dict:
-        headers = self.common_header()
-        url_dict = await OneDevClient().update_url(headers, payload.url.model_dump())
+        url_dict = await OneDevClient().update_url(payload.url.model_dump())
         return url_dict
 
-    @classmethod
-    def common_header(cls):
-        return {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)}",
-        }
+    async def refill_urls_data(self):
+        limit = 60
+        offset = 0
+        all_url_objects = []
+        weaviate_client = await self.get_weaviate_client()
+        while True:
+            urls_data = await OneDevClient().list_urls(params={"limit": limit, "offset": offset})
+            url_dicts = urls_data["urls"]
+            if not url_dicts:
+                break  # no more data
 
-    @classmethod
-    def parse_url_model(cls, url_obj: UrlsContentDto, extra_fields=[]):
-        default_fields = ["id", "name", "url", "last_indexed"]
-        data = url_obj.model_dump(include=set(default_fields + extra_fields))
-        data["id"] = url_obj.backend_id
-        # data["last_indexed"] = data["last_indexed"].isoformat() if data["last_indexed"] else None
-        if data["last_indexed"]:
-            ist_offset = timedelta(hours=5, minutes=30)
-            dt_ist = data["last_indexed"].astimezone(timezone(ist_offset))
-            formatted_dt = dt_ist.strftime("%d/%m/%y %I:%M %p").lower()
-            data["last_indexed"] = formatted_dt
-        return data
+            for url in url_dicts:
+                url["backend_id"] = url.pop("id")
+                all_url_objects.append(UrlsContentDto(**url))
+            if all_url_objects:
+                await UrlsContentRepository(weaviate_client).bulk_insert(all_url_objects)
+            meta = urls_data.get("meta", {})
+            total_count = meta.get("total_count", 0)
+            offset += limit
+            if offset >= total_count:
+                break
