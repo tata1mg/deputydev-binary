@@ -22,5 +22,5 @@ async def shutdown_server(request):
             weaviate_process.terminate()
             await weaviate_process.wait()
 
-    app.stop()
+    # app.stop()
     return response.text("Server shutting down...")
