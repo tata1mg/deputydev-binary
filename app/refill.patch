@@ -1,0 +1,45 @@
+--- app/services/url_service/url_service.py
++++ app/services/url_service/url_service.py
+@@ -65,21 +65,47 @@
+     async def refill_urls_data(self):
+         limit = 60
+         offset = 0
+-        all_url_objects = []
+         weaviate_client = await self.get_weaviate_client()
+         while True:
+-            urls_data = await OneDevClient().list_urls(params={"limit": limit, "offset": offset})
+-            url_dicts = urls_data["urls"]
+-            if not url_dicts:
+-                break  # no more data
+-
+-            for url in url_dicts:
+-                url["backend_id"] = url.pop("id")
+-                all_url_objects.append(UrlsContentDto(**url))
+-            if all_url_objects:
+-                await UrlsContentRepository(weaviate_client).bulk_insert(all_url_objects)
++            urls_data = await self._fetch_urls(limit, offset)
++            if not urls_data["urls"]:
++                break
++
++            url_objects = self._process_url_data(urls_data["urls"])
++            await self._insert_urls_data(weaviate_client, url_objects)
+ 
+             meta = urls_data.get("meta", {})
+             total_count = meta.get("total_count", 0)
+             offset += limit
+             if offset >= total_count:
+                 break
++
++    async def _fetch_urls(self, limit: int, offset: int) -> dict:
++        return await OneDevClient().list_urls(params={"limit": limit, "offset": offset})
++
++    def _process_url_data(self, url_dicts: list) -> list:
++        url_objects = []
++        for url in url_dicts:
++            url["backend_id"] = url.pop("id")
++            url_objects.append(UrlsContentDto(**url))
++        return url_objects
++
++    async def _insert_urls_data(self, weaviate_client, url_objects: list):
++        if url_objects:
++            await UrlsContentRepository(weaviate_client).bulk_insert(url_objects)
