@@ -12,7 +12,7 @@ websockets = "12.0"
 fuzzywuzzy = "0.18.0"
 bs4 = "0.0.2"
 html2text = "2025.4.15"
-deputydev-core = { git = "ssh://git@github.com/tata1mg/deputydev-core.git", rev = "pyproject_setup" }
+deputydev-core = { git = "ssh://git@github.com/tata1mg/deputydev-core.git", rev = "2.1.1" }
 
 [tool.poetry.group.dev.dependencies]
 pycrunch-engine = "==1.6.2"
