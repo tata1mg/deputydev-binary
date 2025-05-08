@@ -672,8 +672,8 @@ xxhash = "3.5.0"
 [package.source]
 type = "git"
 url = "ssh://git@github.com/tata1mg/deputydev-core.git"
-reference = "pyproject_setup"
-resolved_reference = "26e0eda0b687d62433ca04cd10a75acdeb98b67a"
+reference = "2.1.1"
+resolved_reference = "9a806a7d36c36eb97ea2979dfbd559c473179d92"
 
 [[package]]
 name = "diff-match-patch"
@@ -2872,4 +2872,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.*"
-content-hash = "7f03242c5504863ebca2e04ffa52c1cea17dc5ad06bd1b67e280711f4cf9a778"
+content-hash = "f96191e92ead2829e27d6a2bbe3cb62372311a148137ae78bccb1ea4ed4d4e0d"
