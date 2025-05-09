@@ -24,6 +24,7 @@ from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.shared_chunks_manager import SharedChunksManager
 from app.utils.constants import Headers
 from app.utils.util import weaviate_connection
+from app.services.url_service.url_service import UrlService
 
 
 class InitializationService:
@@ -35,13 +36,13 @@ class InitializationService:
 
     @classmethod
     async def update_vector_store(
-        cls, payload: UpdateVectorStoreParams, progress_callback
+            cls, payload: UpdateVectorStoreParams, progress_callback
     ) -> None:
         repo_path = payload.repo_path
         auth_token = SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
         with ProcessPoolExecutor(
-            max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
+                max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
         ) as executor:
             one_dev_client = OneDevClient()
             body = {
@@ -151,13 +152,15 @@ class InitializationService:
         app = Sanic.get_app()
         if not hasattr(app.ctx, "weaviate_client"):
             await cls.get_config(base_config=payload.get("config"))
-            weaviate_client = (
-                await ExtensionInitialisationManager().initialize_vector_db()
+            weaviate_client, is_db_cleaned = (
+                await ExtensionInitialisationManager().initialize_vector_db(send_back_is_db_cleaned=True)
             )
             app.ctx.weaviate_client = ExtentionWeaviateSyncAndAsyncClients(
                 async_client=weaviate_client.async_client,
                 sync_client=weaviate_client.sync_client,
             )
+            if is_db_cleaned:
+                asyncio.create_task(UrlService().refill_urls_data())
             asyncio.create_task(cls.maintain_weaviate_heartbeat())
 
     @classmethod
