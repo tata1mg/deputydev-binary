@@ -31,9 +31,7 @@ from app.utils.util import initialise_weaviate_client
 
 class FocusSearchService:
     @classmethod
-    async def initialise_weaviate_client(
-            cls, repo_path: str
-    ) -> WeaviateSyncAndAsyncClients:
+    async def initialise_weaviate_client(cls, repo_path: str) -> WeaviateSyncAndAsyncClients:
         initialization_manager = ExtensionInitialisationManager(repo_path=repo_path)
         weaviate_client = await initialise_weaviate_client(initialization_manager)
         return weaviate_client
@@ -59,9 +57,7 @@ class FocusSearchService:
             abs_text_path = os.path.join(abs_repo_path, keyword)
             last_path_component = os.path.basename(abs_text_path)
 
-            search_dir = (
-                os.path.dirname(abs_text_path) if last_path_component else abs_repo_path
-            )
+            search_dir = os.path.dirname(abs_text_path) if last_path_component else abs_repo_path
 
             if not os.path.exists(search_dir):
                 search_dir = abs_repo_path
@@ -73,10 +69,7 @@ class FocusSearchService:
                     abs_current_dir_path = os.path.join(root, dir_name)
                     rel_dir_path = os.path.relpath(abs_current_dir_path, abs_repo_path)
 
-                    if (
-                            last_path_component.lower() in dir_name.lower()
-                            and rel_dir_path not in seen_dirs
-                    ):
+                    if last_path_component.lower() in dir_name.lower() and rel_dir_path not in seen_dirs:
                         seen_dirs.add(rel_dir_path)
 
                         results.append(
@@ -102,13 +95,12 @@ class FocusSearchService:
 
     @classmethod
     def add_chunk_file_to_focus_item_map(
-            cls,
-            focus_item_map: Dict[str, FocusItem],
-            chunk_file_dto: ChunkFileDTO,
-            score: float,
-            search_type: Optional[SearchKeywordType] = None,
+        cls,
+        focus_item_map: Dict[str, FocusItem],
+        chunk_file_dto: ChunkFileDTO,
+        score: float,
+        search_type: Optional[SearchKeywordType] = None,
     ):
-
         search_types_to_consider = (
             [
                 SearchKeywordType.CLASS,
@@ -125,9 +117,7 @@ class FocusSearchService:
 
         for search_type in search_types_to_consider:
             property_values = (
-                getattr(
-                    chunk_file_dto, search_type_to_search_property_map[search_type], []
-                )
+                getattr(chunk_file_dto, search_type_to_search_property_map[search_type], [])
                 if search_type in [SearchKeywordType.CLASS, SearchKeywordType.FUNCTION]
                 else [os.path.basename(chunk_file_dto.file_path)]
             )
@@ -151,23 +141,17 @@ class FocusSearchService:
 
     @classmethod
     def get_focus_items(
-            cls,
-            raw_search_result: List[Any],
-            search_type: Optional[SearchKeywordType] = None,
+        cls,
+        raw_search_result: List[Any],
+        search_type: Optional[SearchKeywordType] = None,
     ) -> List[FocusItem]:
         focus_items_map: Dict[str, FocusItem] = {}
         for chunk_file_properties in raw_search_result:
-            chunk_file_dto = ChunkFileDTO(
-                **chunk_file_properties.properties, id=str(chunk_file_properties.uuid)
-            )
+            chunk_file_dto = ChunkFileDTO(**chunk_file_properties.properties, id=str(chunk_file_properties.uuid))
             score = getattr(chunk_file_properties.metadata, "score", 0.0)
-            cls.add_chunk_file_to_focus_item_map(
-                focus_items_map, chunk_file_dto, score, search_type
-            )
+            cls.add_chunk_file_to_focus_item_map(focus_items_map, chunk_file_dto, score, search_type)
 
-        sorted_focus_items = sorted(
-            focus_items_map.values(), key=lambda x: x.score, reverse=True
-        )
+        sorted_focus_items = sorted(focus_items_map.values(), key=lambda x: x.score, reverse=True)
         return sorted_focus_items
 
     @classmethod
@@ -180,62 +164,44 @@ class FocusSearchService:
         try:
             # step 1. Directory search is different, so handle it separately
             if payload.type == SearchKeywordType.DIRECTORY:
-                result = await cls.search_directories(
-                    payload.repo_path, payload.keyword
-                )
+                result = await cls.search_directories(payload.repo_path, payload.keyword)
 
             # step 2. For other types, search using Weaviate
             else:
                 # initializations
-                weaviate_client = await cls.initialise_weaviate_client(
-                    payload.repo_path
-                )
+                weaviate_client = await cls.initialise_weaviate_client(payload.repo_path)
                 chunk_files_service = ChunkFilesService(weaviate_client)
-                chunkable_files_and_hashes = (
-                    await SharedChunksManager.initialize_chunks(payload.repo_path)
-                )
+                chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(payload.repo_path)
 
                 # now, based on whether the type is defined or not, get the chunks from weaviate via specific fuctions
                 raw_search_result = []
                 # TODO: This is fucking ugly. Both the conditions internally share more than 90% of the code. Just passing the type as a parameter would have been better.
                 if payload.type:
-                    raw_search_result = (
-                        await chunk_files_service.get_keyword_type_chunks(
-                            keyword=payload.keyword,
-                            type=payload.type.value,
-                            chunkable_files_and_hashes=chunkable_files_and_hashes,
-                            limit=ConfigManager.configs["AUTOCOMPLETE_SEARCH"][
-                                "MAX_RECORDS_TO_RETURN"
-                            ],
-                        )
+                    raw_search_result = await chunk_files_service.get_keyword_type_chunks(
+                        keyword=payload.keyword,
+                        type=payload.type.value,
+                        chunkable_files_and_hashes=chunkable_files_and_hashes,
+                        limit=ConfigManager.configs["AUTOCOMPLETE_SEARCH"]["MAX_RECORDS_TO_RETURN"],
                     )
                 else:
-                    weaviate_auto_complete_adapter = WeaviateAutocompleteAdapter(
-                        weaviate_client
-                    )
-                    raw_search_result = (
-                        await weaviate_auto_complete_adapter.keyword_suggestions(
-                            request=AutoCompleteSearch(
-                                keyword=payload.keyword,
-                                limit=ConfigManager.configs["AUTOCOMPLETE_SEARCH"][
-                                    "MAX_RECORDS_TO_RETURN"
-                                ],
-                                search_paths=[
-                                    SearchPath(
-                                        file_path=key,
-                                        file_hash=chunkable_files_and_hashes[key],
-                                    )
-                                    for key in chunkable_files_and_hashes
-                                ],
-                            )
+                    weaviate_auto_complete_adapter = WeaviateAutocompleteAdapter(weaviate_client)
+                    raw_search_result = await weaviate_auto_complete_adapter.keyword_suggestions(
+                        request=AutoCompleteSearch(
+                            keyword=payload.keyword,
+                            limit=ConfigManager.configs["AUTOCOMPLETE_SEARCH"]["MAX_RECORDS_TO_RETURN"],
+                            search_paths=[
+                                SearchPath(
+                                    file_path=key,
+                                    file_hash=chunkable_files_and_hashes[key],
+                                )
+                                for key in chunkable_files_and_hashes
+                            ],
                         )
                     )
 
                 result = cls.get_focus_items(raw_search_result, payload.type)
 
-            AppLogger.log_info(
-                f"Total execution time: {time.perf_counter() - start_time:.6f} sec"
-            )
+            AppLogger.log_info(f"Total execution time: {time.perf_counter() - start_time:.6f} sec")
             return result
         except Exception as ex:
             AppLogger.log_error(f"autocomplete type search failed with exception {ex}")

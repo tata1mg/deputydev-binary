@@ -1,6 +1,5 @@
-from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
-from app.utils.constant.url_constants import UrlType
+from pydantic import BaseModel
+from typing import Optional
 
 
 class SearchUrlParams(BaseModel):

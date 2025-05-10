@@ -68,9 +68,7 @@ class SharedChunksManager:
             pass
 
         # Create new shared memory block
-        shm = shared_memory.SharedMemory(
-            create=True, size=len(data_bytes), name=cls._shm_name
-        )
+        shm = shared_memory.SharedMemory(create=True, size=len(data_bytes), name=cls._shm_name)
         shm.buf[: len(data_bytes)] = data_bytes
         shm.close()
 
@@ -84,5 +82,5 @@ class SharedChunksManager:
             return data
         except FileNotFoundError:
             return None
-        except Exception as e:
+        except Exception:
             return None

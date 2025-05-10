@@ -33,9 +33,7 @@ class BatchSearchService:
         weaviate_client = None
 
         try:
-            chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(
-                repo_path
-            )
+            chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(repo_path)
 
             initialization_manager = ExtensionInitialisationManager(repo_path=repo_path)
             weaviate_client = await initialization_manager.initialize_vector_db()
@@ -49,18 +47,12 @@ class BatchSearchService:
 
             all_chunk_hashes = cls.extract_chunk_hashes(chunk_files_results)
 
-            chunks_by_hash = await cls.fetch_chunks_by_hashes(
-                all_chunk_hashes, chunk_service
-            )
+            chunks_by_hash = await cls.fetch_chunks_by_hashes(all_chunk_hashes, chunk_service)
 
-            final_results = cls.map_chunks_to_results(
-                search_terms, chunk_files_results, chunks_by_hash
-            )
+            final_results = cls.map_chunks_to_results(search_terms, chunk_files_results, chunks_by_hash)
 
             # update final chunks in results
-            updated_results = asyncio.gather(
-                *[cls.update_chunks_list(result, repo_path) for result in final_results]
-            )
+            updated_results = asyncio.gather(*[cls.update_chunks_list(result, repo_path) for result in final_results])
             final_results = await updated_results
             return {"response": [result.model_dump() for result in final_results]}
 
@@ -70,9 +62,7 @@ class BatchSearchService:
                 await weaviate_client.async_client.close()
 
     @classmethod
-    async def update_chunks_list(
-        cls, payload: BatchSearchResponse, repo_path: str
-    ) -> BatchSearchResponse:
+    async def update_chunks_list(cls, payload: BatchSearchResponse, repo_path: str) -> BatchSearchResponse:
         if payload.type not in ["class", "function"] or not payload.chunks:
             return payload
 
@@ -105,14 +95,9 @@ class BatchSearchService:
         return payload
 
     @classmethod
-    async def search_chunk_files(
-        cls, search_terms, chunkable_files_and_hashes, chunk_files_service
-    ):
-
+    async def search_chunk_files(cls, search_terms, chunkable_files_and_hashes, chunk_files_service):
         tasks = [
-            cls.process_file_search(
-                idx, chunk_files_service, term, chunkable_files_and_hashes
-            )
+            cls.process_file_search(idx, chunk_files_service, term, chunkable_files_and_hashes)
             for idx, term in enumerate(search_terms)
         ]
         results = await asyncio.gather(*tasks)
@@ -150,9 +135,7 @@ class BatchSearchService:
             chunkable_files_and_hashes=chunkable_files_and_hashes,
             limit=5,
         )
-        sorted_chunks = sorted(
-            chunks, key=lambda x: getattr(x.metadata, "score", 0.0), reverse=True
-        )
+        sorted_chunks = sorted(chunks, key=lambda x: getattr(x.metadata, "score", 0.0), reverse=True)
 
         return idx, sorted_chunks
 
@@ -189,9 +172,7 @@ class BatchSearchService:
         if not chunk_hashes:
             return {}
 
-        chunks_with_vectors = await chunk_service.get_chunks_by_chunk_hashes(
-            list(chunk_hashes)
-        )
+        chunks_with_vectors = await chunk_service.get_chunks_by_chunk_hashes(list(chunk_hashes))
 
         return {chunk.chunk_hash: chunk for chunk, _ in chunks_with_vectors}
 
@@ -234,9 +215,7 @@ class BatchSearchService:
             # Map chunks
             chunk_results: List[ChunkInfo] = []
             for chunk_file in chunk_files:
-                chunk_file_dto = ChunkFileDTO(
-                    **chunk_file.properties, id=str(chunk_file.uuid)
-                )
+                chunk_file_dto = ChunkFileDTO(**chunk_file.properties, id=str(chunk_file.uuid))
                 # Get the corresponding chunk text
                 chunk = chunks_by_hash.get(chunk_file_dto.chunk_hash)
                 if chunk:
