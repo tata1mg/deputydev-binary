@@ -34,10 +34,11 @@ class HtmlScrapper:
     @staticmethod
     def string_to_hash(input_string: str) -> str:
         # Convert the string to bytes, then hash it
-        return hashlib.sha256(input_string.encode('utf-8')).hexdigest()
+        return hashlib.sha256(input_string.encode("utf-8")).hexdigest()
 
-    async def scrape_markdown_from_url(self, url: str, is_content_cached: bool = False,
-                                       existing_content: "UrlsContentDto" = None) -> Tuple[str, bool]:
+    async def scrape_markdown_from_url(
+        self, url: str, is_content_cached: bool = False, existing_content: "UrlsContentDto" = None
+    ) -> Tuple[str, bool]:
         parsed = urlparse(url)
         base_url = parsed._replace(fragment="").geturl()
         fragment_id = parsed.fragment
@@ -75,8 +76,9 @@ class HtmlScrapper:
             return existing_content.content_hash == content_hash
         return False
 
-    def update_cache_metadata(self, existing_content: "UrlsContentDto", response_headers: CaseInsensitiveDict,
-                              content_hash: str):
+    def update_cache_metadata(
+        self, existing_content: "UrlsContentDto", response_headers: CaseInsensitiveDict, content_hash: str
+    ):
         etag = response_headers.get("ETag")
         last_modified = response_headers.get("Last-Modified")
         cache_control = response_headers.get("Cache-Control", "").lower()

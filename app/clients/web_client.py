@@ -1,6 +1,4 @@
-
 from deputydev_core.clients.http.base_http_client import BaseHTTPClient
-
 
 
 class WebClient(BaseHTTPClient):

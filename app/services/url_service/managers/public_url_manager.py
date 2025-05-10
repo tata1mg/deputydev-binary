@@ -29,29 +29,29 @@ class PublicUrlManager(UrlManager):
 
     async def _read_urls(self, urls: List[str]) -> Dict[str, UrlsContentDto]:
         """
-            Asynchronously read and process a list of URLs, fetching their content and managing caching.
+        Asynchronously read and process a list of URLs, fetching their content and managing caching.
 
-            This method performs the following tasks:
-            1. Initializes a Weaviate client for database operations.
-            2. Fetches existing content for the given URLs from the database.
-            3. Processes URLs in batches, scraping content when necessary.
-            4. Handles content validation and updating based on the `validate_content_updation` flag.
-            5. Updates the database if content of existing urls updated.
+        This method performs the following tasks:
+        1. Initializes a Weaviate client for database operations.
+        2. Fetches existing content for the given URLs from the database.
+        3. Processes URLs in batches, scraping content when necessary.
+        4. Handles content validation and updating based on the `validate_content_updation` flag.
+        5. Updates the database if content of existing urls updated.
 
-            Args:
-                urls (List[str]): A list of URLs to process.
+        Args:
+            urls (List[str]): A list of URLs to process.
 
-            Returns:
-                Dict[str, UrlsContentDto]: A dictionary mapping URLs to their corresponding UrlsContentDto objects.
+        Returns:
+            Dict[str, UrlsContentDto]: A dictionary mapping URLs to their corresponding UrlsContentDto objects.
 
-            Notes:
-                - The method uses batching (controlled by `self.batch_size`) to process URLs efficiently.
-                - It respects the `validate_content_updation` flag to determine whether to re-scrape existing content.
-                - The method creates an asynchronous task to update the database with modified content.
+        Notes:
+            - The method uses batching (controlled by `self.batch_size`) to process URLs efficiently.
+            - It respects the `validate_content_updation` flag to determine whether to re-scrape existing content.
+            - The method creates an asynchronous task to update the database with modified content.
 
-            Raises:
-                Any exceptions raised by the underlying services (e.g., HtmlScrapper, UrlsContentRepository)
-                will be propagated.
+        Raises:
+            Any exceptions raised by the underlying services (e.g., HtmlScrapper, UrlsContentRepository)
+            will be propagated.
         """
         tasks = []
         results = {}
@@ -67,8 +67,11 @@ class PublicUrlManager(UrlManager):
                 results[url] = existing_contents[url]
                 continue
             if self.validate_content_updation and url in existing_contents and existing_contents[url].content:
-                tasks.append(HtmlScrapper().scrape_markdown_from_url(url, existing_content=existing_contents[url],
-                                                                     is_content_cached=True))
+                tasks.append(
+                    HtmlScrapper().scrape_markdown_from_url(
+                        url, existing_content=existing_contents[url], is_content_cached=True
+                    )
+                )
             else:
                 tasks.append(HtmlScrapper().scrape_markdown_from_url(url))
             current_urls.append(url)
@@ -132,8 +135,9 @@ class PublicUrlManager(UrlManager):
             await UrlsContentRepository(weaviate_client).save_url_content(content)
             print("Successfully Updated Content")
 
-    async def _gather_batch(self, tasks, urls: List[str], existing_contents: Dict[str, UrlsContentDto],
-                            updated_urls: List[UrlsContentDto]):
+    async def _gather_batch(
+        self, tasks, urls: List[str], existing_contents: Dict[str, UrlsContentDto], updated_urls: List[UrlsContentDto]
+    ):
         results = {}
         urls_data = await asyncio.gather(*tasks)
         for index, fetched_url in enumerate(urls):

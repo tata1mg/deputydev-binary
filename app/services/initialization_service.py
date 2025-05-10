@@ -35,25 +35,15 @@ class InitializationService:
             await task
 
     @classmethod
-    async def update_vector_store(
-            cls, payload: UpdateVectorStoreParams, progress_callback
-    ) -> None:
+    async def update_vector_store(cls, payload: UpdateVectorStoreParams, progress_callback) -> None:
         repo_path = payload.repo_path
         auth_token = SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
-        with ProcessPoolExecutor(
-                max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
-        ) as executor:
+        with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             one_dev_client = OneDevClient()
-            body = {
-                "enable_grace_period": ConfigManager.configs[
-                    "USE_GRACE_PERIOD_FOR_EMBEDDING"
-                ]
-            }
+            body = {"enable_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]}
             headers = {"Authorization": f"Bearer {auth_token}"}
-            token_data = await one_dev_client.verify_auth_token(
-                headers=headers, payload=body
-            )
+            token_data = await one_dev_client.verify_auth_token(headers=headers, payload=body)
             if token_data["status"] == AuthStatus.EXPIRED.value:
                 await cls.handle_expired_token(token_data)
 
@@ -63,15 +53,9 @@ class InitializationService:
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
-            local_repo = initialization_manager.get_local_repo(
-                chunkable_files=chunkable_files
-            )
-            chunkable_files_and_hashes = (
-                await local_repo.get_chunkable_files_and_commit_hashes()
-            )
-            await SharedChunksManager.update_chunks(
-                repo_path, chunkable_files_and_hashes, chunkable_files
-            )
+            local_repo = initialization_manager.get_local_repo(chunkable_files=chunkable_files)
+            chunkable_files_and_hashes = await local_repo.get_chunkable_files_and_commit_hashes()
+            await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes, chunkable_files)
             weaviate_client = await weaviate_connection()
             if weaviate_client:
                 initialization_manager.weaviate_client = weaviate_client
@@ -105,9 +89,7 @@ class InitializationService:
     async def handle_expired_token(cls, token_data):
         auth_token = token_data["encrypted_session_data"]
         SharedMemory.create(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
-        await AuthTokenService.store_token(
-            get_context_value("headers").get(Headers.X_CLIENT)
-        )
+        await AuthTokenService.store_token(get_context_value("headers").get(Headers.X_CLIENT))
         return auth_token
 
     @classmethod
@@ -127,9 +109,7 @@ class InitializationService:
                 if not is_reachable:
                     AppLogger.log_info(f"Is Weaviate reachable: {is_reachable}")
                     app = Sanic.get_app()
-                    existing_client: WeaviateSyncAndAsyncClients = (
-                        app.ctx.weaviate_client
-                    )
+                    existing_client: WeaviateSyncAndAsyncClients = app.ctx.weaviate_client
                     await existing_client.async_client.close()
                     existing_client.sync_client.close()
                     await existing_client.ensure_connected()
@@ -143,17 +123,15 @@ class InitializationService:
             async def ensure_connected(self):
                 if not await self.is_ready():
                     await cls.get_config(base_config=payload.get("config"))
-                    weaviate_client = (
-                        await ExtensionInitialisationManager().initialize_vector_db()
-                    )
+                    weaviate_client = await ExtensionInitialisationManager().initialize_vector_db()
                     self.sync_client = weaviate_client.sync_client
                     self.async_client = weaviate_client.async_client
 
         app = Sanic.get_app()
         if not hasattr(app.ctx, "weaviate_client"):
             await cls.get_config(base_config=payload.get("config"))
-            weaviate_client, is_db_cleaned = (
-                await ExtensionInitialisationManager().initialize_vector_db(send_back_is_db_cleaned=True)
+            weaviate_client, is_db_cleaned = await ExtensionInitialisationManager().initialize_vector_db(
+                send_back_is_db_cleaned=True
             )
             app.ctx.weaviate_client = ExtentionWeaviateSyncAndAsyncClients(
                 async_client=weaviate_client.async_client,

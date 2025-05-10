@@ -26,9 +26,7 @@ focus_search = Blueprint("focus_search", url_prefix="")
 @focus_search.route("/get-focus-search-results", methods=["POST"])
 async def get_focus_search_results(_request: Request):
     json_body = _request.json
-    chunks = await FocusSearchService.get_search_results(
-        payload=FocusSearchParams(**json_body)
-    )
+    chunks = await FocusSearchService.get_search_results(payload=FocusSearchParams(**json_body))
     response = {
         "data": [chunk.model_dump(mode="json") for chunk in chunks],
     }
@@ -53,9 +51,7 @@ async def get_files_in_dir(_request: Request):
 async def grep_search(_request: Request):
     json_body = _request.json
     validated_body = GrepSearchRequestParams(**json_body)
-    grep_search_results = await GrepSearchService(
-        repo_path=validated_body.repo_path
-    ).perform_grep_search(
+    grep_search_results = await GrepSearchService(repo_path=validated_body.repo_path).perform_grep_search(
         directory_path=validated_body.directory_path,
         search_terms=validated_body.search_terms,
     )

@@ -15,9 +15,7 @@ from deputydev_core.utils.shared_memory import SharedMemory
 from app.utils.constants import Headers
 
 
-def handle_client_response(
-    func: Callable[..., Awaitable[AiohttpToRequestsAdapter]]
-) -> Callable[..., Awaitable[Any]]:
+def handle_client_response(func: Callable[..., Awaitable[AiohttpToRequestsAdapter]]) -> Callable[..., Awaitable[Any]]:
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Optional[Dict[str, Any]]:
         result = await func(*args, **kwargs)
@@ -25,9 +23,7 @@ def handle_client_response(
         auth_token = response_headers.get("new_session_data")
         if auth_token:
             SharedMemory.create(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
-            await AuthTokenService.store_token(
-                get_context_value("headers").get(Headers.X_CLIENT)
-            )
+            await AuthTokenService.store_token(get_context_value("headers").get(Headers.X_CLIENT))
         result = await result.json()
 
         if "data" in result:

@@ -9,6 +9,7 @@ from app.services.url_service.url_service import UrlService
 from app.utils.request_handlers import request_handler
 from app.utils.util import parse_request_params
 from sanic.exceptions import ServerError, BadRequest
+
 url_reader = Blueprint("url_reader", url_prefix="")
 
 

@@ -25,9 +25,7 @@ def chunks_content(chunks: List[ChunkInfo]) -> List[str]:
     return [chunk.content for chunk in chunks]
 
 
-def filter_chunks_by_denotation(
-        chunks: List[ChunkInfo], denotations: List[str]
-) -> List[ChunkInfo]:
+def filter_chunks_by_denotation(chunks: List[ChunkInfo], denotations: List[str]) -> List[ChunkInfo]:
     return [chunk for chunk in chunks if chunk.denotation in denotations]
 
 

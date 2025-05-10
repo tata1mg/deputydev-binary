@@ -17,9 +17,7 @@ async def apply_unified_diff(_request: Request, **kwargs: Any):
     try:
         data = await DiffApplicatorService().apply_diff(data.diff_application_requests)
         return response.json(
-            dict(
-                diff_application_results=[resp.model_dump(mode="json") for resp in data]
-            ),
+            dict(diff_application_results=[resp.model_dump(mode="json") for resp in data]),
             status=200,
         )
     except Exception as e:

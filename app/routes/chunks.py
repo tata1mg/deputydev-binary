@@ -23,9 +23,7 @@ async def relevant_chunks(request, ws):
         data = await ws.recv()
         payload = json.loads(data)
         payload = RelevantChunksParams(**payload)
-        relevant_chunks_data = await RelevantChunksService(
-            payload.repo_path
-        ).get_relevant_chunks(payload)
+        relevant_chunks_data = await RelevantChunksService(payload.repo_path).get_relevant_chunks(payload)
         relevant_chunks_data = json.dumps(relevant_chunks_data)
         await ws.send(relevant_chunks_data)
     except Exception:
@@ -46,9 +44,7 @@ async def focus_chunks(_request: Request):
     try:
         payload = _request.json
         payload = FocusChunksParams(**payload)
-        focus_chunks = await RelevantChunksService(payload.repo_path).get_focus_chunks(
-            payload
-        )
+        focus_chunks = await RelevantChunksService(payload.repo_path).get_focus_chunks(payload)
         return HTTPResponse(body=json.dumps(focus_chunks))
     except Exception:
         print(traceback.format_exc())
@@ -76,17 +72,11 @@ async def update_vector_store(request, ws):
             )
 
         await InitializationService.update_chunks(payload, progress_callback)
-        await ws.send(
-            json.dumps(
-                {"status": "Completed", "repo_path": payload.repo_path, "progress": 100}
-            )
-        )
+        await ws.send(json.dumps({"status": "Completed", "repo_path": payload.repo_path, "progress": 100}))
 
     except Exception:
         print(traceback.format_exc())
-        await ws.send(
-            json.dumps({"status": "Failed", "message": traceback.format_exc()})
-        )
+        await ws.send(json.dumps({"status": "Failed", "message": traceback.format_exc()}))
 
 
 @chunks.route("/batch_chunks_search", methods=["POST"])

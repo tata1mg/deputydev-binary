@@ -22,9 +22,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
 
 # Function to create a file logger
 def get_file_logger(log_file, level):
-    handler = TimedRotatingFileHandler(
-        log_file, when="midnight", interval=1, backupCount=7, encoding="utf-8"
-    )
+    handler = TimedRotatingFileHandler(log_file, when="midnight", interval=1, backupCount=7, encoding="utf-8")
     formatter = CustomJsonFormatter()
     handler.setFormatter(formatter)
 

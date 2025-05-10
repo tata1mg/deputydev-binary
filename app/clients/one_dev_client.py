@@ -19,13 +19,9 @@ class OneDevClient(BaseHTTPClient):
             # The total number of simultaneous connections allowed (default is 100). (set 0 for unlimited)
             limit = ConfigManager.configs["DEPUTY_DEV"].get("LIMIT") or 0
             # The maximum number of connections allowed per host (default is 0, meaning unlimited).
-            limit_per_host = (
-                    ConfigManager.configs["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
-            )
+            limit_per_host = ConfigManager.configs["DEPUTY_DEV"].get("LIMIT_PER_HOST") or 0
             # ttl_dns_cache: Time-to-live (TTL) for DNS cache entries, in seconds (default is 10).
-            ttl_dns_cache = (
-                    ConfigManager.configs["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
-            )
+            ttl_dns_cache = ConfigManager.configs["DEPUTY_DEV"].get("TTL_DNS_CACHE") or 10
         else:
             self._host = config["DEPUTY_DEV"]["HOST"]
             timeout = config["DEPUTY_DEV"].get("TIMEOUT") or 60
@@ -40,17 +36,9 @@ class OneDevClient(BaseHTTPClient):
         )
 
     @handle_client_response
-    async def create_embedding(
-            self, payload: Dict[str, Any], headers: Dict[str, str]
-    ) -> Dict[str, Any]:
+    async def create_embedding(self, payload: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
         path = "/end_user/v1/code-gen/create-embedding"
-        payload.update(
-            {
-                "use_grace_period": ConfigManager.configs[
-                    "USE_GRACE_PERIOD_FOR_EMBEDDING"
-                ]
-            }
-        )
+        payload.update({"use_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]})
         headers = {**headers, **get_common_headers()}
         result = await self.post(url=self._host + path, json=payload, headers=headers)
         return result
@@ -75,9 +63,7 @@ class OneDevClient(BaseHTTPClient):
         return result
 
     @handle_client_response
-    async def verify_auth_token(
-            self, headers: Dict[str, str], payload: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def verify_auth_token(self, headers: Dict[str, str], payload: Dict[str, Any]) -> Dict[str, Any]:
         """
         Verify the authentication token for the user.
 

@@ -19,14 +19,8 @@ class UrlsContentRepository(BaseWeaviateRepository):
 
     async def fetch_urls_objects(self, urls: List[str]) -> Dict[str, UrlsContentDto]:
         await self.ensure_collection_connections()
-        filters = Filter.any_of(
-            filters=[
-                Filter.by_property("url").equal(url) for url in urls
-            ]
-        )
-        obj = await self.async_collection.query.fetch_objects(
-            filters=filters
-        )
+        filters = Filter.any_of(filters=[Filter.by_property("url").equal(url) for url in urls])
+        obj = await self.async_collection.query.fetch_objects(filters=filters)
         if not obj.objects:
             return {}
         results = {
@@ -39,14 +33,11 @@ class UrlsContentRepository(BaseWeaviateRepository):
     async def fetch_urls_objects_by_backend_id(self, backend_id: int):
         await self.ensure_collection_connections()
         filters = Filter.any_of(filters=[Filter.by_property("backend_id").equal(backend_id)])
-        obj = await self.async_collection.query.fetch_objects(
-            filters=filters
-        )
+        obj = await self.async_collection.query.fetch_objects(filters=filters)
         if not obj.objects:
             return {}
         results = {
-            item.properties["backend_id"]: UrlsContentDto(**item.properties, id=str(item.uuid))
-            for item in obj.objects
+            item.properties["backend_id"]: UrlsContentDto(**item.properties, id=str(item.uuid)) for item in obj.objects
         }
         return results
 
@@ -78,17 +69,12 @@ class UrlsContentRepository(BaseWeaviateRepository):
         await asyncio.gather(*update_tasks)
 
     async def delete_url_content(self, url: str):
-        await self.async_collection.data.delete_many(
-            where=Filter.by_property("url").equal(url)
-        )
+        await self.async_collection.data.delete_many(where=Filter.by_property("url").equal(url))
 
     async def search_urls(self, keyword: str, limit=5):
         if len(keyword) < 3:
             content_filters = Filter.any_of(
-                [
-                    Filter.by_property("url").like(f"*{keyword}*"),
-                    Filter.by_property("name").like(f"*{keyword}*")
-                ]
+                [Filter.by_property("url").like(f"*{keyword}*"), Filter.by_property("name").like(f"*{keyword}*")]
             )
             results = await self.async_collection.query.fetch_objects(
                 filters=content_filters,
@@ -99,15 +85,13 @@ class UrlsContentRepository(BaseWeaviateRepository):
                 query=keyword,
                 query_properties=["url", "name"],
                 return_properties=["url", "name", "last_indexed", "backend_id"],
-                limit=limit
+                limit=limit,
             )
         formatted_urls = [UrlsContentDto(**url.properties) for url in results.objects]
         return formatted_urls
 
     async def delete_url(self, url_id: int) -> None:
-        await self.async_collection.data.delete_many(
-            where=Filter.by_property("backend_id").equal(url_id)
-        )
+        await self.async_collection.data.delete_many(where=Filter.by_property("backend_id").equal(url_id))
 
     async def update_url(self, url) -> UrlsContentDto:
         urls = await self.fetch_urls_objects_by_backend_id(url.id)
