@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import html2text
 from app.clients.web_client import WebClient
 from urllib.parse import urlparse
-from typing import TYPE_CHECKING, Tuple
+from typing import Tuple
 import hashlib
 from requests.structures import CaseInsensitiveDict
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto, CacheHeaders

@@ -28,7 +28,7 @@ async def relevant_chunks(request, ws):
         ).get_relevant_chunks(payload)
         relevant_chunks_data = json.dumps(relevant_chunks_data)
         await ws.send(relevant_chunks_data)
-    except Exception as e:
+    except Exception:
         await ws.send(
             json.dumps(
                 {
@@ -50,7 +50,7 @@ async def focus_chunks(_request: Request):
             payload
         )
         return HTTPResponse(body=json.dumps(focus_chunks))
-    except Exception as e:
+    except Exception:
         print(traceback.format_exc())
         raise Exception(traceback.format_exc())
 
@@ -82,7 +82,7 @@ async def update_vector_store(request, ws):
             )
         )
 
-    except Exception as e:
+    except Exception:
         print(traceback.format_exc())
         await ws.send(
             json.dumps({"status": "Failed", "message": traceback.format_exc()})

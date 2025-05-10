@@ -1,14 +1,6 @@
-from typing import Any, Dict
 
-from deputydev_core.clients.http.adapters.http_response_adapter import (
-    AiohttpToRequestsAdapter,
-)
 from deputydev_core.clients.http.base_http_client import BaseHTTPClient
-from deputydev_core.utils.config_manager import ConfigManager
-from deputydev_core.utils.constants.enums import ConfigConsumer
 
-from app.utils.response_headers_handler import handle_client_response
-from app.utils.util import get_common_headers
 
 
 class WebClient(BaseHTTPClient):

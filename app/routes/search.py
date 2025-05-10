@@ -1,6 +1,6 @@
 import json
 
-from sanic import Blueprint, HTTPResponse, Request
+from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
 
 from app.dataclasses.codebase_search.file_path_search.file_path_search_dataclasses import (

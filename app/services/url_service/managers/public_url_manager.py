@@ -10,11 +10,11 @@ from app.utils.util import initialise_weaviate_client
 from app.repository.urls_content_repository import UrlsContentRepository
 from deputydev_core.utils.config_manager import ConfigManager
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from app.services.url_service.helpers.url_serializer import UrlSerializer
 
 if TYPE_CHECKING:
-    from app.models.dtos.url_dtos.save_url_params import SaveUrlParams, Url
+    from app.models.dtos.url_dtos.save_url_params import SaveUrlParams
     from app.models.dtos.url_dtos.url_reader_params import UrlReaderParams
 
 
