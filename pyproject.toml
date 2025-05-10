@@ -1,6 +1,6 @@
 [project]
 name = "deputydev-binary"
-version = "3.0.0"
+version = "4.0.0"
 description = "Installable binary for running Deputy Dev algorithms"
 readme = "README.md"
 authors = [{ name = "Deputy Dev", email = "deputydev@1mg.com" }]
@@ -12,6 +12,11 @@ dependencies = [
   "bs4==0.0.2",
   "html2text==2025.4.15",
   "deputydev-core @ git+ssh://git@github.com/tata1mg/deputydev-core.git@DD-441"
+]
+
+[project.optional-dependencies]
+binarization = [
+    "nuitka>=2.7.1",
 ]
 
 [dependency-groups]
