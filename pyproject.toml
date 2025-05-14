@@ -11,7 +11,7 @@ dependencies = [
   "fuzzywuzzy==0.18.0",
   "bs4==0.0.2",
   "html2text==2025.4.15",
-  "deputydev-core @ git+ssh://git@github.com/tata1mg/deputydev-core.git@3.0.0"
+  "deputydev-core @ git+ssh://git@github.com/tata1mg/deputydev-core.git@pr_review_final"
 ]
 
 [project.optional-dependencies]

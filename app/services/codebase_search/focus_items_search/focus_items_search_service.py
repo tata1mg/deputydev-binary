@@ -25,15 +25,17 @@ from app.dataclasses.codebase_search.focus_items_search.focus_items_search_datac
     FocusSearchParams,
     SearchKeywordType,
 )
-from app.services.shared_chunks_manager import SharedChunksManager
-from app.utils.util import initialise_weaviate_client
+from deputydev_core.services.shared_chunks.shared_chunks_manager import (
+    SharedChunksManager,
+)
+from deputydev_core.utils.weaviate import get_weaviate_client
 
 
 class FocusSearchService:
     @classmethod
     async def initialise_weaviate_client(cls, repo_path: str) -> WeaviateSyncAndAsyncClients:
         initialization_manager = ExtensionInitialisationManager(repo_path=repo_path)
-        weaviate_client = await initialise_weaviate_client(initialization_manager)
+        weaviate_client = await get_weaviate_client(initialization_manager)
         return weaviate_client
 
     @classmethod

@@ -3,8 +3,8 @@ from typing import List, Optional, Tuple
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.services.chunking.chunking_manager import ChunkingManger
 from deputydev_core.utils.config_manager import ConfigManager
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
-from deputydev_core.utils.shared_memory import SharedMemory
+from deputydev_core.utils.constants.enums import ContextValueKeys
+from deputydev_core.utils.context_value import ContextValue
 
 from app.clients.one_dev_client import OneDevClient
 from app.utils.util import filter_chunks_by_denotation, jsonify_chunks
@@ -31,7 +31,7 @@ class RerankerService:
             }
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)}",
+                "Authorization": f"Bearer {ContextValue.get(ContextValueKeys.EXTENSION_AUTH_TOKEN.value)}",
             }
             if self.session_id:
                 headers["X-Session-Id"] = str(self.session_id)

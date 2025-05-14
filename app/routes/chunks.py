@@ -4,9 +4,12 @@ import traceback
 from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
 
-from app.models.dtos.batch_chunk_search_params import BatchSearchParams
-from app.models.dtos.focus_chunk_params import FocusChunksParams
-from app.models.dtos.relevant_chunks_params import RelevantChunksParams
+from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import (
+    FocussedSnippetSearchParams,
+)
+from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import FocusChunksParams
+
+from deputydev_core.services.tools.relevant_chunks.dataclass.main import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
 from app.services.initialization_service import InitializationService
@@ -14,7 +17,6 @@ from app.services.relevant_chunk_service import RelevantChunksService
 from app.utils.request_handlers import request_handler
 
 chunks = Blueprint("chunks", url_prefix="")
-
 
 @chunks.websocket("/relevant_chunks")
 @request_handler
@@ -82,6 +84,6 @@ async def update_vector_store(request, ws):
 @chunks.route("/batch_chunks_search", methods=["POST"])
 async def get_autocomplete_keyword_type_chunks(_request: Request):
     payload = _request.json
-    payload = BatchSearchParams(**payload)
+    payload = FocussedSnippetSearchParams(**payload)
     chunks = await BatchSearchService.search_code(payload)
     return HTTPResponse(body=json.dumps(chunks))

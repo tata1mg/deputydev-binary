@@ -4,10 +4,10 @@ import os
 from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
 
-from app.dataclasses.codebase_read.iterative_file_reader.iterative_file_reader_dataclass import (
+from deputydev_core.services.tools.iterative_file_reader.dataclass.main import (
     IterativeFileReaderRequestParams,
 )
-from app.services.codebase_read.iterative_file_reader.iterative_file_reader import (
+from deputydev_core.services.tools.iterative_file_reader.iterative_file_reader import (
     IterativeFileReader,
 )
 

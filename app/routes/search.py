@@ -3,22 +3,23 @@ import json
 from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
 
-from app.dataclasses.codebase_search.file_path_search.file_path_search_dataclasses import (
-    FilePathSearchPayload,
-)
 from app.dataclasses.codebase_search.focus_items_search.focus_items_search_dataclasses import (
     FocusSearchParams,
 )
-from app.dataclasses.codebase_search.grep_search.grep_search_dataclass import (
-    GrepSearchRequestParams,
+from deputydev_core.services.tools.file_path_search.dataclass.main import (
+    FilePathSearchPayload,
 )
-from app.services.codebase_search.file_path_search.file_path_search_service import (
-    FilePathSearchService,
+from deputydev_core.services.tools.file_path_search.file_path_search import (
+    FilePathSearch,
+)
+
+from deputydev_core.services.tools.grep_search.grep_search import GrepSearch as CoreGrepSearchService
+from deputydev_core.services.tools.grep_search.dataclass.main import (
+    GrepSearchRequestParams,
 )
 from app.services.codebase_search.focus_items_search.focus_items_search_service import (
     FocusSearchService,
 )
-from app.services.codebase_search.grep_search.grep_search import GrepSearchService
 
 focus_search = Blueprint("focus_search", url_prefix="")
 
@@ -37,7 +38,7 @@ async def get_focus_search_results(_request: Request):
 async def get_files_in_dir(_request: Request):
     json_body = _request.json
     payload = FilePathSearchPayload(**json_body)
-    files = FilePathSearchService(repo_path=payload.repo_path).list_files(
+    files = FilePathSearch(repo_path=payload.repo_path).list_files(
         directory=payload.directory,
         search_terms=payload.search_terms,
     )
@@ -51,7 +52,7 @@ async def get_files_in_dir(_request: Request):
 async def grep_search(_request: Request):
     json_body = _request.json
     validated_body = GrepSearchRequestParams(**json_body)
-    grep_search_results = await GrepSearchService(repo_path=validated_body.repo_path).perform_grep_search(
+    grep_search_results = await CoreGrepSearchService(repo_path=validated_body.repo_path).perform_grep_search(
         directory_path=validated_body.directory_path,
         search_terms=validated_body.search_terms,
     )
