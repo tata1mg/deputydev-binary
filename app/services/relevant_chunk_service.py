@@ -14,6 +14,7 @@ from deputydev_core.services.tools.relevant_chunks.dataclass.main import Relevan
 from deputydev_core.utils.constants.enums import ContextValueKeys
 from deputydev_core.services.tools.relevant_chunks.relevant_chunk import RelevantChunks as CoreRelevantChunksService
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import FocusChunksParams
+from deputydev_core.utils.weaviate import weaviate_connection
 
 
 class RelevantChunksService:
@@ -27,12 +28,14 @@ class RelevantChunksService:
             auth_token_key=ContextValueKeys.EXTENSION_AUTH_TOKEN.value,
             one_dev_client=one_dev_client,
         )
+        weaviate_client = await weaviate_connection()
         with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             initialization_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
                 auth_token_key=ContextValueKeys.EXTENSION_AUTH_TOKEN.value,
                 process_executor=executor,
                 one_dev_client=one_dev_client,
+                weaviate_client=weaviate_client
             )
             relevant_chunks = await CoreRelevantChunksService(
                 repo_path
