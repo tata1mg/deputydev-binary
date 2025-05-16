@@ -231,7 +231,7 @@ wheels = [
 
 [[package]]
 name = "deputydev-binary"
-version = "4.0.0"
+version = "5.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "bs4" },
@@ -255,7 +255,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bs4", specifier = "==0.0.2" },
-    { name = "deputydev-core", git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=pr_review_final" },
+    { name = "deputydev-core", git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=4.0.0" },
     { name = "fuzzywuzzy", specifier = "==0.18.0" },
     { name = "html2text", specifier = "==2025.4.15" },
     { name = "nuitka", marker = "extra == 'binarization'", specifier = ">=2.7.1" },
@@ -269,8 +269,8 @@ dev = [{ name = "ruff", specifier = ">=0.11.9" }]
 
 [[package]]
 name = "deputydev-core"
-version = "3.0.4"
-source = { git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=pr_review_final#283951ff39917b59a11a8452a66571c9e54995c3" }
+version = "4.0.0"
+source = { git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=4.0.0#8da400bf6b0ed370ac80ef1da02290f35c8abb29" }
 dependencies = [
     { name = "aiohttp" },
     { name = "diff-match-patch" },
