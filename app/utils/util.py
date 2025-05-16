@@ -1,20 +1,11 @@
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List
 
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
-from deputydev_core.utils.shared_memory import SharedMemory
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
+from deputydev_core.utils.constants.enums import ContextValueKeys
+from deputydev_core.utils.context_value import ContextValue
 from deputydev_core.utils.context_vars import get_context_value
-from sanic import Sanic
 from sanic.request import Request
 from app.utils.constants import Headers
-
-if TYPE_CHECKING:
-    from deputydev_core.services.repository.dataclasses.main import (
-        WeaviateSyncAndAsyncClients,
-    )
-    from deputydev_core.services.initialization.initialization_service import (
-        InitializationManager,
-    )
 
 
 def jsonify_chunks(chunks: List[ChunkInfo]) -> List[Dict[str, dict]]:
@@ -29,30 +20,8 @@ def filter_chunks_by_denotation(chunks: List[ChunkInfo], denotations: List[str])
     return [chunk for chunk in chunks if chunk.denotation in denotations]
 
 
-async def weaviate_connection():
-    app = Sanic.get_app()
-    if app.ctx.weaviate_client:
-        weaviate_clients: "WeaviateSyncAndAsyncClients" = app.ctx.weaviate_client
-        if not weaviate_clients.async_client.is_connected():
-            print("Async Connection was dropped, Reconnecting")
-            await weaviate_clients.async_client.connect()
-        if not weaviate_clients.sync_client.is_connected():
-            print("Sync Connection was dropped, Reconnecting")
-            weaviate_clients.sync_client.connect()
-        return weaviate_clients
-
-
-async def initialise_weaviate_client(initialization_manager: "InitializationManager") -> "WeaviateSyncAndAsyncClients":
-    weaviate_client = await weaviate_connection()
-    if weaviate_client:
-        weaviate_client = weaviate_client
-    else:
-        weaviate_client = await initialization_manager.initialize_vector_db()
-    return weaviate_client
-
-
 def get_extension_auth_token():
-    return SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)
+    return ContextValue.get(ContextValueKeys.EXTENSION_AUTH_TOKEN.value)
 
 
 def get_common_headers(add_auth=False) -> Dict[str, str]:

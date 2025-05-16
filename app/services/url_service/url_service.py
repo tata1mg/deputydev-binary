@@ -5,7 +5,7 @@ from app.repository.urls_content_repository import UrlsContentRepository
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
 )
-from app.utils.util import initialise_weaviate_client
+from deputydev_core.utils.weaviate import get_weaviate_client
 from app.services.url_service.helpers.url_serializer import UrlSerializer
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class UrlService:
     async def get_weaviate_client(self):
         initialization_manager = ExtensionInitialisationManager()
-        weaviate_client = await initialise_weaviate_client(initialization_manager)
+        weaviate_client = await get_weaviate_client(initialization_manager)
         return weaviate_client
 
     async def fetch_urls_content(self, payload: "UrlReaderParams") -> dict:
