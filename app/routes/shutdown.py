@@ -32,9 +32,12 @@ async def stop_weaviate_heartbeat(app):
             pass
 
 async def stop_weaviate_process():
-    proc = await asyncio.create_subprocess_exec(
-        "podman", "stop", "-t", "30", "weaviate",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
-    await proc.communicate()
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "docker", "stop", "-t", "30", "weaviate",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        await proc.communicate()
+    except Exception:
+        pass
