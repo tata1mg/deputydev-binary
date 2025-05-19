@@ -8,6 +8,14 @@ shutdown = Blueprint("shutdown", url_prefix="")
 async def shutdown_server(request):
     app = Sanic.get_app()
 
+    await stop_weaviate_heartbeat(app)
+    await close_weaviate_client(app)
+    await stop_weaviate_process()
+
+    app.stop()
+    return response.text("Server shutting down...")
+
+async def close_weaviate_client(app):
     # close the weaviate client if it exists
     if hasattr(app.ctx, "weaviate_client"):
         weaviate_client = app.ctx.weaviate_client
@@ -15,12 +23,18 @@ async def shutdown_server(request):
             await weaviate_client.async_client.close()
             weaviate_client.sync_client.close()
 
-    # kill the weaviate process if it exists
-    if hasattr(app.ctx, "weaviate_process"):
-        weaviate_process: asyncio.subprocess.Process = app.ctx.weaviate_process
-        if weaviate_process:
-            weaviate_process.terminate()
-            await weaviate_process.wait()
+async def stop_weaviate_heartbeat(app):
+    if hasattr(app.ctx, "weaviate_heartbeat_task"):
+        app.ctx.weaviate_heartbeat_task.cancel()
+        try:
+            await app.ctx.weaviate_heartbeat_task
+        except asyncio.CancelledError:
+            pass
 
-    # app.stop()
-    return response.text("Server shutting down...")
+async def stop_weaviate_process():
+    proc = await asyncio.create_subprocess_exec(
+        "podman", "stop", "-t", "30", "weaviate",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    await proc.communicate()

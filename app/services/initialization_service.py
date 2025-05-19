@@ -134,6 +134,7 @@ class InitializationService:
                     )
                     self.sync_client = weaviate_client.sync_client
                     self.async_client = weaviate_client.async_client
+
                     if new_weaviate_process: # set only in case of windows
                         app.ctx.weaviate_process = new_weaviate_process
 
@@ -146,11 +147,12 @@ class InitializationService:
                 async_client=weaviate_client.async_client,
                 sync_client=weaviate_client.sync_client,
             )
+
             if new_weaviate_process: # set only in case of windows
                 app.ctx.weaviate_process = new_weaviate_process
             if schema_cleaned:
                 asyncio.create_task(UrlService().refill_urls_data())
-            asyncio.create_task(cls.maintain_weaviate_heartbeat())
+            app.ctx.weaviate_heartbeat_task = asyncio.create_task(cls.maintain_weaviate_heartbeat())
 
     @classmethod
     async def get_config(cls, base_config: Dict = {}) -> None:
