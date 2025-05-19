@@ -8,7 +8,6 @@ shutdown = Blueprint("shutdown", url_prefix="")
 async def shutdown_server(request):
     app = Sanic.get_app()
 
-    await stop_weaviate_heartbeat(app)
     await close_weaviate_client(app)
     await stop_weaviate_process()
 
@@ -22,14 +21,6 @@ async def close_weaviate_client(app):
         if weaviate_client:
             await weaviate_client.async_client.close()
             weaviate_client.sync_client.close()
-
-async def stop_weaviate_heartbeat(app):
-    if hasattr(app.ctx, "weaviate_heartbeat_task"):
-        app.ctx.weaviate_heartbeat_task.cancel()
-        try:
-            await app.ctx.weaviate_heartbeat_task
-        except asyncio.CancelledError:
-            pass
 
 async def stop_weaviate_process():
     try:
