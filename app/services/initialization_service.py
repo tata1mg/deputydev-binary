@@ -13,8 +13,11 @@ from deputydev_core.services.initialization.extension_initialisation_manager imp
 from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.auth import AuthStatus
-from deputydev_core.utils.context_vars import get_context_value
 from deputydev_core.utils.custom_progress_bar import CustomProgressBar
+from deputydev_core.utils.context_vars import get_context_value
+from deputydev_core.utils.constants.enums import ContextValueKeys
+from deputydev_core.utils.context_value import ContextValue
+from deputydev_core.utils.weaviate import weaviate_connection
 from sanic import Sanic
 
 from app.clients.one_dev_client import OneDevClient
@@ -23,10 +26,7 @@ from deputydev_core.services.shared_chunks.shared_chunks_manager import (
     SharedChunksManager,
 )
 from app.utils.constants import Headers
-from deputydev_core.utils.weaviate import weaviate_connection
 from app.services.url_service.url_service import UrlService
-from deputydev_core.utils.constants.enums import ContextValueKeys
-from deputydev_core.utils.context_value import ContextValue
 
 
 class InitializationService:
@@ -91,7 +91,9 @@ class InitializationService:
     async def handle_expired_token(cls, token_data):
         auth_token = token_data["encrypted_session_data"]
         ContextValue.set(ContextValueKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
-        await AuthTokenService.store_token(get_context_value("headers").get(Headers.X_CLIENT))
+        await AuthTokenService.store_token(
+            get_context_value("headers").get(Headers.X_CLIENT)
+        )
         return auth_token
 
     @classmethod
@@ -121,27 +123,36 @@ class InitializationService:
 
     @classmethod
     async def initialization(cls, payload):
+        app = Sanic.get_app()
+
         class ExtentionWeaviateSyncAndAsyncClients(WeaviateSyncAndAsyncClients):
             async def ensure_connected(self):
                 if not await self.is_ready():
                     await cls.get_config(base_config=payload.get("config"))
-                    weaviate_client = await ExtensionInitialisationManager().initialize_vector_db()
+                    weaviate_client, new_weaviate_process, _schema_cleaned = (
+                        await ExtensionInitialisationManager().initialize_vector_db()
+                    )
                     self.sync_client = weaviate_client.sync_client
                     self.async_client = weaviate_client.async_client
 
-        app = Sanic.get_app()
+                    if new_weaviate_process: # set only in case of windows
+                        app.ctx.weaviate_process = new_weaviate_process
+
         if not hasattr(app.ctx, "weaviate_client"):
             await cls.get_config(base_config=payload.get("config"))
-            weaviate_client, is_db_cleaned = await ExtensionInitialisationManager().initialize_vector_db(
-                send_back_is_db_cleaned=True
+            weaviate_client, new_weaviate_process, schema_cleaned = (
+                await ExtensionInitialisationManager().initialize_vector_db()
             )
             app.ctx.weaviate_client = ExtentionWeaviateSyncAndAsyncClients(
                 async_client=weaviate_client.async_client,
                 sync_client=weaviate_client.sync_client,
             )
-            if is_db_cleaned:
+
+            if new_weaviate_process: # set only in case of windows
+                app.ctx.weaviate_process = new_weaviate_process
+            if schema_cleaned:
                 asyncio.create_task(UrlService().refill_urls_data())
-            asyncio.create_task(cls.maintain_weaviate_heartbeat())
+            app.ctx.weaviate_heartbeat_task = asyncio.create_task(cls.maintain_weaviate_heartbeat())
 
     @classmethod
     async def get_config(cls, base_config: Dict = {}) -> None:

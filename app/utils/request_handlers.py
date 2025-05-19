@@ -12,9 +12,7 @@ def set_auth_token(headers):
     authorization_header = headers.get("Authorization")
     if authorization_header:
         auth_token = authorization_header.split(" ")[1]
-
-        ContextValue.set(ContextValueKeys.EXTENSION_AUTH_TOKEN.value,auth_token)
-
+        ContextValue.set(ContextValueKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
 
 def request_handler(func):
     """Decorator to store request headers in a context variable."""
