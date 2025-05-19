@@ -16,11 +16,14 @@ url_reader = Blueprint("url_reader", url_prefix="")
 @url_reader.route("/read_urls", methods=["POST"])
 @request_handler
 async def read_url(_request: Request, **kwargs):
+    payload = _request.json
+    if not payload:
+        raise BadRequest("Request payload is missing or invalid.")
     try:
-        payload = _request.json
-        if not payload:
-            raise BadRequest("Request payload is missing or invalid.")
         payload = UrlReaderParams(**payload)
+    except Exception:
+        raise BadRequest("INVALID_PARAMS")
+    try:
         content = await UrlService().fetch_urls_content(payload)
         return HTTPResponse(body=json.dumps(content))
     except Exception as e:

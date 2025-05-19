@@ -231,7 +231,7 @@ wheels = [
 
 [[package]]
 name = "deputydev-binary"
-version = "4.0.0"
+version = "5.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "bs4" },
@@ -255,7 +255,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bs4", specifier = "==0.0.2" },
-    { name = "deputydev-core", directory = "../deputydev-core" },
+    { name = "deputydev-core", git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=4.0.0" },
     { name = "fuzzywuzzy", specifier = "==0.18.0" },
     { name = "html2text", specifier = "==2025.4.15" },
     { name = "nuitka", marker = "extra == 'binarization'", specifier = ">=2.7.1" },
@@ -269,8 +269,8 @@ dev = [{ name = "ruff", specifier = ">=0.11.9" }]
 
 [[package]]
 name = "deputydev-core"
-version = "3.0.4"
-source = { directory = "../deputydev-core" }
+version = "4.0.0"
+source = { git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=4.0.0#8da400bf6b0ed370ac80ef1da02290f35c8abb29" }
 dependencies = [
     { name = "aiohttp" },
     { name = "diff-match-patch" },
@@ -287,27 +287,6 @@ dependencies = [
     { name = "weaviate-client" },
     { name = "xxhash" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiohttp", specifier = ">=3.11.12" },
-    { name = "diff-match-patch", specifier = "==20241021" },
-    { name = "gitpython", specifier = "==3.1.27" },
-    { name = "giturlparse", specifier = "==0.12.0" },
-    { name = "numpy", specifier = "==1.26.2" },
-    { name = "prompt-toolkit", specifier = "==3.0.48" },
-    { name = "pydantic", specifier = "==2.10.3" },
-    { name = "pyyaml", specifier = "==6.0.2" },
-    { name = "tiktoken", specifier = "==0.7.0" },
-    { name = "tree-sitter", specifier = "==0.21.0" },
-    { name = "tree-sitter-javascript", specifier = "==0.21.0" },
-    { name = "tree-sitter-languages", specifier = "==1.10.2" },
-    { name = "weaviate-client", specifier = "==4.10.3" },
-    { name = "xxhash", specifier = "==3.5.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.11.9" }]
 
 [[package]]
 name = "diff-match-patch"

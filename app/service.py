@@ -22,5 +22,5 @@ for listener in listeners:
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     os.environ["SSL_CERT_FILE"] = f"{certifi.where()}"
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8005  # Default: 8001
-    app.run(host="0.0.0.0", port=8005, debug=False, legacy=True)
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8001  # Default: 8001
+    app.run(host="0.0.0.0", port=port, debug=False, legacy=True)

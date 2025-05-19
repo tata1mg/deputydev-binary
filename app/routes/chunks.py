@@ -1,8 +1,10 @@
 import json
 import traceback
 
+from app.utils.error_handler import error_handler
 from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
+from sanic.exceptions import BadRequest, ServerError
 
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import (
     FocussedSnippetSearchParams,
@@ -28,12 +30,14 @@ async def relevant_chunks(request, ws):
         relevant_chunks_data = await RelevantChunksService(payload.repo_path).get_relevant_chunks(payload)
         relevant_chunks_data = json.dumps(relevant_chunks_data)
         await ws.send(relevant_chunks_data)
-    except Exception:
+    except Exception as e:
         await ws.send(
             json.dumps(
                 {
-                    "error": "can not find relevant chunks",
-                    "message": str(traceback.format_exc()),
+                    "error_code": 500,
+                    "error_type": "SERVER_ERROR",
+                    "error_message": f"Can not find relevant chunks due to: {str(e)}",
+                    "traceback": str(traceback.format_exc()),
                 }
             )
         )
@@ -82,8 +86,18 @@ async def update_vector_store(request, ws):
 
 
 @chunks.route("/batch_chunks_search", methods=["POST"])
+@error_handler
 async def get_autocomplete_keyword_type_chunks(_request: Request):
     payload = _request.json
-    payload = FocussedSnippetSearchParams(**payload)
-    chunks = await BatchSearchService.search_code(payload)
-    return HTTPResponse(body=json.dumps(chunks))
+    if not payload:
+        raise BadRequest("Request payload is missing or invalid.")
+    try:
+        payload = FocussedSnippetSearchParams(**payload)
+    except Exception:
+        raise BadRequest("INVALID_PARAMS")
+    try:
+        chunks = await BatchSearchService.search_code(payload)
+        return HTTPResponse(body=json.dumps(chunks))
+    except Exception as e:
+        raise ServerError(e)
+
