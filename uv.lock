@@ -255,7 +255,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bs4", specifier = "==0.0.2" },
-    { name = "deputydev-core", git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=4.1.0" },
+    { name = "deputydev-core", git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=4.1.1" },
     { name = "fuzzywuzzy", specifier = "==0.18.0" },
     { name = "html2text", specifier = "==2025.4.15" },
     { name = "nuitka", marker = "extra == 'binarization'", specifier = ">=2.7.1" },
@@ -269,8 +269,8 @@ dev = [{ name = "ruff", specifier = ">=0.11.9" }]
 
 [[package]]
 name = "deputydev-core"
-version = "4.1.0"
-source = { git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=4.1.0#059322c7bdcb1c39680dde5931b2e3f040f21094" }
+version = "4.1.1"
+source = { git = "ssh://git@github.com/tata1mg/deputydev-core.git?rev=4.1.1#9a139b6747b49d6bc5f9a4c4bcde3935659740d8" }
 dependencies = [
     { name = "aiohttp" },
     { name = "diff-match-patch" },
