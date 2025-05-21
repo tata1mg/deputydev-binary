@@ -6,7 +6,7 @@ from app.services.url_service.helpers.html_scrapper import HtmlScrapper
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
 )
-from app.utils.util import initialise_weaviate_client
+from deputydev_core.utils.weaviate import get_weaviate_client
 from app.repository.urls_content_repository import UrlsContentRepository
 from deputydev_core.utils.config_manager import ConfigManager
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
@@ -58,7 +58,7 @@ class PublicUrlManager(UrlManager):
         current_urls = []
         updated_objects: List[UrlsContentDto] = []
         initialization_manager = ExtensionInitialisationManager()
-        weaviate_client = await initialise_weaviate_client(initialization_manager)
+        weaviate_client = await get_weaviate_client(initialization_manager)
         existing_contents = await UrlsContentRepository(weaviate_client).fetch_urls_objects(urls)
 
         for url in urls:
@@ -120,7 +120,7 @@ class PublicUrlManager(UrlManager):
         url = UrlsContentDto(name=payload.url.name, url=payload.url.url, last_indexed=last_indexed)
         url_data = await self._save_url_in_backend(url)
         initialization_manager = ExtensionInitialisationManager()
-        weaviate_client = await initialise_weaviate_client(initialization_manager)
+        weaviate_client = await get_weaviate_client(initialization_manager)
         url.backend_id = url_data["id"]
         await UrlsContentRepository(weaviate_client).save_url_content(url)
         asyncio.create_task(self._save_url_content(url, weaviate_client))

@@ -13,17 +13,19 @@ from deputydev_core.services.initialization.extension_initialisation_manager imp
 from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.auth import AuthStatus
-from deputydev_core.utils.constants.enums import SharedMemoryKeys
-from deputydev_core.utils.context_vars import get_context_value
 from deputydev_core.utils.custom_progress_bar import CustomProgressBar
-from deputydev_core.utils.shared_memory import SharedMemory
+from deputydev_core.utils.context_vars import get_context_value
+from deputydev_core.utils.constants.enums import ContextValueKeys
+from deputydev_core.utils.context_value import ContextValue
+from deputydev_core.utils.weaviate import weaviate_connection
 from sanic import Sanic
 
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from app.services.shared_chunks_manager import SharedChunksManager
+from deputydev_core.services.shared_chunks.shared_chunks_manager import (
+    SharedChunksManager,
+)
 from app.utils.constants import Headers
-from app.utils.util import weaviate_connection
 from app.services.url_service.url_service import UrlService
 
 
@@ -37,7 +39,7 @@ class InitializationService:
     @classmethod
     async def update_vector_store(cls, payload: UpdateVectorStoreParams, progress_callback) -> None:
         repo_path = payload.repo_path
-        auth_token = SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)
+        auth_token = ContextValue.get(ContextValueKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
         with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             one_dev_client = OneDevClient()
@@ -49,7 +51,7 @@ class InitializationService:
 
             initialization_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
-                auth_token_key=SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value,
+                auth_token_key=ContextValueKeys.EXTENSION_AUTH_TOKEN.value,
                 process_executor=executor,
                 one_dev_client=one_dev_client,
             )
@@ -88,8 +90,10 @@ class InitializationService:
     @classmethod
     async def handle_expired_token(cls, token_data):
         auth_token = token_data["encrypted_session_data"]
-        SharedMemory.create(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
-        await AuthTokenService.store_token(get_context_value("headers").get(Headers.X_CLIENT))
+        ContextValue.set(ContextValueKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
+        await AuthTokenService.store_token(
+            get_context_value("headers").get(Headers.X_CLIENT)
+        )
         return auth_token
 
     @classmethod
@@ -119,25 +123,34 @@ class InitializationService:
 
     @classmethod
     async def initialization(cls, payload):
+        app = Sanic.get_app()
+
         class ExtentionWeaviateSyncAndAsyncClients(WeaviateSyncAndAsyncClients):
             async def ensure_connected(self):
                 if not await self.is_ready():
                     await cls.get_config(base_config=payload.get("config"))
-                    weaviate_client = await ExtensionInitialisationManager().initialize_vector_db()
+                    weaviate_client, new_weaviate_process, _schema_cleaned = (
+                        await ExtensionInitialisationManager().initialize_vector_db()
+                    )
                     self.sync_client = weaviate_client.sync_client
                     self.async_client = weaviate_client.async_client
 
-        app = Sanic.get_app()
+                    if new_weaviate_process: # set only in case of windows
+                        app.ctx.weaviate_process = new_weaviate_process
+
         if not hasattr(app.ctx, "weaviate_client"):
             await cls.get_config(base_config=payload.get("config"))
-            weaviate_client, is_db_cleaned = await ExtensionInitialisationManager().initialize_vector_db(
-                send_back_is_db_cleaned=True
+            weaviate_client, new_weaviate_process, schema_cleaned = (
+                await ExtensionInitialisationManager().initialize_vector_db()
             )
             app.ctx.weaviate_client = ExtentionWeaviateSyncAndAsyncClients(
                 async_client=weaviate_client.async_client,
                 sync_client=weaviate_client.sync_client,
             )
-            if is_db_cleaned:
+
+            if new_weaviate_process: # set only in case of windows
+                app.ctx.weaviate_process = new_weaviate_process
+            if schema_cleaned:
                 asyncio.create_task(UrlService().refill_urls_data())
             asyncio.create_task(cls.maintain_weaviate_heartbeat())
 
@@ -152,13 +165,12 @@ class InitializationService:
                 configs: Optional[Dict[str, str]] = await one_dev_client.get_configs(
                     headers={
                         "Content-Type": "application/json",
-                        "Authorization": f"Bearer {SharedMemory.read(SharedMemoryKeys.EXTENSION_AUTH_TOKEN.value)}",
+                        "Authorization": f"Bearer {ContextValue.get(ContextValueKeys.EXTENSION_AUTH_TOKEN.value)}",
                     }
                 )
                 if configs is None:
                     raise Exception("No configs fetched")
                 ConfigManager.set(configs)
-                # SharedMemory.create(SharedMemoryKeys.BINARY_CONFIG.value, configs)
             except Exception as error:
                 AppLogger.log_error(f"Failed to fetch configs: {error}")
                 await cls.close_session_and_exit(one_dev_client)
