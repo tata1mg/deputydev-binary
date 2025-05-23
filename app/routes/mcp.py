@@ -3,7 +3,7 @@ from sanic import Blueprint, Request, HTTPResponse
 from deputydev_core.services.mcp.mcp_service import McpService
 from deputydev_core.services.mcp.dataclass.main import ToolInvokeRequest
 from sanic.response import json
-
+from sanic.exceptions import BadRequest
 mcp = Blueprint("mcp", url_prefix="mcp")
 mcp_service = McpService()
 
@@ -11,7 +11,10 @@ mcp_service = McpService()
 @mcp.route("/servers/sync", methods=["POST"])
 async def server_sync(_request: Request):
     json_body = _request.json
-    config_path = json_body["config_path"]
+    config_path = json_body and json_body.get("config_path")
+    if not config_path:
+        raise BadRequest("Missing required field: config_path")
+
     response = await mcp_service.sync_mcp_servers(config_path)
     return json(response.model_dump())
 
