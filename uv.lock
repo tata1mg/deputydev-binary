@@ -277,7 +277,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bs4", specifier = "==0.0.2" },
-    { name = "deputydev-core", git = "ssh://git@github.com/DeputyDev-1mg/deputydev-core.git?rev=mcp-core" },
+    { name = "deputydev-core", git = "ssh://git@github.com/DeputyDev-1mg/deputydev-core.git?rev=4.3.1" },
     { name = "fuzzywuzzy", specifier = "==0.18.0" },
     { name = "html2text", specifier = "==2025.4.15" },
     { name = "nuitka", marker = "extra == 'binarization'", specifier = ">=2.7.1" },
@@ -291,8 +291,8 @@ dev = [{ name = "ruff", specifier = ">=0.11.9" }]
 
 [[package]]
 name = "deputydev-core"
-version = "4.1.10"
-source = { git = "ssh://git@github.com/DeputyDev-1mg/deputydev-core.git?rev=mcp-core#218e21901152401c4049aa2542c9f80a0447f148" }
+version = "4.3.1"
+source = { git = "ssh://git@github.com/DeputyDev-1mg/deputydev-core.git?rev=4.3.1#8aaab059d94f01eab9a83814b6c13cec86164741" }
 dependencies = [
     { name = "aiohttp" },
     { name = "diff-match-patch" },

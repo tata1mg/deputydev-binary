@@ -91,9 +91,7 @@ class InitializationService:
     async def handle_expired_token(cls, token_data):
         auth_token = token_data["encrypted_session_data"]
         ContextValue.set(ContextValueKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
-        await AuthTokenService.store_token(
-            get_context_value("headers").get(Headers.X_CLIENT)
-        )
+        await AuthTokenService.store_token(get_context_value("headers").get(Headers.X_CLIENT))
         return auth_token
 
     @classmethod
@@ -129,26 +127,30 @@ class InitializationService:
             async def ensure_connected(self):
                 if not await self.is_ready():
                     await cls.get_config(base_config=payload.get("config"))
-                    weaviate_client, new_weaviate_process, _schema_cleaned = (
-                        await ExtensionInitialisationManager().initialize_vector_db()
-                    )
+                    (
+                        weaviate_client,
+                        new_weaviate_process,
+                        _schema_cleaned,
+                    ) = await ExtensionInitialisationManager().initialize_vector_db()
                     self.sync_client = weaviate_client.sync_client
                     self.async_client = weaviate_client.async_client
 
-                    if new_weaviate_process: # set only in case of windows
+                    if new_weaviate_process:  # set only in case of windows
                         app.ctx.weaviate_process = new_weaviate_process
 
         if not hasattr(app.ctx, "weaviate_client"):
             await cls.get_config(base_config=payload.get("config"))
-            weaviate_client, new_weaviate_process, schema_cleaned = (
-                await ExtensionInitialisationManager().initialize_vector_db()
-            )
+            (
+                weaviate_client,
+                new_weaviate_process,
+                schema_cleaned,
+            ) = await ExtensionInitialisationManager().initialize_vector_db()
             app.ctx.weaviate_client = ExtentionWeaviateSyncAndAsyncClients(
                 async_client=weaviate_client.async_client,
                 sync_client=weaviate_client.sync_client,
             )
 
-            if new_weaviate_process: # set only in case of windows
+            if new_weaviate_process:  # set only in case of windows
                 app.ctx.weaviate_process = new_weaviate_process
             if schema_cleaned:
                 asyncio.create_task(UrlService().refill_urls_data())

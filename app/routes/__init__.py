@@ -11,8 +11,17 @@ from app.routes.search import focus_search
 from app.routes.shutdown import shutdown
 from app.routes.url import url_reader
 
-blueprints = [chunks, auth_token, diff_applicator, initialization, focus_search, shutdown, codebase_read,
-              url_reader, mcp]
+blueprints = [
+    chunks,
+    auth_token,
+    diff_applicator,
+    initialization,
+    focus_search,
+    shutdown,
+    codebase_read,
+    url_reader,
+    mcp,
+]
 
 v1_binary_blueprints = Blueprint.group(*blueprints, url_prefix="v1")
 

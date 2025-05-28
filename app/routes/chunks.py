@@ -20,6 +20,7 @@ from app.utils.request_handlers import request_handler
 
 chunks = Blueprint("chunks", url_prefix="")
 
+
 @chunks.websocket("/relevant_chunks")
 @request_handler
 async def relevant_chunks(request, ws):
@@ -100,4 +101,3 @@ async def get_autocomplete_keyword_type_chunks(_request: Request):
         return HTTPResponse(body=json.dumps(chunks))
     except Exception as e:
         raise ServerError(e)
-

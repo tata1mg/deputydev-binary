@@ -1,4 +1,3 @@
-import json
 from sanic import Blueprint, Request, HTTPResponse
 from deputydev_core.services.mcp.dataclass.main import ToolInvokeRequest
 from sanic.response import json
@@ -55,7 +54,7 @@ async def invoke_tool(_request: Request):
 
 
 @mcp.route("/servers/tool/approve", methods=["POST"])
-async def invoke_tool(_request: Request):
+async def approve_tool(_request: Request):
     json_body = _request.json
     server_name = json_body["server_name"]
     tool_name = json_body["tool_name"]
