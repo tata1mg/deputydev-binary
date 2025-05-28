@@ -16,7 +16,6 @@ from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import
 from deputydev_core.utils.weaviate import get_weaviate_client
 
 
-
 class BatchSearchService:
     @classmethod
     async def search_code(cls, payload: FocussedSnippetSearchParams):
@@ -26,9 +25,7 @@ class BatchSearchService:
         repo_path = payload.repo_path
 
         one_dev_client = OneDevClient()
-        with ProcessPoolExecutor(
-                max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
-        ) as executor:
+        with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             initialisation_manager = ExtensionInitialisationManager(
                 repo_path=repo_path,
                 auth_token_key=ContextValueKeys.EXTENSION_AUTH_TOKEN.value,

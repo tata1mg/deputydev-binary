@@ -12,6 +12,7 @@ from deputydev_core.services.tools.iterative_file_reader.iterative_file_reader i
     IterativeFileReader,
 )
 from sanic.exceptions import BadRequest, ServerError
+
 codebase_read = Blueprint("codebase_read", url_prefix="")
 
 
@@ -41,4 +42,3 @@ async def read_file(_request: Request):
         raise ValueError(ve)
     except Exception as e:
         raise ServerError(e)
-

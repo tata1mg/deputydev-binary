@@ -35,18 +35,21 @@ class RelevantChunksService:
                 auth_token_key=ContextValueKeys.EXTENSION_AUTH_TOKEN.value,
                 process_executor=executor,
                 one_dev_client=one_dev_client,
-                weaviate_client=weaviate_client
+                weaviate_client=weaviate_client,
             )
-            relevant_chunks = await CoreRelevantChunksService(
-                repo_path
-            ).get_relevant_chunks(payload, one_dev_client, embedding_manager, initialization_manager, executor, ContextValueKeys.EXTENSION_AUTH_TOKEN.value)
+            relevant_chunks = await CoreRelevantChunksService(repo_path).get_relevant_chunks(
+                payload,
+                one_dev_client,
+                embedding_manager,
+                initialization_manager,
+                executor,
+                ContextValueKeys.EXTENSION_AUTH_TOKEN.value,
+            )
         return relevant_chunks
 
     async def get_focus_chunks(self, payload: FocusChunksParams) -> List[Dict[str, Any]]:
         one_dev_client = OneDevClient()
-        with ProcessPoolExecutor(
-                max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]
-        ) as executor:
+        with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             initialisation_manager = ExtensionInitialisationManager(
                 repo_path=payload.repo_path,
                 auth_token_key=ContextValueKeys.EXTENSION_AUTH_TOKEN.value,
@@ -58,4 +61,3 @@ class RelevantChunksService:
                 payload, initialisation_manager
             )
         return focus_chunks
-
