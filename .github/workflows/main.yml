@@ -45,7 +45,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install uv
-          uv sync --extras binarization
+          uv sync --extra binarization
 
       # 6) Build macOS .app with Nuitka
       - name: Build macOS executable with Nuitka
