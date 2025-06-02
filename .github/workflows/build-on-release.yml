@@ -1,0 +1,78 @@
+name: Build DeputyDev macOS Binaries
+
+on:
+  release:
+    types: [published, prereleased]
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x86_64]
+
+    steps:
+      # 1) Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # 2) Extract version from tag (strip leading "v" if present)
+      - name: Determine version
+        id: get_version
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # 3) Setup SSH for private dependencies
+      - name: Setup SSH for private deps
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # 4) Setup Python 3.11
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 5) Install uv and sync dependencies
+      - name: Install dependencies via UV (with binarization extras)
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          uv sync --extras binarization
+
+      # 6) Build macOS .app with Nuitka
+      - name: Build macOS executable with Nuitka
+        shell: bash
+        run: |
+          set -e
+
+          VERSION="${{ steps.get_version.outputs.version }}"
+          ARCH="${{ matrix.arch }}"
+
+          # Find the .so file path from the installed tree_sitter_languages
+          LIB_PATH=$(python - <<EOF
+          import tree_sitter_languages, os
+          print(os.path.join(os.path.dirname(tree_sitter_languages.__file__), "languages.so"))
+          EOF
+          )
+
+          # Build with Nuitka
+          nuitka --mode=app --macos-target-arch="$ARCH" \
+            --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
+            app/service.py
+
+          # Rename result
+          mkdir -p output
+          mv service.app "output/macos-${ARCH}-${VERSION}.app"
+
+      # 7) Upload to GitHub Artifacts
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: deputydev-macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
+          path: output/macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.app
