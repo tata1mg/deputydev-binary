@@ -55,6 +55,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install uv
           uv sync --extra binarization
+      - name: Debug site-packages
+        run: |
+          python -c "import sys; print(sys.path)"
+          python -c "import tree_sitter_languages; print(tree_sitter_languages.__file__)"
 
       # 7) Build macOS .app with Nuitka
       - name: Build macOS executable with Nuitka
