@@ -11,14 +11,17 @@ jobs:
       matrix:
         arch: [arm64, x86_64]
 
+    permissions:
+      contents: read
+
     steps:
-      # 1) Checkout the repo
+      # 1) Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2) Extract version from tag (strip leading "v" if present)
+      # 2) Determine version from tag
       - name: Determine version
         id: get_version
         run: |
@@ -26,17 +29,16 @@ jobs:
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # 3) Setup SSH for private dependencies
-      - name: Setup SSH for private deps
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      # 4) Setup Python 3.11
+      # 3) Setup Python 3.11
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+
+      # 4) Configure Git to use GITHUB_TOKEN for authentication
+      - name: Configure Git for GitHub App authentication
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "git@github.com:"
 
       # 5) Install uv and sync dependencies
       - name: Install dependencies via UV (with binarization extras)
@@ -72,7 +74,7 @@ jobs:
 
       # 7) Upload to GitHub Artifacts
       - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v4
         with:
           name: deputydev-macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
           path: output/macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.app
