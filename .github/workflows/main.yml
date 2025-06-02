@@ -71,6 +71,8 @@ jobs:
       shell: bash
       env:
         GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
+        NUITKA_CCACHE_AUTO_INSTALL: "yes"
+
       run: |
         set -e
         source .venv/bin/activate    # use venv’s python/nuitka
