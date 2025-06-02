@@ -65,6 +65,10 @@ jobs:
 
         # quick sanity-check
         python -c "import tree_sitter_languages, sys, pathlib; print('tree_sitter_languages →', pathlib.Path(tree_sitter_languages.__file__).parent)"
+    # 6.5 ▸ Pre-install ccache to avoid Nuitka prompt
+    - name: Pre-install ccache
+      run: |
+        brew install ccache
 
     # 7 ▸ Build standalone .app with Nuitka (still inside .venv)
     - name: Build macOS executable with Nuitka
