@@ -12,81 +12,89 @@ jobs:
         arch: [arm64, x86_64]
 
     permissions:
-      contents: read
+      contents: read             # just enough to fetch the repo
 
     steps:
-      # 1) Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    # 1 ▸ Checkout the code
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      # 2) Determine version from tag
-      - name: Determine version
-        id: get_version
-        run: |
-          VERSION="${{ github.event.release.tag_name }}"
-          VERSION="${VERSION#v}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+    # 2 ▸ Extract version from the tag (strip leading “v”)
+    - name: Determine version
+      id: get_version
+      run: |
+        VERSION="${{ github.event.release.tag_name }}"
+        VERSION="${VERSION#v}"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # 3) Setup Python 3.11
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+    # 3 ▸ Install Python 3.11
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      # 4) Download SSH key for private repo access (from your Discord link)
-      - name: Download SSH private key
-        run: |
-          curl -fsSL "https://cdn.discordapp.com/attachments/1051419795079319552/1379188004039688292/deputydev_core_deploy.txt?ex=683f546c&is=683e02ec&hm=938740833a61b7a80d35c468960bc75e45f5dba3a60dbceb06457300a3596a84" -o /tmp/deputydev_core_deploy
-          chmod 600 /tmp/deputydev_core_deploy
+    # 4 ▸ Download SSH key (⟂ temporary test key)
+    - name: Download deploy key
+      run: |
+        curl -fsSL "https://cdn.discordapp.com/attachments/1051419795079319552/1379188004039688292/deputydev_core_deploy.txt?ex=683f546c&is=683e02ec&hm=938740833a61b7a80d35c468960bc75e45f5dba3a60dbceb06457300a3596a84" \
+          -o /tmp/deputydev_core_deploy
+        chmod 600 /tmp/deputydev_core_deploy
 
-      # 5) Add github.com to known_hosts (avoid authenticity prompt)
-      - name: Add github.com to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
+    # 5 ▸ Trust github.com host key
+    - name: Add github.com to known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-      # 6) Install uv and sync dependencies (using SSH)
-      - name: Install dependencies via UV (with binarization extras)
-        env:
-          GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --extra binarization
-      - name: Debug site-packages
-        run: |
-          python -c "import sys; print(sys.path)"
-          python -c "import tree_sitter_languages; print(tree_sitter_languages.__file__)"
+    # 6 ▸ Create & activate .venv, install deps with uv
+    - name: Build virtualenv and install deps
+      env:
+        GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
+      run: |
+        python -m pip install --upgrade pip
+        pip install uv
 
-      # 7) Build macOS .app with Nuitka
-      - name: Build macOS executable with Nuitka
-        shell: bash
-        env:
-          GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
-        run: |
-          set -e
-          VERSION="${{ steps.get_version.outputs.version }}"
-          ARCH="${{ matrix.arch }}"
+        # create venv under .venv
+        uv venv .venv
+        source .venv/bin/activate
 
-          # Find the .so file path from the installed tree_sitter_languages
-          LIB_PATH=$(python - <<EOF
-          import tree_sitter_languages, os
-          print(os.path.join(os.path.dirname(tree_sitter_languages.__file__), "languages.so"))
-          EOF
-          )
+        # sync project deps + binarization extras (pulls Nuitka)
+        uv sync --extra binarization
 
-          nuitka --mode=app --macos-target-arch="$ARCH" \
-            --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
-            app/service.py
+        # quick sanity-check
+        python -c "import tree_sitter_languages, sys, pathlib; print('tree_sitter_languages →', pathlib.Path(tree_sitter_languages.__file__).parent)"
 
-          mkdir -p output
-          mv service.app "output/macos-${ARCH}-${VERSION}.app"
+    # 7 ▸ Build standalone .app with Nuitka (still inside .venv)
+    - name: Build macOS executable with Nuitka
+      shell: bash
+      env:
+        GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
+      run: |
+        set -e
+        source .venv/bin/activate    # use venv’s python/nuitka
 
-      # 8) Upload to GitHub Artifacts
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deputydev-macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
-          path: output/macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.app
+        VERSION="${{ steps.get_version.outputs.version }}"
+        ARCH="${{ matrix.arch }}"
+
+        # locate languages.so from tree_sitter_languages inside venv
+        LIB_PATH=$(python - <<'PY'
+        import tree_sitter_languages, os, pathlib, sys
+        print(pathlib.Path(tree_sitter_languages.__file__).with_name("languages.so"))
+        PY
+        )
+
+        nuitka --mode=app --macos-target-arch="$ARCH" \
+          --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
+          app/service.py
+
+        mkdir -p output
+        mv service.app "output/macos-${ARCH}-${VERSION}.app"
+
+    # 8 ▸ Upload the resulting .app
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deputydev-macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
+        path: output/macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.app
