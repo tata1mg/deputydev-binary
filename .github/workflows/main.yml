@@ -76,7 +76,7 @@ jobs:
           # quick sanity-check
           python - <<'PY'
           import tree_sitter_languages, pathlib, sys
-          print("tree_sitter_languages →", pathlib.Path(tree_sitter_languages.__file__).parent)
+          print("tree_sitter_languages ->", pathlib.Path(tree_sitter_languages.__file__).parent)
           PY
 
       # 6.5 ▸ Pre-install ccache (OS-specific)
