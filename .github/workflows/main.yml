@@ -1,106 +1,162 @@
-name: Build DeputyDev macOS Binaries
+name: Build DeputyDev Linux & Windows Binaries
 
 on:
   release:
     types: [published, prereleased]
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
+  build-cross:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        arch: [arm64, x86_64]
+        os: [ubuntu-latest, windows-latest]
+        arch: [x86_64]
 
     permissions:
-      contents: read             # just enough to fetch the repo
+      contents: read
 
     steps:
-    # 1 ▸ Checkout the code
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      # 1 ▸ Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    # 2 ▸ Extract version from the tag (strip leading “v”)
-    - name: Determine version
-      id: get_version
-      run: |
-        VERSION="${{ github.event.release.tag_name }}"
-        VERSION="${VERSION#v}"
-        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      # 2 ▸ Extract version from the tag (strip leading “v”)
+      - name: Determine version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-    # 3 ▸ Install Python 3.11
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      # 3 ▸ Install Python 3.11
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    # 4 ▸ Download SSH key (⟂ temporary test key)
-    - name: Download deploy key
-      run: |
-        curl -fsSL "https://cdn.discordapp.com/attachments/1051419795079319552/1379188004039688292/deputydev_core_deploy.txt?ex=683f546c&is=683e02ec&hm=938740833a61b7a80d35c468960bc75e45f5dba3a60dbceb06457300a3596a84" \
-          -o /tmp/deputydev_core_deploy
-        chmod 600 /tmp/deputydev_core_deploy
+      # 4 ▸ Write the SSH deploy key from repo secret
+      - name: Write deploy key
+        shell: bash
+        run: |
+          echo "${{ secrets.DEPUTYDEV_CORE_ACCESS_KEY }}" > /tmp/deputydev_core_deploy
+          chmod 600 /tmp/deputydev_core_deploy
 
-    # 5 ▸ Trust github.com host key
-    - name: Add github.com to known_hosts
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan github.com >> ~/.ssh/known_hosts
+      # 5 ▸ Trust github.com host key
+      - name: Add github.com to known_hosts
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-    # 6 ▸ Create & activate .venv, install deps with uv
-    - name: Build virtualenv and install deps
-      env:
-        GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
-      run: |
-        python -m pip install --upgrade pip
-        pip install uv
+      # 6 ▸ Build .venv and install deps with uv
+      - name: Build virtualenv and install deps
+        shell: bash
+        env:
+          GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
 
-        # create venv under .venv
-        uv venv .venv
-        source .venv/bin/activate
+          uv venv .venv
 
-        # sync project deps + binarization extras (pulls Nuitka)
-        uv sync --extra binarization
+          # choose correct activation script per OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            ACTIVATE=".venv/Scripts/activate"
+          else
+            ACTIVATE=".venv/bin/activate"
+          fi
+          source "$ACTIVATE"
 
-        # quick sanity-check
-        python -c "import tree_sitter_languages, sys, pathlib; print('tree_sitter_languages →', pathlib.Path(tree_sitter_languages.__file__).parent)"
-    # 6.5 ▸ Pre-install ccache to avoid Nuitka prompt
-    - name: Pre-install ccache
-      run: |
-        brew install ccache
+          # install runtime & binarization extras (pulls Nuitka)
+          uv sync --extra binarization
 
-    # 7 ▸ Build standalone .app with Nuitka (still inside .venv)
-    - name: Build macOS executable with Nuitka
-      shell: bash
-      env:
-        GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
-        NUITKA_CCACHE_AUTO_INSTALL: "yes"
+          # quick sanity-check
+          python - <<'PY'
+          import tree_sitter_languages, pathlib, sys
+          print("tree_sitter_languages →", pathlib.Path(tree_sitter_languages.__file__).parent)
+          PY
 
-      run: |
-        set -e
-        source .venv/bin/activate    # use venv’s python/nuitka
+      # 6.5 ▸ Pre-install ccache (OS-specific)
+      - name: Install ccache on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ccache
 
-        VERSION="${{ steps.get_version.outputs.version }}"
-        ARCH="${{ matrix.arch }}"
+      - name: Install ccache on Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install -y ccache
 
-        # locate languages.so from tree_sitter_languages inside venv
-        LIB_PATH=$(python - <<'PY'
-        import tree_sitter_languages, os, pathlib, sys
-        print(pathlib.Path(tree_sitter_languages.__file__).with_name("languages.so"))
-        PY
-        )
+      # 7 ▸ Build standalone executable with Nuitka (OS-specific)
+      - name: Build Linux binary
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
+          NUITKA_CCACHE_AUTO_INSTALL: "yes"
+        run: |
+          set -e
+          source .venv/bin/activate
 
-        nuitka --mode=app --macos-target-arch="$ARCH" \
-          --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
-          app/service.py
+          VERSION="${{ steps.get_version.outputs.version }}"
+          ARCH="x86_64"
 
-        mkdir -p output
-        mv service.app "output/macos-${ARCH}-${VERSION}.app"
+          LIB_PATH=$(python - <<'PY'
+          import tree_sitter_languages, pathlib
+          print(pathlib.Path(tree_sitter_languages.__file__).with_name("languages.so"))
+          PY
+          )
 
-    # 8 ▸ Upload the resulting .app
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: deputydev-macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
-        path: output/macos-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.app
+          nuitka --mode=app \
+            --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
+            app/service.py
+
+          mkdir -p output
+          mv service.bin "output/linux-${ARCH}-${VERSION}.bin"
+
+      - name: Build Windows EXE
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
+          NUITKA_CCACHE_AUTO_INSTALL: "yes"
+        run: |
+          set -e
+          source .venv/Scripts/activate
+
+          VERSION="${{ steps.get_version.outputs.version }}"
+          ARCH="x86_64"
+
+          LIB_PATH=$(python - <<'PY'
+          import tree_sitter_languages, pathlib
+          print(pathlib.Path(tree_sitter_languages.__file__).with_name("languages.dll"))
+          PY
+          )
+
+          nuitka --mode=app \
+            --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
+            app/service.py
+
+          mkdir -p output
+          mv service.exe "output/windows-${ARCH}-${VERSION}.exe"
+
+      # 8 ▸ Upload the resulting artifact (OS-specific)
+      - name: Upload Linux artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: deputydev-linux-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
+          path: output/linux-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.bin
+
+      - name: Upload Windows artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: deputydev-windows-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
+          path: output/windows-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.exe
