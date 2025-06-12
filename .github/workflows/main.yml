@@ -113,7 +113,7 @@ jobs:
           PY
           )
 
-          nuitka --mode=app \
+          nuitka --mode=app --show-progress  \
             --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
             app/service.py
 
@@ -139,7 +139,7 @@ jobs:
           PY
           )
 
-          python -m nuitka --mode=app \
+          python -m nuitka --mode=app --show-progress  \
             --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
             app/service.py
 
