@@ -1,6 +1,5 @@
 import json
 import traceback
-
 from app.utils.error_handler import error_handler
 from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
@@ -10,7 +9,7 @@ from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import
     FocussedSnippetSearchParams,
 )
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import FocusChunksParams
-
+from sanic import Sanic
 from deputydev_core.services.tools.relevant_chunks.dataclass.main import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
@@ -66,9 +65,9 @@ async def update_vector_store(request, ws):
         payload = json.loads(data)
         payload = UpdateVectorStoreParams(**payload)
 
-        async def indexing_progress_callback(progress):
+        async def indexing_progress_callback(progress, indexing_status={}):
             """Sends progress updates to the WebSocket."""
-            print(f"Indexing Progress: {progress}")
+            print(f"Indexing status: {indexing_status}")
             await ws.send(
                 json.dumps(
                     {
@@ -76,53 +75,51 @@ async def update_vector_store(request, ws):
                         "status": "In Progress",
                         "repo_path": payload.repo_path,
                         "progress": progress,
+                        "indexing_status": indexing_status,
+                        "is_partial_state": True if payload.chunkable_files else False
                     }
                 )
             )
 
         async def embedding_progress_callback(progress):
-            print(f"Embedding Progress: {progress}")
-
-            # await ws.send(
-            #     json.dumps(
-            #         {
-            #             "task": "Embedding",
-            #             "status": "In Progress",
-            #             "repo_path": payload.repo_path,
-            #             "progress": progress,
-            #         }
-            #     )
-            # )
+            await ws.send(
+                json.dumps(
+                    {
+                        "task": "Embedding",
+                        "status": "In Progress",
+                        "repo_path": payload.repo_path,
+                        "progress": progress,
+                    }
+                )
+            )
 
         indexing_task, embedding_task = await InitializationService.update_chunks(payload, indexing_progress_callback,
                                                                                   embedding_progress_callback)
         indexing_done, embedding_done = False, False
-        if indexing_task and embedding_task:
-            try:
-                while True:
-                    print("A", end=" ")
-                    if embedding_task.done():
-                        print(f"{indexing_task.done()} {embedding_task.done()}")
-                    if not indexing_done and indexing_task.done():
-                        print("Indexing completed")
-                        indexing_done = True
-                        await ws.send(json.dumps(
-                            {"task": "Indexing", "status": "Completed", "repo_path": payload.repo_path, "progress": 100}
-                        ))
-                    if not embedding_done and embedding_task.done():
-                        print("Embedding completed")
-                        embedding_done = True
-                        await ws.send(json.dumps(
-                            {"task": "Embedding", "status": "Completed", "repo_path": payload.repo_path, "progress": 100}
-                        ))
-                    if indexing_task.done() and embedding_task.done():
-                        print("All tasks done")
-                        break
-                    await asyncio.sleep(1)
+        # TODO: After FE change we need to change this to completed
+        await ws.send(json.dumps(
+            {"task": "Indexing", "status": "In Progress", "repo_path": payload.repo_path, "progress": 100}
+        ))
 
-                print("Bye")
-            except Exception as error:
-                print(f"ERROR OCCURED: {error}")
+        if indexing_task or embedding_task:
+            while True:
+                if not indexing_done and indexing_task and indexing_task.done():
+                    print("Indexing completed")
+                    indexing_done = True
+                if not embedding_done and embedding_task and embedding_task.done():
+                    print("Embedding completed")
+                    embedding_done = True
+                    # TODO: After FE change we need to change this to completed
+                    await ws.send(json.dumps(
+                        {"task": "Embedding", "status": "In Progress", "repo_path": payload.repo_path, "progress": 100}
+                    ))
+                if (not indexing_task or indexing_task.done()) and (not embedding_task or embedding_task.done()):
+                    print("All tasks done")
+                    break
+                await asyncio.sleep(0.5)
+            await ws.send(json.dumps(
+                {"task": "Indexing", "status": "Completed", "repo_path": payload.repo_path, "progress": 100}
+            ))
 
     except Exception:
         print(traceback.format_exc())

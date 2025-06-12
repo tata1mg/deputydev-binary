@@ -15,6 +15,7 @@ from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.auth import AuthStatus
 from deputydev_core.utils.custom_progress_bar import CustomProgressBar
+from deputydev_core.utils.file_indexing_monitor import FileIndexingMonitor
 from deputydev_core.utils.context_vars import get_context_value
 from deputydev_core.utils.constants.enums import ContextValueKeys
 from deputydev_core.utils.context_value import ContextValue
@@ -33,13 +34,10 @@ from app.services.url_service.url_service import UrlService
 class InitializationService:
     @classmethod
     async def update_chunks(cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback):
-        task = asyncio.create_task(cls.update_vector_store(payload, indexing_progress_callback, embedding_progress_callback))
-        if payload.sync:
-            return await task
-        return None, None
+        return await cls.update_vector_store(payload, indexing_progress_callback, embedding_progress_callback)
 
     @classmethod
-    async def update_vector_store(cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback) -> Union[tuple[Task[None], Task[None]], tuple[None, None]]:
+    async def update_vector_store(cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback) -> tuple[Union[Task[None], None], Union[Task[None], None]]:
         repo_path = payload.repo_path
         auth_token = ContextValue.get(ContextValueKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
@@ -67,35 +65,41 @@ class InitializationService:
                 await initialization_manager.initialize_vector_db()
             indexing_progressbar = CustomProgressBar()
             embedding_progressbar = CustomProgressBar()
+            files_with_indexing_status = {key: "In Progress" for key in chunkable_files_and_hashes}
+            file_indexing_monitor = FileIndexingMonitor(files_with_indexing_status=files_with_indexing_status)
             if payload.sync:
-                _indexing_progress_monitor_task = asyncio.create_task(
-                    cls._monitor_indexing_progress(indexing_progressbar, indexing_progress_callback)
-                )
                 _embedding_progress_monitor_task = asyncio.create_task(
                     cls._monitor_embedding_progress(embedding_progressbar, embedding_progress_callback)
                 )
+            _indexing_progress_monitor_task = asyncio.create_task(
+                cls._monitor_indexing_progress(indexing_progressbar, indexing_progress_callback, file_indexing_monitor)
+            )
             await initialization_manager.prefill_vector_store(
                 chunkable_files_and_hashes,
                 indexing_progressbar=indexing_progressbar,
                 embedding_progressbar=embedding_progressbar,
+                file_indexing_progress_monitor=file_indexing_monitor,
                 enable_refresh=payload.sync,
             )
         if payload.sync:
             return _indexing_progress_monitor_task, _embedding_progress_monitor_task
         else:
-            return None, None
+            return _indexing_progress_monitor_task, None
 
     @classmethod
-    async def _monitor_indexing_progress(cls, progress_bar, progress_callback):
+    async def _monitor_indexing_progress(cls, progress_bar, progress_callback, file_indexing_monitor):
         """A separate task that can monitor and report progress while chunking happens"""
         try:
             while True:
                 if not progress_bar.is_completed():
-                    # print(f"Total Completed: {progress_bar.total_percentage}")
-                    await progress_callback(progress_bar.total_percentage)
+                    print(file_indexing_monitor.files_with_indexing_status)
+                    await progress_callback(progress_bar.total_percentage, file_indexing_monitor.files_with_indexing_status)
                 else:
+                    print(file_indexing_monitor.files_with_indexing_status)
+                    await progress_callback(progress_bar.total_percentage,
+                                            file_indexing_monitor.files_with_indexing_status)
                     return
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.2)
         except asyncio.CancelledError:
             return
 
@@ -110,7 +114,7 @@ class InitializationService:
                 else:
                     print(f"Embedding completed: {progress_bar.total_percentage}")
                     return
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(5)
         except asyncio.CancelledError as error:
             raise error
         finally:
@@ -183,7 +187,7 @@ class InitializationService:
                 app.ctx.weaviate_process = new_weaviate_process
             if schema_cleaned:
                 asyncio.create_task(UrlService().refill_urls_data())
-            asyncio.create_task(cls.maintain_weaviate_heartbeat())
+            # asyncio.create_task(cls.maintain_weaviate_heartbeat())
 
     @classmethod
     async def get_config(cls, base_config: Dict = {}) -> None:
