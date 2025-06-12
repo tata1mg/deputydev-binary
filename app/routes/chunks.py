@@ -5,7 +5,7 @@ from app.utils.error_handler import error_handler
 from sanic import Blueprint, HTTPResponse
 from sanic.request import Request
 from sanic.exceptions import BadRequest, ServerError
-
+import asyncio
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import (
     FocussedSnippetSearchParams,
 )
@@ -66,11 +66,13 @@ async def update_vector_store(request, ws):
         payload = json.loads(data)
         payload = UpdateVectorStoreParams(**payload)
 
-        async def progress_callback(progress):
+        async def indexing_progress_callback(progress):
             """Sends progress updates to the WebSocket."""
+            print(f"Indexing Progress: {progress}")
             await ws.send(
                 json.dumps(
                     {
+                        "task": "Indexing",
                         "status": "In Progress",
                         "repo_path": payload.repo_path,
                         "progress": progress,
@@ -78,8 +80,49 @@ async def update_vector_store(request, ws):
                 )
             )
 
-        await InitializationService.update_chunks(payload, progress_callback)
-        await ws.send(json.dumps({"status": "Completed", "repo_path": payload.repo_path, "progress": 100}))
+        async def embedding_progress_callback(progress):
+            print(f"Embedding Progress: {progress}")
+
+            # await ws.send(
+            #     json.dumps(
+            #         {
+            #             "task": "Embedding",
+            #             "status": "In Progress",
+            #             "repo_path": payload.repo_path,
+            #             "progress": progress,
+            #         }
+            #     )
+            # )
+
+        indexing_task, embedding_task = await InitializationService.update_chunks(payload, indexing_progress_callback,
+                                                                                  embedding_progress_callback)
+        indexing_done, embedding_done = False, False
+        if indexing_task and embedding_task:
+            try:
+                while True:
+                    print("A", end=" ")
+                    if embedding_task.done():
+                        print(f"{indexing_task.done()} {embedding_task.done()}")
+                    if not indexing_done and indexing_task.done():
+                        print("Indexing completed")
+                        indexing_done = True
+                        await ws.send(json.dumps(
+                            {"task": "Indexing", "status": "Completed", "repo_path": payload.repo_path, "progress": 100}
+                        ))
+                    if not embedding_done and embedding_task.done():
+                        print("Embedding completed")
+                        embedding_done = True
+                        await ws.send(json.dumps(
+                            {"task": "Embedding", "status": "Completed", "repo_path": payload.repo_path, "progress": 100}
+                        ))
+                    if indexing_task.done() and embedding_task.done():
+                        print("All tasks done")
+                        break
+                    await asyncio.sleep(1)
+
+                print("Bye")
+            except Exception as error:
+                print(f"ERROR OCCURED: {error}")
 
     except Exception:
         print(traceback.format_exc())
@@ -100,4 +143,4 @@ async def get_autocomplete_keyword_type_chunks(_request: Request):
         chunks = await BatchSearchService.search_code(payload)
         return HTTPResponse(body=json.dumps(chunks))
     except Exception as e:
-        raise ServerError(e)
+        raise ServerError(str(e))

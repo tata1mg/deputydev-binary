@@ -1,7 +1,8 @@
 import asyncio
+from asyncio import Task
 import time
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from deputydev_core.services.auth_token_storage.auth_token_service import (
     AuthTokenService,
@@ -31,13 +32,14 @@ from app.services.url_service.url_service import UrlService
 
 class InitializationService:
     @classmethod
-    async def update_chunks(cls, payload: UpdateVectorStoreParams, progress_callback):
-        task = asyncio.create_task(cls.update_vector_store(payload, progress_callback))
+    async def update_chunks(cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback):
+        task = asyncio.create_task(cls.update_vector_store(payload, indexing_progress_callback, embedding_progress_callback))
         if payload.sync:
-            await task
+            return await task
+        return None, None
 
     @classmethod
-    async def update_vector_store(cls, payload: UpdateVectorStoreParams, progress_callback) -> None:
+    async def update_vector_store(cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback) -> Union[tuple[Task[None], Task[None]], tuple[None, None]]:
         repo_path = payload.repo_path
         auth_token = ContextValue.get(ContextValueKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
@@ -63,29 +65,56 @@ class InitializationService:
                 initialization_manager.weaviate_client = weaviate_client
             else:
                 await initialization_manager.initialize_vector_db()
-            progressbar = CustomProgressBar()
+            indexing_progressbar = CustomProgressBar()
+            embedding_progressbar = CustomProgressBar()
             if payload.sync:
-                _progress_monitor_task = asyncio.create_task(
-                    cls._monitor_embedding_progress(progressbar, progress_callback)
+                _indexing_progress_monitor_task = asyncio.create_task(
+                    cls._monitor_indexing_progress(indexing_progressbar, indexing_progress_callback)
+                )
+                _embedding_progress_monitor_task = asyncio.create_task(
+                    cls._monitor_embedding_progress(embedding_progressbar, embedding_progress_callback)
                 )
             await initialization_manager.prefill_vector_store(
                 chunkable_files_and_hashes,
-                progressbar=progressbar,
+                indexing_progressbar=indexing_progressbar,
+                embedding_progressbar=embedding_progressbar,
                 enable_refresh=payload.sync,
             )
+        if payload.sync:
+            return _indexing_progress_monitor_task, _embedding_progress_monitor_task
+        else:
+            return None, None
 
     @classmethod
-    async def _monitor_embedding_progress(cls, progress_bar, progress_callback):
+    async def _monitor_indexing_progress(cls, progress_bar, progress_callback):
         """A separate task that can monitor and report progress while chunking happens"""
         try:
             while True:
                 if not progress_bar.is_completed():
+                    # print(f"Total Completed: {progress_bar.total_percentage}")
                     await progress_callback(progress_bar.total_percentage)
                 else:
                     return
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.5)
         except asyncio.CancelledError:
             return
+
+    @classmethod
+    async def _monitor_embedding_progress(cls, progress_bar, progress_callback):
+        """A separate task that can monitor and report progress while Embedding happens"""
+        try:
+            while True:
+                print(f"Total Completed: {progress_bar.total_percentage}")
+                if not progress_bar.is_completed():
+                    await progress_callback(progress_bar.total_percentage)
+                else:
+                    print(f"Embedding completed: {progress_bar.total_percentage}")
+                    return
+                await asyncio.sleep(0.5)
+        except asyncio.CancelledError as error:
+            raise error
+        finally:
+            print(f"Existing _monitor_embedding_progress: {progress_bar.total_percentage}")
 
     @classmethod
     async def handle_expired_token(cls, token_data):
