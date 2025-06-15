@@ -65,7 +65,7 @@ class InitializationService:
                 await initialization_manager.initialize_vector_db()
             indexing_progressbar = CustomProgressBar()
             embedding_progressbar = CustomProgressBar()
-            files_with_indexing_status = {key: "In Progress" for key in chunkable_files_and_hashes}
+            files_with_indexing_status = {key: {"file_path": key, "status": "In Progress"} for key in chunkable_files_and_hashes}
             file_indexing_monitor = FileIndexingMonitor(files_with_indexing_status=files_with_indexing_status)
             if payload.sync:
                 _embedding_progress_monitor_task = asyncio.create_task(
@@ -91,13 +91,8 @@ class InitializationService:
         """A separate task that can monitor and report progress while chunking happens"""
         try:
             while True:
-                if not progress_bar.is_completed():
-                    print(file_indexing_monitor.files_with_indexing_status)
-                    await progress_callback(progress_bar.total_percentage, file_indexing_monitor.files_with_indexing_status)
-                else:
-                    print(file_indexing_monitor.files_with_indexing_status)
-                    await progress_callback(progress_bar.total_percentage,
-                                            file_indexing_monitor.files_with_indexing_status)
+                await progress_callback(progress_bar.total_percentage, file_indexing_monitor.files_with_indexing_status)
+                if progress_bar.is_completed():
                     return
                 await asyncio.sleep(0.2)
         except asyncio.CancelledError:
@@ -187,7 +182,7 @@ class InitializationService:
                 app.ctx.weaviate_process = new_weaviate_process
             if schema_cleaned:
                 asyncio.create_task(UrlService().refill_urls_data())
-            # asyncio.create_task(cls.maintain_weaviate_heartbeat())
+            asyncio.create_task(cls.maintain_weaviate_heartbeat())
 
     @classmethod
     async def get_config(cls, base_config: Dict = {}) -> None:

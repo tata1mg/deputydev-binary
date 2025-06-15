@@ -75,7 +75,7 @@ async def update_vector_store(request, ws):
                         "status": "In Progress",
                         "repo_path": payload.repo_path,
                         "progress": progress,
-                        "indexing_status": indexing_status,
+                        "indexing_status": list(indexing_status.values()),
                         "is_partial_state": True if payload.chunkable_files else False
                     }
                 )
