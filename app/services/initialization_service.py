@@ -94,7 +94,7 @@ class InitializationService:
                 await progress_callback(progress_bar.total_percentage, file_indexing_monitor.files_with_indexing_status)
                 if progress_bar.is_completed():
                     return
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.5)
         except asyncio.CancelledError:
             return
 
@@ -109,7 +109,7 @@ class InitializationService:
                     return
                 await asyncio.sleep(2)
         except asyncio.CancelledError as error:
-            raise error
+            return
 
     @classmethod
     async def handle_expired_token(cls, token_data):

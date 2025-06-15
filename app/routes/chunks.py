@@ -75,7 +75,7 @@ async def update_vector_store(request, ws):
                         "repo_path": payload.repo_path,
                         "progress": progress,
                         "indexing_status": list(indexing_status.values()),
-                        "is_partial_state": True if payload.chunkable_files else False
+                        "is_partial_state": False if payload.sync else True
                     }
                 )
             )
@@ -95,15 +95,15 @@ async def update_vector_store(request, ws):
         indexing_task, embedding_task = await InitializationService.update_chunks(payload, indexing_progress_callback,
                                                                                   embedding_progress_callback)
         indexing_done, embedding_done = False, False
-        # TODO: After FE change we need to change this to completed
-        await ws.send(json.dumps(
-            {"task": "Indexing", "status": "In Progress", "repo_path": payload.repo_path, "progress": 100}
-        ))
 
         if indexing_task or embedding_task:
             while True:
                 if not indexing_done and indexing_task and indexing_task.done():
                     indexing_done = True
+                    # TODO: After FE change we need to change this to completed
+                    await ws.send(json.dumps(
+                        {"task": "Indexing", "status": "In Progress", "repo_path": payload.repo_path, "progress": 100}
+                    ))
                 if not embedding_done and embedding_task and embedding_task.done():
                     embedding_done = True
                     # TODO: After FE change we need to change this to completed
@@ -113,6 +113,7 @@ async def update_vector_store(request, ws):
                 if (not indexing_task or indexing_task.done()) and (not embedding_task or embedding_task.done()):
                     break
                 await asyncio.sleep(0.5)
+            # TODO: Remove this after FE changes done.
             await ws.send(json.dumps(
                 {"task": "Indexing", "status": "Completed", "repo_path": payload.repo_path, "progress": 100}
             ))
