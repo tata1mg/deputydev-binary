@@ -67,7 +67,6 @@ async def update_vector_store(request, ws):
 
         async def indexing_progress_callback(progress, indexing_status={}):
             """Sends progress updates to the WebSocket."""
-            print(f"Indexing status: {indexing_status}")
             await ws.send(
                 json.dumps(
                     {
@@ -104,17 +103,14 @@ async def update_vector_store(request, ws):
         if indexing_task or embedding_task:
             while True:
                 if not indexing_done and indexing_task and indexing_task.done():
-                    print("Indexing completed")
                     indexing_done = True
                 if not embedding_done and embedding_task and embedding_task.done():
-                    print("Embedding completed")
                     embedding_done = True
                     # TODO: After FE change we need to change this to completed
                     await ws.send(json.dumps(
                         {"task": "Embedding", "status": "In Progress", "repo_path": payload.repo_path, "progress": 100}
                     ))
                 if (not indexing_task or indexing_task.done()) and (not embedding_task or embedding_task.done()):
-                    print("All tasks done")
                     break
                 await asyncio.sleep(0.5)
             await ws.send(json.dumps(
@@ -122,7 +118,6 @@ async def update_vector_store(request, ws):
             ))
 
     except Exception:
-        print(traceback.format_exc())
         await ws.send(json.dumps({"status": "Failed", "message": traceback.format_exc()}))
 
 

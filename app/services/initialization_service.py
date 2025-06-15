@@ -103,17 +103,13 @@ class InitializationService:
         """A separate task that can monitor and report progress while Embedding happens"""
         try:
             while True:
-                print(f"Total Completed: {progress_bar.total_percentage}")
                 if not progress_bar.is_completed():
                     await progress_callback(progress_bar.total_percentage)
                 else:
-                    print(f"Embedding completed: {progress_bar.total_percentage}")
                     return
-                await asyncio.sleep(5)
+                await asyncio.sleep(2)
         except asyncio.CancelledError as error:
             raise error
-        finally:
-            print(f"Existing _monitor_embedding_progress: {progress_bar.total_percentage}")
 
     @classmethod
     async def handle_expired_token(cls, token_data):
