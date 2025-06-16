@@ -64,9 +64,14 @@ async def update_vector_store(request, ws):
         data = await ws.recv()
         payload = json.loads(data)
         payload = UpdateVectorStoreParams(**payload)
+        is_partial_indexing = False if payload.sync else True
+        files_indexing_status = {}
 
         async def indexing_progress_callback(progress, indexing_status={}):
+            nonlocal is_partial_indexing
+            nonlocal files_indexing_status
             """Sends progress updates to the WebSocket."""
+            files_indexing_status = indexing_status
             await ws.send(
                 json.dumps(
                     {
@@ -75,7 +80,7 @@ async def update_vector_store(request, ws):
                         "repo_path": payload.repo_path,
                         "progress": progress,
                         "indexing_status": list(indexing_status.values()),
-                        "is_partial_state": False if payload.sync else True
+                        "is_partial_state": is_partial_indexing
                     }
                 )
             )
@@ -100,23 +105,24 @@ async def update_vector_store(request, ws):
             while True:
                 if not indexing_done and indexing_task and indexing_task.done():
                     indexing_done = True
-                    # TODO: After FE change we need to change this to completed
                     await ws.send(json.dumps(
-                        {"task": "Indexing", "status": "In Progress", "repo_path": payload.repo_path, "progress": 100}
+                        {
+                            "task": "Indexing",
+                            "status": "Completed",
+                            "repo_path": payload.repo_path,
+                            "progress": 100,
+                            "is_partial_state": is_partial_indexing,
+                            "indexing_status": list(files_indexing_status.values())
+                        }
                     ))
                 if not embedding_done and embedding_task and embedding_task.done():
                     embedding_done = True
-                    # TODO: After FE change we need to change this to completed
                     await ws.send(json.dumps(
-                        {"task": "Embedding", "status": "In Progress", "repo_path": payload.repo_path, "progress": 100}
+                        {"task": "Embedding", "status": "Completed", "repo_path": payload.repo_path, "progress": 100}
                     ))
                 if (not indexing_task or indexing_task.done()) and (not embedding_task or embedding_task.done()):
                     break
                 await asyncio.sleep(0.5)
-            # TODO: Remove this after FE changes done.
-            await ws.send(json.dumps(
-                {"task": "Indexing", "status": "Completed", "repo_path": payload.repo_path, "progress": 100}
-            ))
 
     except Exception:
         await ws.send(json.dumps({"status": "Failed", "message": traceback.format_exc()}))
