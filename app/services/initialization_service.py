@@ -69,7 +69,7 @@ class InitializationService:
             file_indexing_monitor = FileIndexingMonitor(files_with_indexing_status=files_with_indexing_status)
             if payload.sync:
                 _embedding_progress_monitor_task = asyncio.create_task(
-                    cls._monitor_embedding_progress(embedding_progressbar, embedding_progress_callback)
+                    cls._monitor_embedding_progress(embedding_progressbar, embedding_progress_callback, repo_path)
                 )
             _indexing_progress_monitor_task = asyncio.create_task(
                 cls._monitor_indexing_progress(indexing_progressbar, indexing_progress_callback, file_indexing_monitor)
@@ -99,13 +99,14 @@ class InitializationService:
             return
 
     @classmethod
-    async def _monitor_embedding_progress(cls, progress_bar, progress_callback):
+    async def _monitor_embedding_progress(cls, progress_bar, progress_callback, repo_path):
         """A separate task that can monitor and report progress while Embedding happens"""
         try:
             while True:
                 if not progress_bar.is_completed():
                     await progress_callback(progress_bar.total_percentage)
                 else:
+                    AppLogger.log_info(f"Embedding done for {repo_path}")
                     return
                 await asyncio.sleep(2)
         except asyncio.CancelledError as error:
