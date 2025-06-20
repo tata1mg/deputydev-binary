@@ -71,7 +71,9 @@ async def grep_search(_request: Request):
     try:
         grep_search_results = await CoreGrepSearchService(repo_path=validated_body.repo_path).perform_grep_search(
             directory_path=validated_body.directory_path,
-            search_terms=validated_body.search_terms,
+            search_term=validated_body.search_term,
+            case_insensitive=validated_body.case_insensitive,
+            use_regex=validated_body.use_regex,
         )
 
         response = {
