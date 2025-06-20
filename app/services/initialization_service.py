@@ -1,7 +1,8 @@
 import asyncio
 import time
+from asyncio import Task
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from deputydev_core.services.auth_token_storage.auth_token_service import (
     AuthTokenService,
@@ -20,6 +21,7 @@ from deputydev_core.utils.constants.enums import ContextValueKeys
 from deputydev_core.utils.context_value import ContextValue
 from deputydev_core.utils.context_vars import get_context_value
 from deputydev_core.utils.custom_progress_bar import CustomProgressBar
+from deputydev_core.utils.file_indexing_monitor import FileIndexingMonitor
 from deputydev_core.utils.weaviate import weaviate_connection
 from sanic import Sanic
 
@@ -31,13 +33,15 @@ from app.utils.constants import Headers
 
 class InitializationService:
     @classmethod
-    async def update_chunks(cls, payload: UpdateVectorStoreParams, progress_callback):
-        task = asyncio.create_task(cls.update_vector_store(payload, progress_callback))
-        if payload.sync:
-            await task
+    async def update_chunks(
+        cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback
+    ):
+        return await cls.update_vector_store(payload, indexing_progress_callback, embedding_progress_callback)
 
     @classmethod
-    async def update_vector_store(cls, payload: UpdateVectorStoreParams, progress_callback) -> None:
+    async def update_vector_store(
+        cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback
+    ) -> tuple[Union[Task[None], None], Union[Task[None], None]]:
         repo_path = payload.repo_path
         auth_token = ContextValue.get(ContextValueKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
@@ -63,27 +67,54 @@ class InitializationService:
                 initialization_manager.weaviate_client = weaviate_client
             else:
                 await initialization_manager.initialize_vector_db()
-            progressbar = CustomProgressBar()
+            indexing_progressbar = CustomProgressBar()
+            embedding_progressbar = CustomProgressBar()
+            files_with_indexing_status = {
+                key: {"file_path": key, "status": "IN_PROGRESS"} for key in chunkable_files_and_hashes
+            }
+            file_indexing_monitor = FileIndexingMonitor(files_with_indexing_status=files_with_indexing_status)
             if payload.sync:
-                _progress_monitor_task = asyncio.create_task(
-                    cls._monitor_embedding_progress(progressbar, progress_callback)
+                _embedding_progress_monitor_task = asyncio.create_task(
+                    cls._monitor_embedding_progress(embedding_progressbar, embedding_progress_callback, repo_path)
                 )
+            _indexing_progress_monitor_task = asyncio.create_task(
+                cls._monitor_indexing_progress(indexing_progressbar, indexing_progress_callback, file_indexing_monitor)
+            )
             await initialization_manager.prefill_vector_store(
                 chunkable_files_and_hashes,
-                progressbar=progressbar,
+                indexing_progressbar=indexing_progressbar,
+                embedding_progressbar=embedding_progressbar,
+                file_indexing_progress_monitor=file_indexing_monitor,
                 enable_refresh=payload.sync,
             )
+        if payload.sync:
+            return _indexing_progress_monitor_task, _embedding_progress_monitor_task
+        else:
+            return _indexing_progress_monitor_task, None
 
     @classmethod
-    async def _monitor_embedding_progress(cls, progress_bar, progress_callback):
+    async def _monitor_indexing_progress(cls, progress_bar, progress_callback, file_indexing_monitor):
         """A separate task that can monitor and report progress while chunking happens"""
+        try:
+            while True:
+                await progress_callback(progress_bar.total_percentage, file_indexing_monitor.files_with_indexing_status)
+                if progress_bar.is_completed():
+                    return
+                await asyncio.sleep(0.5)
+        except asyncio.CancelledError:
+            return
+
+    @classmethod
+    async def _monitor_embedding_progress(cls, progress_bar, progress_callback, repo_path):
+        """A separate task that can monitor and report progress while Embedding happens"""
         try:
             while True:
                 if not progress_bar.is_completed():
                     await progress_callback(progress_bar.total_percentage)
                 else:
+                    AppLogger.log_info(f"Embedding done for {repo_path}")
                     return
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(2)
         except asyncio.CancelledError:
             return
 

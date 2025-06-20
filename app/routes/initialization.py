@@ -15,7 +15,7 @@ async def initialize_service(_request: Request, **kwargs):
     try:
         payload = _request.json
         await InitializationService.initialization(payload=payload)
-        return HTTPResponse(body=json.dumps({"status": "Completed"}))
+        return HTTPResponse(body=json.dumps({"status": "COMPLETED"}))
     except Exception as error:
         import traceback
 
