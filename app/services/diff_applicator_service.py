@@ -19,4 +19,4 @@ class DiffApplicatorService:
             return responses
         except Exception as _ex:
             AppLogger.log_error(f"Error while applying diff: {_ex}")
-            return []
+            raise _ex
