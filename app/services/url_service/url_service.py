@@ -1,20 +1,22 @@
-from app.clients.one_dev_client import OneDevClient
-from app.services.url_service.url_manager_factory import UrlManagerFactory
 from typing import TYPE_CHECKING
-from app.repository.urls_content_repository import UrlsContentRepository
+
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
 )
 from deputydev_core.utils.weaviate import get_weaviate_client
-from app.services.url_service.helpers.url_serializer import UrlSerializer
+
+from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
+from app.repository.urls_content_repository import UrlsContentRepository
+from app.services.url_service.helpers.url_serializer import UrlSerializer
+from app.services.url_service.url_manager_factory import UrlManagerFactory
 
 if TYPE_CHECKING:
-    from app.models.dtos.url_dtos.url_reader_params import UrlReaderParams
+    from app.models.dtos.url_dtos.list_url_params import ListUrlParams
     from app.models.dtos.url_dtos.save_url_params import SaveUrlParams
     from app.models.dtos.url_dtos.search_url_params import SearchUrlParams
-    from app.models.dtos.url_dtos.list_url_params import ListUrlParams
     from app.models.dtos.url_dtos.update_url_params import UpdateUrlParams
+    from app.models.dtos.url_dtos.url_reader_params import UrlReaderParams
 
 
 class UrlService:

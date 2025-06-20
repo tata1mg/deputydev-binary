@@ -7,14 +7,14 @@ from deputydev_core.services.embedding.extension_embedding_manager import (
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
 )
+from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import FocusChunksParams
+from deputydev_core.services.tools.relevant_chunks.dataclass.main import RelevantChunksParams
+from deputydev_core.services.tools.relevant_chunks.relevant_chunk import RelevantChunks as CoreRelevantChunksService
 from deputydev_core.utils.config_manager import ConfigManager
+from deputydev_core.utils.constants.enums import ContextValueKeys
+from deputydev_core.utils.weaviate import weaviate_connection
 
 from app.clients.one_dev_client import OneDevClient
-from deputydev_core.services.tools.relevant_chunks.dataclass.main import RelevantChunksParams
-from deputydev_core.utils.constants.enums import ContextValueKeys
-from deputydev_core.services.tools.relevant_chunks.relevant_chunk import RelevantChunks as CoreRelevantChunksService
-from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import FocusChunksParams
-from deputydev_core.utils.weaviate import weaviate_connection
 
 
 class RelevantChunksService:

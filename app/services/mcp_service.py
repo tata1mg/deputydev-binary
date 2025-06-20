@@ -1,17 +1,17 @@
 from typing import List, Optional
 
+import mcp
 from deputydev_core.services.mcp.client import MCPClient
 from deputydev_core.services.mcp.dataclass.main import (
-    ServersDetails,
     ConnectionStatus,
-    Tools,
-    ToolInvokeRequest,
     McpDefaultSettings,
+    ServersDetails,
+    ToolInvokeRequest,
+    Tools,
 )
-import mcp
+from deputydev_core.utils.config_manager import ConfigManager
 
 from app.utils.request_handlers import handle_mcp_exceptions
-from deputydev_core.utils.config_manager import ConfigManager
 
 
 class McpService:

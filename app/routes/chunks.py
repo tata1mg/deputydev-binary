@@ -1,21 +1,20 @@
 import json
 import traceback
 
-from app.utils.error_handler import error_handler
-from sanic import Blueprint, HTTPResponse
-from sanic.request import Request
-from sanic.exceptions import BadRequest, ServerError
-
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import (
+    FocusChunksParams,
     FocussedSnippetSearchParams,
 )
-from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import FocusChunksParams
-
 from deputydev_core.services.tools.relevant_chunks.dataclass.main import RelevantChunksParams
+from sanic import Blueprint, HTTPResponse
+from sanic.exceptions import BadRequest, ServerError
+from sanic.request import Request
+
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
 from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
+from app.utils.error_handler import error_handler
 from app.utils.request_handlers import request_handler
 
 chunks = Blueprint("chunks", url_prefix="")

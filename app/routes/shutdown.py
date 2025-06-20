@@ -1,5 +1,6 @@
-from sanic import Blueprint, Sanic, response
 import asyncio
+
+from sanic import Blueprint, Sanic, response
 
 shutdown = Blueprint("shutdown", url_prefix="")
 
