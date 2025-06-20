@@ -1,10 +1,9 @@
-from sanic import Blueprint, Request, HTTPResponse
 from deputydev_core.services.mcp.dataclass.main import ToolInvokeRequest
+from sanic import Blueprint, HTTPResponse, Request
+from sanic.exceptions import SanicException
 from sanic.response import json
 
 from app.services.mcp_service import McpService
-from sanic.exceptions import SanicException
-
 
 mcp = Blueprint("mcp", url_prefix="mcp")
 

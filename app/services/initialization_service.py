@@ -10,23 +10,23 @@ from deputydev_core.services.initialization.extension_initialisation_manager imp
     ExtensionInitialisationManager,
     WeaviateSyncAndAsyncClients,
 )
+from deputydev_core.services.shared_chunks.shared_chunks_manager import (
+    SharedChunksManager,
+)
 from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.auth import AuthStatus
-from deputydev_core.utils.custom_progress_bar import CustomProgressBar
-from deputydev_core.utils.context_vars import get_context_value
 from deputydev_core.utils.constants.enums import ContextValueKeys
 from deputydev_core.utils.context_value import ContextValue
+from deputydev_core.utils.context_vars import get_context_value
+from deputydev_core.utils.custom_progress_bar import CustomProgressBar
 from deputydev_core.utils.weaviate import weaviate_connection
 from sanic import Sanic
 
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from deputydev_core.services.shared_chunks.shared_chunks_manager import (
-    SharedChunksManager,
-)
-from app.utils.constants import Headers
 from app.services.url_service.url_service import UrlService
+from app.utils.constants import Headers
 
 
 class InitializationService:
