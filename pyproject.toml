@@ -1,6 +1,6 @@
 [project]
 name = "deputydev-binary"
-version = "7.2.1"
+version = "8.0.0"
 description = "Installable binary for running Deputy Dev algorithms"
 readme = "README.md"
 authors = [{ name = "Deputy Dev", email = "deputydev@1mg.com" }]
@@ -11,7 +11,7 @@ dependencies = [
   "fuzzywuzzy==0.18.0",
   "bs4==0.0.2",
   "html2text==2025.4.15",
-  "deputydev-core @ git+ssh://git@github.com/DeputyDev-1mg/deputydev-core.git@background_embedding",
+  "deputydev-core @ git+ssh://git@github.com/DeputyDev-1mg/deputydev-core.git@5.0.0",
 ]
 
 [project.optional-dependencies]
