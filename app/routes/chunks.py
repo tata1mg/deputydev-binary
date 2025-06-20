@@ -1,19 +1,21 @@
+import asyncio
 import json
 import traceback
-from app.utils.error_handler import error_handler
-from sanic import Blueprint, HTTPResponse
-from sanic.request import Request
-from sanic.exceptions import BadRequest, ServerError
-import asyncio
+
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import (
+    FocusChunksParams,
     FocussedSnippetSearchParams,
 )
-from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import FocusChunksParams
 from deputydev_core.services.tools.relevant_chunks.dataclass.main import RelevantChunksParams
+from sanic import Blueprint, HTTPResponse
+from sanic.exceptions import BadRequest, ServerError
+from sanic.request import Request
+
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
 from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
+from app.utils.error_handler import error_handler
 from app.utils.request_handlers import request_handler
 
 chunks = Blueprint("chunks", url_prefix="")
@@ -79,7 +81,7 @@ async def update_vector_store(request, ws):
                         "repo_path": payload.repo_path,
                         "progress": progress,
                         "indexing_status": list(indexing_status.values()),
-                        "is_partial_state": is_partial_indexing
+                        "is_partial_state": is_partial_indexing,
                     }
                 )
             )
@@ -96,29 +98,39 @@ async def update_vector_store(request, ws):
                 )
             )
 
-        indexing_task, embedding_task = await InitializationService.update_chunks(payload, indexing_progress_callback,
-                                                                                  embedding_progress_callback)
+        indexing_task, embedding_task = await InitializationService.update_chunks(
+            payload, indexing_progress_callback, embedding_progress_callback
+        )
         indexing_done, embedding_done = False, False
 
         if indexing_task or embedding_task:
             while True:
                 if not indexing_done and indexing_task and indexing_task.done():
                     indexing_done = True
-                    await ws.send(json.dumps(
-                        {
-                            "task": "INDEXING",
-                            "status": "COMPLETED",
-                            "repo_path": payload.repo_path,
-                            "progress": 100,
-                            "is_partial_state": is_partial_indexing,
-                            "indexing_status": list(files_indexing_status.values())
-                        }
-                    ))
+                    await ws.send(
+                        json.dumps(
+                            {
+                                "task": "INDEXING",
+                                "status": "COMPLETED",
+                                "repo_path": payload.repo_path,
+                                "progress": 100,
+                                "is_partial_state": is_partial_indexing,
+                                "indexing_status": list(files_indexing_status.values()),
+                            }
+                        )
+                    )
                 if not embedding_done and embedding_task and embedding_task.done():
                     embedding_done = True
-                    await ws.send(json.dumps(
-                        {"task": "EMBEDDING", "status": "COMPLETED", "repo_path": payload.repo_path, "progress": 100}
-                    ))
+                    await ws.send(
+                        json.dumps(
+                            {
+                                "task": "EMBEDDING",
+                                "status": "COMPLETED",
+                                "repo_path": payload.repo_path,
+                                "progress": 100,
+                            }
+                        )
+                    )
                 if (not indexing_task or indexing_task.done()) and (not embedding_task or embedding_task.done()):
                     break
                 await asyncio.sleep(0.5)

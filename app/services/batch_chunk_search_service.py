@@ -1,19 +1,19 @@
+from concurrent.futures import ProcessPoolExecutor
+
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
-)
-from deputydev_core.utils.constants.enums import ContextValueKeys
-
-from app.clients.one_dev_client import OneDevClient
-from concurrent.futures import ProcessPoolExecutor
-from deputydev_core.utils.config_manager import ConfigManager
-
-from deputydev_core.services.tools.focussed_snippet_search.focussed_snippet_search import (
-    FocussedSnippetSearch,
 )
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import (
     FocussedSnippetSearchParams,
 )
+from deputydev_core.services.tools.focussed_snippet_search.focussed_snippet_search import (
+    FocussedSnippetSearch,
+)
+from deputydev_core.utils.config_manager import ConfigManager
+from deputydev_core.utils.constants.enums import ContextValueKeys
 from deputydev_core.utils.weaviate import get_weaviate_client
+
+from app.clients.one_dev_client import OneDevClient
 
 
 class BatchSearchService:

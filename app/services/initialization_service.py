@@ -1,6 +1,6 @@
 import asyncio
-from asyncio import Task
 import time
+from asyncio import Task
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict, Optional, Union
 
@@ -11,33 +11,37 @@ from deputydev_core.services.initialization.extension_initialisation_manager imp
     ExtensionInitialisationManager,
     WeaviateSyncAndAsyncClients,
 )
+from deputydev_core.services.shared_chunks.shared_chunks_manager import (
+    SharedChunksManager,
+)
 from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.utils.config_manager import ConfigManager
 from deputydev_core.utils.constants.auth import AuthStatus
-from deputydev_core.utils.custom_progress_bar import CustomProgressBar
-from deputydev_core.utils.file_indexing_monitor import FileIndexingMonitor
-from deputydev_core.utils.context_vars import get_context_value
 from deputydev_core.utils.constants.enums import ContextValueKeys
 from deputydev_core.utils.context_value import ContextValue
+from deputydev_core.utils.context_vars import get_context_value
+from deputydev_core.utils.custom_progress_bar import CustomProgressBar
+from deputydev_core.utils.file_indexing_monitor import FileIndexingMonitor
 from deputydev_core.utils.weaviate import weaviate_connection
 from sanic import Sanic
 
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
-from deputydev_core.services.shared_chunks.shared_chunks_manager import (
-    SharedChunksManager,
-)
-from app.utils.constants import Headers
 from app.services.url_service.url_service import UrlService
+from app.utils.constants import Headers
 
 
 class InitializationService:
     @classmethod
-    async def update_chunks(cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback):
+    async def update_chunks(
+        cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback
+    ):
         return await cls.update_vector_store(payload, indexing_progress_callback, embedding_progress_callback)
 
     @classmethod
-    async def update_vector_store(cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback) -> tuple[Union[Task[None], None], Union[Task[None], None]]:
+    async def update_vector_store(
+        cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback
+    ) -> tuple[Union[Task[None], None], Union[Task[None], None]]:
         repo_path = payload.repo_path
         auth_token = ContextValue.get(ContextValueKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
@@ -65,7 +69,9 @@ class InitializationService:
                 await initialization_manager.initialize_vector_db()
             indexing_progressbar = CustomProgressBar()
             embedding_progressbar = CustomProgressBar()
-            files_with_indexing_status = {key: {"file_path": key, "status": "IN_PROGRESS"} for key in chunkable_files_and_hashes}
+            files_with_indexing_status = {
+                key: {"file_path": key, "status": "IN_PROGRESS"} for key in chunkable_files_and_hashes
+            }
             file_indexing_monitor = FileIndexingMonitor(files_with_indexing_status=files_with_indexing_status)
             if payload.sync:
                 _embedding_progress_monitor_task = asyncio.create_task(
@@ -109,7 +115,7 @@ class InitializationService:
                     AppLogger.log_info(f"Embedding done for {repo_path}")
                     return
                 await asyncio.sleep(2)
-        except asyncio.CancelledError as error:
+        except asyncio.CancelledError:
             return
 
     @classmethod

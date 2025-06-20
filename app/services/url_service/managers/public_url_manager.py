@@ -1,17 +1,19 @@
 import asyncio
-from app.clients.one_dev_client import OneDevClient
-from app.services.url_service.managers.url_manager import UrlManager
-from typing import List, TYPE_CHECKING, Dict
-from app.services.url_service.helpers.html_scrapper import HtmlScrapper
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Dict, List
+
 from deputydev_core.services.initialization.extension_initialisation_manager import (
     ExtensionInitialisationManager,
 )
-from deputydev_core.utils.weaviate import get_weaviate_client
-from app.repository.urls_content_repository import UrlsContentRepository
 from deputydev_core.utils.config_manager import ConfigManager
+from deputydev_core.utils.weaviate import get_weaviate_client
+
+from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
-from datetime import datetime, timezone
+from app.repository.urls_content_repository import UrlsContentRepository
+from app.services.url_service.helpers.html_scrapper import HtmlScrapper
 from app.services.url_service.helpers.url_serializer import UrlSerializer
+from app.services.url_service.managers.url_manager import UrlManager
 
 if TYPE_CHECKING:
     from app.models.dtos.url_dtos.save_url_params import SaveUrlParams

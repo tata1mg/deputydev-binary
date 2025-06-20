@@ -1,7 +1,7 @@
 import multiprocessing
 import os
 import sys
-import asyncio
+
 import certifi
 from sanic import Sanic
 

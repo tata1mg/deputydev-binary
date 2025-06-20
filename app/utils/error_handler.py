@@ -1,7 +1,8 @@
-import traceback
-from sanic.response import HTTPResponse
 import json
+import traceback
+
 from sanic.exceptions import BadRequest, ServerError
+from sanic.response import HTTPResponse
 
 
 def error_handler(func):
