@@ -9,7 +9,6 @@ from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import
     FocussedSnippetSearchParams,
 )
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import FocusChunksParams
-from sanic import Sanic
 from deputydev_core.services.tools.relevant_chunks.dataclass.main import RelevantChunksParams
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
@@ -75,8 +74,8 @@ async def update_vector_store(request, ws):
             await ws.send(
                 json.dumps(
                     {
-                        "task": "Indexing",
-                        "status": "In Progress",
+                        "task": "INDEXING",
+                        "status": "IN_PROGRESS",
                         "repo_path": payload.repo_path,
                         "progress": progress,
                         "indexing_status": list(indexing_status.values()),
@@ -89,8 +88,8 @@ async def update_vector_store(request, ws):
             await ws.send(
                 json.dumps(
                     {
-                        "task": "Embedding",
-                        "status": "In Progress",
+                        "task": "EMBEDDING",
+                        "status": "IN_PROGRESS",
                         "repo_path": payload.repo_path,
                         "progress": progress,
                     }
@@ -107,8 +106,8 @@ async def update_vector_store(request, ws):
                     indexing_done = True
                     await ws.send(json.dumps(
                         {
-                            "task": "Indexing",
-                            "status": "Completed",
+                            "task": "INDEXING",
+                            "status": "COMPLETED",
                             "repo_path": payload.repo_path,
                             "progress": 100,
                             "is_partial_state": is_partial_indexing,
@@ -118,14 +117,14 @@ async def update_vector_store(request, ws):
                 if not embedding_done and embedding_task and embedding_task.done():
                     embedding_done = True
                     await ws.send(json.dumps(
-                        {"task": "Embedding", "status": "Completed", "repo_path": payload.repo_path, "progress": 100}
+                        {"task": "EMBEDDING", "status": "COMPLETED", "repo_path": payload.repo_path, "progress": 100}
                     ))
                 if (not indexing_task or indexing_task.done()) and (not embedding_task or embedding_task.done()):
                     break
                 await asyncio.sleep(0.5)
 
     except Exception:
-        await ws.send(json.dumps({"status": "Failed", "message": traceback.format_exc()}))
+        await ws.send(json.dumps({"status": "FAILED", "message": traceback.format_exc()}))
 
 
 @chunks.route("/batch_chunks_search", methods=["POST"])

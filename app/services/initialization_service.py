@@ -65,7 +65,7 @@ class InitializationService:
                 await initialization_manager.initialize_vector_db()
             indexing_progressbar = CustomProgressBar()
             embedding_progressbar = CustomProgressBar()
-            files_with_indexing_status = {key: {"file_path": key, "status": "In Progress"} for key in chunkable_files_and_hashes}
+            files_with_indexing_status = {key: {"file_path": key, "status": "IN_PROGRESS"} for key in chunkable_files_and_hashes}
             file_indexing_monitor = FileIndexingMonitor(files_with_indexing_status=files_with_indexing_status)
             if payload.sync:
                 _embedding_progress_monitor_task = asyncio.create_task(
