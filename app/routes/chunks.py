@@ -1,15 +1,17 @@
 import asyncio
 import json
 import traceback
+from typing import Dict, List
 
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import (
+    DirectoryStructureParams,
     FocusChunksParams,
     FocussedSnippetSearchParams,
 )
 from deputydev_core.services.tools.relevant_chunks.dataclass.main import RelevantChunksParams
-from sanic import Blueprint, HTTPResponse
+from deputydev_core.services.tools.relevant_chunks.relevant_chunk import RelevantChunks
+from sanic import Blueprint, HTTPResponse, Request, Websocket
 from sanic.exceptions import BadRequest, ServerError
-from sanic.request import Request
 
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
@@ -23,7 +25,7 @@ chunks = Blueprint("chunks", url_prefix="")
 
 @chunks.websocket("/relevant_chunks")
 @request_handler
-async def relevant_chunks(request, ws):
+async def relevant_chunks(request: Request, ws: Websocket) -> None:
     try:
         data = await ws.recv()
         payload = json.loads(data)
@@ -47,7 +49,7 @@ async def relevant_chunks(request, ws):
 
 @chunks.route("/get-focus-chunks", methods=["POST"])
 @request_handler
-async def focus_chunks(_request: Request):
+async def focus_chunks(_request: Request) -> HTTPResponse:
     try:
         payload = _request.json
         payload = FocusChunksParams(**payload)
@@ -58,9 +60,23 @@ async def focus_chunks(_request: Request):
         raise Exception(traceback.format_exc())
 
 
+@chunks.route("/get-directory-structure", methods=["POST"])
+@request_handler
+async def directory_format(_request: Request) -> HTTPResponse:
+    try:
+        payload = _request.json
+        payload = DirectoryStructureParams(**payload)
+        relevant_chunks = RelevantChunks(payload.repo_path)
+        directory_tree = await relevant_chunks.get_directory_structure(payload)
+        return HTTPResponse(body=json.dumps(directory_tree))
+    except Exception:
+        print(traceback.format_exc())
+        raise Exception(traceback.format_exc())
+
+
 @chunks.websocket("/update_chunks")
 @request_handler
-async def update_vector_store(request, ws):
+async def update_vector_store(request: Request, ws: Websocket) -> None:
     try:
         data = await ws.recv()
         payload = json.loads(data)
@@ -68,7 +84,7 @@ async def update_vector_store(request, ws):
         is_partial_indexing = False if payload.sync else True
         files_indexing_status = {}
 
-        async def indexing_progress_callback(progress, indexing_status={}):
+        async def indexing_progress_callback(progress: float, indexing_status: List[Dict[str, str]]) -> None:
             nonlocal is_partial_indexing
             nonlocal files_indexing_status
             """Sends progress updates to the WebSocket."""
@@ -86,7 +102,7 @@ async def update_vector_store(request, ws):
                 )
             )
 
-        async def embedding_progress_callback(progress):
+        async def embedding_progress_callback(progress: float) -> None:
             await ws.send(
                 json.dumps(
                     {
@@ -141,7 +157,7 @@ async def update_vector_store(request, ws):
 
 @chunks.route("/batch_chunks_search", methods=["POST"])
 @error_handler
-async def get_autocomplete_keyword_type_chunks(_request: Request):
+async def get_autocomplete_keyword_type_chunks(_request: Request) -> HTTPResponse:
     payload = _request.json
     if not payload:
         raise BadRequest("Request payload is missing or invalid.")
