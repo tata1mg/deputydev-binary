@@ -304,7 +304,7 @@ dev = [
 
 [[package]]
 name = "deputydev-core"
-version = "5.0.0"
+version = "5.0.1"
 source = { directory = "../deputydev-core" }
 dependencies = [
     { name = "aiohttp" },
