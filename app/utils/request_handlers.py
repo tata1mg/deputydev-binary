@@ -40,3 +40,15 @@ def handle_mcp_exceptions(func):
             return McpResponse(is_error=True, meta=McpResponseMeta(message=str(ex)))
 
     return wrapper
+
+
+def handle_ide_review_exceptions(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            result = await func(*args, **kwargs)
+            return McpResponse(is_error=False, data=result)
+        except Exception as ex:
+            return McpResponse(is_error=True, meta=McpResponseMeta(message=str(ex)))
+
+    return wrapper
