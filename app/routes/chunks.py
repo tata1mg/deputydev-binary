@@ -72,21 +72,7 @@ async def directory_format(_request: Request) -> HTTPResponse:
         directory_tree = await relevant_chunks.get_directory_structure(payload)
         return HTTPResponse(body=json.dumps(directory_tree))
     except Exception:
-        print(traceback.format_exc())
-        raise Exception(traceback.format_exc())
-
-
-@chunks.route("/get-directory-structure", methods=["POST"])
-@request_handler
-async def directory_format(_request: Request) -> HTTPResponse:
-    try:
-        payload = _request.json
-        payload = DirectoryStructureParams(**payload)
-        relevant_chunks = RelevantChunks(payload.repo_path)
-        directory_tree = await relevant_chunks.get_directory_structure(payload)
-        return HTTPResponse(body=json.dumps(directory_tree))
-    except Exception:
-        print(traceback.format_exc())
+        AppLogger.log_error(traceback.format_exc())
         raise Exception(traceback.format_exc())
 
 
