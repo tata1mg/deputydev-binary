@@ -1,12 +1,14 @@
 import asyncio
 import json
 import traceback
+from typing import Any, Dict
 
 from deputydev_core.services.tools.focussed_snippet_search.dataclass.main import (
     FocusChunksParams,
     FocussedSnippetSearchParams,
 )
 from deputydev_core.services.tools.relevant_chunks.dataclass.main import RelevantChunksParams
+from deputydev_core.utils.app_logger import AppLogger
 from sanic import Blueprint, HTTPResponse
 from sanic.exceptions import BadRequest, ServerError
 from sanic.request import Request
@@ -15,15 +17,16 @@ from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
 from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
-from app.utils.error_handler import error_handler
 from app.utils.request_handlers import request_handler
+from app.utils.route_error_handler.error_type_handlers.tool_handler import ToolErrorHandler
+from app.utils.route_error_handler.route_error_handler import get_error_handler
 
 chunks = Blueprint("chunks", url_prefix="")
 
 
 @chunks.websocket("/relevant_chunks")
 @request_handler
-async def relevant_chunks(request, ws):
+async def relevant_chunks(request: Request, ws: Any) -> None:
     try:
         data = await ws.recv()
         payload = json.loads(data)
@@ -31,7 +34,7 @@ async def relevant_chunks(request, ws):
         relevant_chunks_data = await RelevantChunksService(payload.repo_path).get_relevant_chunks(payload)
         relevant_chunks_data = json.dumps(relevant_chunks_data)
         await ws.send(relevant_chunks_data)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         await ws.send(
             json.dumps(
                 {
@@ -42,25 +45,25 @@ async def relevant_chunks(request, ws):
                 }
             )
         )
-        print(traceback.format_exc())
+        AppLogger.log_error(traceback.format_exc())
 
 
 @chunks.route("/get-focus-chunks", methods=["POST"])
 @request_handler
-async def focus_chunks(_request: Request):
+async def focus_chunks(_request: Request) -> HTTPResponse:
     try:
         payload = _request.json
         payload = FocusChunksParams(**payload)
         focus_chunks = await RelevantChunksService(payload.repo_path).get_focus_chunks(payload)
         return HTTPResponse(body=json.dumps(focus_chunks))
-    except Exception:
-        print(traceback.format_exc())
+    except Exception:  # noqa: BLE001
+        AppLogger.log_error(traceback.format_exc())
         raise Exception(traceback.format_exc())
 
 
 @chunks.websocket("/update_chunks")
 @request_handler
-async def update_vector_store(request, ws):
+async def update_vector_store(request: Request, ws: Any) -> None:
     try:
         data = await ws.recv()
         payload = json.loads(data)
@@ -68,7 +71,7 @@ async def update_vector_store(request, ws):
         is_partial_indexing = False if payload.sync else True
         files_indexing_status = {}
 
-        async def indexing_progress_callback(progress, indexing_status={}):
+        async def indexing_progress_callback(progress: int, indexing_status: Dict[str, str] = {}) -> None:
             nonlocal is_partial_indexing
             nonlocal files_indexing_status
             """Sends progress updates to the WebSocket."""
@@ -86,7 +89,7 @@ async def update_vector_store(request, ws):
                 )
             )
 
-        async def embedding_progress_callback(progress):
+        async def embedding_progress_callback(progress: int) -> None:
             await ws.send(
                 json.dumps(
                     {
@@ -135,22 +138,22 @@ async def update_vector_store(request, ws):
                     break
                 await asyncio.sleep(0.5)
 
-    except Exception:
+    except Exception:  # noqa: BLE001
         await ws.send(json.dumps({"status": "FAILED", "message": traceback.format_exc()}))
 
 
 @chunks.route("/batch_chunks_search", methods=["POST"])
-@error_handler
-async def get_autocomplete_keyword_type_chunks(_request: Request):
+@get_error_handler(special_handlers=[ToolErrorHandler])
+async def get_autocomplete_keyword_type_chunks(_request: Request) -> HTTPResponse:
     payload = _request.json
     if not payload:
         raise BadRequest("Request payload is missing or invalid.")
     try:
         payload = FocussedSnippetSearchParams(**payload)
-    except Exception:
+    except Exception:  # noqa: BLE001
         raise BadRequest("INVALID_PARAMS")
     try:
         chunks = await BatchSearchService.search_code(payload)
         return HTTPResponse(body=json.dumps(chunks))
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise ServerError(str(e))
