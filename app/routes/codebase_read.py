@@ -11,25 +11,26 @@ from sanic import Blueprint, HTTPResponse
 from sanic.exceptions import BadRequest, ServerError
 from sanic.request import Request
 
-from app.utils.error_handler import error_handler
+from app.utils.route_error_handler.error_type_handlers.tool_handler import ToolErrorHandler
+from app.utils.route_error_handler.route_error_handler import get_error_handler
 
 codebase_read = Blueprint("codebase_read", url_prefix="")
 
 
 @codebase_read.route("/iteratively-read-file", methods=["POST"])
-@error_handler
-async def read_file(_request: Request):
+@get_error_handler(special_handlers=[ToolErrorHandler])
+async def read_file(_request: Request) -> HTTPResponse:
     json_body = _request.json
     if not json_body:
         raise BadRequest("Request payload is missing or invalid.")
     try:
         validated_body = IterativeFileReaderRequestParams(**json_body)
-    except Exception:
+    except Exception:  # noqa: BLE001
         raise BadRequest("INVALID_PARAMS")
 
     try:
         file_content, eof_reached = await IterativeFileReader(
-            file_path=os.path.join(validated_body.repo_path, validated_body.file_path)
+            file_path=os.path.join(validated_body.repo_path, validated_body.file_path)  # noqa: PTH118
         ).read_lines(start_line=validated_body.start_line, end_line=validated_body.end_line)
         response = {
             "data": {
@@ -40,5 +41,5 @@ async def read_file(_request: Request):
         return HTTPResponse(body=json.dumps(response))
     except ValueError as ve:
         raise ValueError(ve)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise ServerError(e)
