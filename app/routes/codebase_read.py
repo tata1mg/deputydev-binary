@@ -30,11 +30,10 @@ async def read_file(_request: Request) -> HTTPResponse:
 
     try:
         if validated_body.start_line and validated_body.end_line:
-
             file_content, eof_reached = await IterativeFileReader(
                 file_path=os.path.join(validated_body.repo_path, validated_body.file_path)  # noqa: PTH118
             ).read_lines(start_line=validated_body.start_line, end_line=validated_body.end_line)
-            
+
         else:
             file_content, eof_reached = await IterativeFileReader(
                 file_path=os.path.join(validated_body.repo_path, validated_body.file_path)  # noqa: PTH118
