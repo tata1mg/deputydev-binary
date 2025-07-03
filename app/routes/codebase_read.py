@@ -1,5 +1,5 @@
 import json
-import os
+from typing import Any, Dict
 
 from deputydev_core.services.tools.iterative_file_reader.dataclass.main import (
     IterativeFileReaderRequestParams,
@@ -30,9 +30,11 @@ async def read_file(_request: Request) -> HTTPResponse:
 
     try:
         file_content, eof_reached = await IterativeFileReader(
-            file_path=os.path.join(validated_body.repo_path, validated_body.file_path)  # noqa: PTH118
+            file_path=validated_body.file_path,
+            repo_path=validated_body.repo_path,
         ).read_lines(start_line=validated_body.start_line, end_line=validated_body.end_line)
-        response = {
+
+        response: Dict[str, Any] = {
             "data": {
                 "chunk": file_content.model_dump(mode="json"),
                 "eof_reached": eof_reached,
@@ -42,4 +44,4 @@ async def read_file(_request: Request) -> HTTPResponse:
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as e:  # noqa: BLE001
-        raise ServerError(e)
+        raise ServerError(str(e)) from e
