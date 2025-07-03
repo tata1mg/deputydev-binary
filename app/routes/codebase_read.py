@@ -29,9 +29,17 @@ async def read_file(_request: Request) -> HTTPResponse:
         raise BadRequest("INVALID_PARAMS")
 
     try:
-        file_content, eof_reached = await IterativeFileReader(
-            file_path=os.path.join(validated_body.repo_path, validated_body.file_path)  # noqa: PTH118
-        ).read_lines(start_line=validated_body.start_line, end_line=validated_body.end_line)
+        if validated_body.start_line and validated_body.end_line:
+
+            file_content, eof_reached = await IterativeFileReader(
+                file_path=os.path.join(validated_body.repo_path, validated_body.file_path)  # noqa: PTH118
+            ).read_lines(start_line=validated_body.start_line, end_line=validated_body.end_line)
+            
+        else:
+            file_content, eof_reached = await IterativeFileReader(
+                file_path=os.path.join(validated_body.repo_path, validated_body.file_path)  # noqa: PTH118
+            ).give_summary()
+
         response = {
             "data": {
                 "chunk": file_content.model_dump(mode="json"),
