@@ -9,7 +9,8 @@ class CommentValidator:
 
     async def is_comment_applicable(self, params: CommentValidityParams) -> dict:
         try:
-            line, _, _ = await read_file_lines(params.repo_path + params.file_path, params.line_number - 1)
+            repo_path, file_path = self.sanitize_path(params.repo_path), self.sanitize_path(params.file_path)
+            line, _, _ = await read_file_lines(repo_path + file_path, params.line_number - 1)
             if not line:
                 return {"is_applicable": False, "message": self.LINE_UPDATED}
 
@@ -19,3 +20,7 @@ class CommentValidator:
 
         except FileNotFoundError:
             return {"is_applicable": False, "message": self.FILE_DELETED_OR_MOVED}
+
+    @staticmethod
+    def sanitize_path(path):
+        return path if path.startswith("/") else f"/{path}"
