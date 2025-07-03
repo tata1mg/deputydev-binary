@@ -1,5 +1,5 @@
 from typing import Dict, List
-
+import hashlib
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.utils.constants.enums import ContextValueKeys
 from deputydev_core.utils.context_value import ContextValue
@@ -53,3 +53,9 @@ def parse_request_params(req: Request) -> Dict[str, str]:
     for key, value in req.match_info.items():
         params[key] = value
     return params
+
+
+def hash_content(content: str, strip_content=False) -> str:
+    if strip_content:
+        content = content.strip()
+    return hashlib.md5(content.encode()).hexdigest()

@@ -10,6 +10,7 @@ from app.routes.ping import ping
 from app.routes.search import focus_search
 from app.routes.shutdown import shutdown
 from app.routes.url import url_reader
+from app.routes.code_review import code_review
 
 blueprints = [
     chunks,
@@ -21,6 +22,7 @@ blueprints = [
     codebase_read,
     url_reader,
     mcp,
+    code_review
 ]
 
 v1_binary_blueprints = Blueprint.group(*blueprints, url_prefix="v1")
