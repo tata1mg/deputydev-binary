@@ -1,0 +1,47 @@
+*****************************************************************
+MacOS arm64
+*****************************************************************
+
+python3 -m nuitka --mode=app \
+--macos-signed-app-name="com.tata1mg.ddbinary" \
+--include-package=tree_sitter_language_pack.bindings.dockerfile \
+--include-package=tree_sitter_language_pack.bindings.make \
+--include-package=tree_sitter_language_pack.bindings.cmake \
+--include-package=tree_sitter_language_pack.bindings.python \
+--include-package=tree_sitter_language_pack.bindings.javascript \
+--include-package=tree_sitter_language_pack.bindings.typescript \
+--include-package=tree_sitter_language_pack.bindings.java \
+--include-package=tree_sitter_language_pack.bindings.c \
+--include-package=tree_sitter_language_pack.bindings.cpp \
+--include-package=tree_sitter_language_pack.bindings.go \
+--include-package=tree_sitter_language_pack.bindings.rust \
+--include-package=tree_sitter_language_pack.bindings.ruby \
+--include-package=tree_sitter_language_pack.bindings.html \
+--include-package=tree_sitter_language_pack.bindings.kotlin \
+--include-package=tree_sitter_language_pack.bindings.json \
+--include-package=tree_sitter_language_pack.bindings.tsx \
+app/service.py
+
+
+*****************************************************************
+Windows x86_64 / Linux x86_64
+*****************************************************************
+
+python3 -m nuitka --mode=app \
+--include-package=tree_sitter_language_pack.bindings.dockerfile \
+--include-package=tree_sitter_language_pack.bindings.make \
+--include-package=tree_sitter_language_pack.bindings.cmake \
+--include-package=tree_sitter_language_pack.bindings.python \
+--include-package=tree_sitter_language_pack.bindings.javascript \
+--include-package=tree_sitter_language_pack.bindings.typescript \
+--include-package=tree_sitter_language_pack.bindings.java \
+--include-package=tree_sitter_language_pack.bindings.c \
+--include-package=tree_sitter_language_pack.bindings.cpp \
+--include-package=tree_sitter_language_pack.bindings.go \
+--include-package=tree_sitter_language_pack.bindings.rust \
+--include-package=tree_sitter_language_pack.bindings.ruby \
+--include-package=tree_sitter_language_pack.bindings.html \
+--include-package=tree_sitter_language_pack.bindings.kotlin \
+--include-package=tree_sitter_language_pack.bindings.json \
+--include-package=tree_sitter_language_pack.bindings.tsx \
+app/service.py
