@@ -74,6 +74,7 @@ jobs:
           uv sync --extra binarization
 
 
+
       # 6.5 ▸ Pre-install ccache (OS-specific)
       - name: Install ccache on Linux
         if: runner.os == 'Linux'
@@ -102,14 +103,9 @@ jobs:
           VERSION="${{ steps.get_version.outputs.version }}"
           ARCH="x86_64"
 
-          LIB_PATH=$(python - <<'PY'
-          import tree_sitter_languages, pathlib
-          print(pathlib.Path(tree_sitter_languages.__file__).with_name("languages.so"))
-          PY
-          )
+
 
           python3 -m nuitka --mode=app \
-            --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
             --include-package=tree_sitter_language_pack.bindings.dockerfile \
             --include-package=tree_sitter_language_pack.bindings.make \
             --include-package=tree_sitter_language_pack.bindings.cmake \
@@ -145,14 +141,8 @@ jobs:
           VERSION="${{ steps.get_version.outputs.version }}"
           ARCH="x86_64"
 
-          LIB_PATH=$(python - <<'PY'
-          import tree_sitter_languages, pathlib
-          print(pathlib.Path(tree_sitter_languages.__file__).with_name("languages.dll"))
-          PY
-          )
 
           python3 -m nuitka --mode=app \
-            --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
             --include-package=tree_sitter_language_pack.bindings.dockerfile \
             --include-package=tree_sitter_language_pack.bindings.make \
             --include-package=tree_sitter_language_pack.bindings.cmake \
