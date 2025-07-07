@@ -113,12 +113,29 @@ jobs:
           PY
           )
 
-          nuitka --mode=app --show-progress  \
+          python3 -m nuitka --mode=app \
             --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
+            --include-package=tree_sitter_language_pack.bindings.dockerfile \
+            --include-package=tree_sitter_language_pack.bindings.make \
+            --include-package=tree_sitter_language_pack.bindings.cmake \
+            --include-package=tree_sitter_language_pack.bindings.python \
+            --include-package=tree_sitter_language_pack.bindings.javascript \
+            --include-package=tree_sitter_language_pack.bindings.typescript \
+            --include-package=tree_sitter_language_pack.bindings.java \
+            --include-package=tree_sitter_language_pack.bindings.c \
+            --include-package=tree_sitter_language_pack.bindings.cpp \
+            --include-package=tree_sitter_language_pack.bindings.go \
+            --include-package=tree_sitter_language_pack.bindings.rust \
+            --include-package=tree_sitter_language_pack.bindings.ruby \
+            --include-package=tree_sitter_language_pack.bindings.html \
+            --include-package=tree_sitter_language_pack.bindings.kotlin \
+            --include-package=tree_sitter_language_pack.bindings.json \
+            --include-package=tree_sitter_language_pack.bindings.tsx \
             app/service.py
 
           mkdir -p output
           mv service.bin "output/linux-${ARCH}-${VERSION}.bin"
+
 
       - name: Build Windows EXE
         if: runner.os == 'Windows'
@@ -139,12 +156,29 @@ jobs:
           PY
           )
 
-          python -m nuitka --mode=app --show-progress  \
+          python3 -m nuitka --mode=app \
             --include-data-files="$LIB_PATH=tree_sitter_languages/$(basename "$LIB_PATH")" \
+            --include-package=tree_sitter_language_pack.bindings.dockerfile \
+            --include-package=tree_sitter_language_pack.bindings.make \
+            --include-package=tree_sitter_language_pack.bindings.cmake \
+            --include-package=tree_sitter_language_pack.bindings.python \
+            --include-package=tree_sitter_language_pack.bindings.javascript \
+            --include-package=tree_sitter_language_pack.bindings.typescript \
+            --include-package=tree_sitter_language_pack.bindings.java \
+            --include-package=tree_sitter_language_pack.bindings.c \
+            --include-package=tree_sitter_language_pack.bindings.cpp \
+            --include-package=tree_sitter_language_pack.bindings.go \
+            --include-package=tree_sitter_language_pack.bindings.rust \
+            --include-package=tree_sitter_language_pack.bindings.ruby \
+            --include-package=tree_sitter_language_pack.bindings.html \
+            --include-package=tree_sitter_language_pack.bindings.kotlin \
+            --include-package=tree_sitter_language_pack.bindings.json \
+            --include-package=tree_sitter_language_pack.bindings.tsx \
             app/service.py
 
           mkdir -p output
           mv service.exe "output/windows-${ARCH}-${VERSION}.exe"
+
 
       # 8 ▸ Upload the resulting artifact (OS-specific)
       - name: Upload Linux artifact
