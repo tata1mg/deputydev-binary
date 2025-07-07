@@ -1,6 +1,7 @@
+from typing import TYPE_CHECKING, Type
+
 from app.services.url_service.managers.public_url_manager import PublicUrlManager
 from app.utils.constant.url_constants import UrlType
-from typing import TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
     from app.services.url_service.managers.url_manager import UrlManager

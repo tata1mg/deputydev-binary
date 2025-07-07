@@ -17,18 +17,18 @@ from deputydev_core.services.repository.chunk_files_service import ChunkFilesSer
 from deputydev_core.services.repository.dataclasses.main import (
     WeaviateSyncAndAsyncClients,
 )
+from deputydev_core.services.shared_chunks.shared_chunks_manager import (
+    SharedChunksManager,
+)
 from deputydev_core.utils.app_logger import AppLogger
 from deputydev_core.utils.config_manager import ConfigManager
+from deputydev_core.utils.weaviate import get_weaviate_client
 
 from app.dataclasses.codebase_search.focus_items_search.focus_items_search_dataclasses import (
     FocusItem,
     FocusSearchParams,
     SearchKeywordType,
 )
-from deputydev_core.services.shared_chunks.shared_chunks_manager import (
-    SharedChunksManager,
-)
-from deputydev_core.utils.weaviate import get_weaviate_client
 
 
 class FocusSearchService:

@@ -1,4 +1,7 @@
-from typing import List, Dict
+import asyncio
+from datetime import datetime, timezone
+from typing import Dict, List
+
 from deputydev_core.models.dao.weaviate.urls_content import UrlsContent
 from deputydev_core.services.repository.base_weaviate_repository import (
     BaseWeaviateRepository,
@@ -7,10 +10,9 @@ from deputydev_core.services.repository.dataclasses.main import (
     WeaviateSyncAndAsyncClients,
 )
 from weaviate.collections.classes.filters import Filter
-from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
 from weaviate.util import generate_uuid5
-import asyncio
-from datetime import datetime, timezone
+
+from app.models.dtos.collection_dtos.urls_content_dto import UrlsContentDto
 
 
 class UrlsContentRepository(BaseWeaviateRepository):
