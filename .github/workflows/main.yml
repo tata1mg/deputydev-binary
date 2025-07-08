@@ -1,12 +1,12 @@
-name: Build DeputyDev Linux Binary
+name: Build DeputyDev Windows Binary
 
 on:
   release:
     types: [published, prereleased]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  build-windows:
+    runs-on: [self-hosted, windows]
     strategy:
       matrix:
         arch: [x86_64]
@@ -30,7 +30,7 @@ jobs:
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # 3 ▸ Install Python 3.11
+      # 3 ▸ Setup Python 3.11
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -61,27 +61,26 @@ jobs:
 
           uv venv .venv
 
-          source .venv/bin/activate
+          source .venv/Scripts/activate
 
           # install runtime & binarization extras (pulls Nuitka)
           uv sync --extra binarization
 
-      # 6.5 ▸ Pre-install ccache (Linux-specific)
-      - name: Install ccache on Linux
+      # 6.5 ▸ Pre-install ccache (Windows-specific, optional)
+      - name: Install ccache on Windows
         shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ccache
+          choco install -y ccache
 
-      # 7 ▸ Build standalone executable with Nuitka (Linux)
-      - name: Build Linux binary
+      # 7 ▸ Build standalone executable with Nuitka (Windows)
+      - name: Build Windows binary
         shell: bash
         env:
           GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
           NUITKA_CCACHE_AUTO_INSTALL: "yes"
         run: |
           set -e
-          source .venv/bin/activate
+          source .venv/Scripts/activate
 
           VERSION="${{ steps.get_version.outputs.version }}"
           ARCH="x86_64"
@@ -106,11 +105,11 @@ jobs:
             app/service.py
 
           mkdir -p output
-          mv service.bin "output/linux-${ARCH}-${VERSION}.bin"
+          mv service.exe "output/windows-${ARCH}-${VERSION}.exe"
 
-      # 8 ▸ Upload the resulting artifact (Linux)
-      - name: Upload Linux artifact
+      # 8 ▸ Upload the resulting artifact (Windows)
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deputydev-linux-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
-          path: output/linux-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.bin
+          name: deputydev-windows-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
+          path: output/windows-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.exe
