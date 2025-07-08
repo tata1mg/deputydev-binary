@@ -1,15 +1,14 @@
-name: Build DeputyDev Linux & Windows Binaries
+name: Build DeputyDev Linux Binary
 
 on:
   release:
     types: [published, prereleased]
 
 jobs:
-  build-cross:
-    runs-on: ${{ matrix.os }}
+  build-linux:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
         arch: [x86_64]
 
     permissions:
@@ -62,36 +61,20 @@ jobs:
 
           uv venv .venv
 
-          # choose correct activation script per OS
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            ACTIVATE=".venv/Scripts/activate"
-          else
-            ACTIVATE=".venv/bin/activate"
-          fi
-          source "$ACTIVATE"
+          source .venv/bin/activate
 
           # install runtime & binarization extras (pulls Nuitka)
           uv sync --extra binarization
 
-
-
-      # 6.5 ▸ Pre-install ccache (OS-specific)
+      # 6.5 ▸ Pre-install ccache (Linux-specific)
       - name: Install ccache on Linux
-        if: runner.os == 'Linux'
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y ccache
 
-      - name: Install ccache on Windows
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          choco install -y ccache
-
-      # 7 ▸ Build standalone executable with Nuitka (OS-specific)
+      # 7 ▸ Build standalone executable with Nuitka (Linux)
       - name: Build Linux binary
-        if: runner.os == 'Linux'
         shell: bash
         env:
           GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
@@ -102,8 +85,6 @@ jobs:
 
           VERSION="${{ steps.get_version.outputs.version }}"
           ARCH="x86_64"
-
-
 
           python -m nuitka --mode=app --show-progress \
             --include-package=tree_sitter_language_pack.bindings.dockerfile \
@@ -127,55 +108,9 @@ jobs:
           mkdir -p output
           mv service.bin "output/linux-${ARCH}-${VERSION}.bin"
 
-
-      - name: Build Windows EXE
-        if: runner.os == 'Windows'
-        shell: bash
-        env:
-          GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
-          NUITKA_CCACHE_AUTO_INSTALL: "yes"
-        run: |
-          set -e
-          source .venv/Scripts/activate
-
-          VERSION="${{ steps.get_version.outputs.version }}"
-          ARCH="x86_64"
-
-
-          python -m nuitka --mode=app --show-progress \
-            --include-package=tree_sitter_language_pack.bindings.dockerfile \
-            --include-package=tree_sitter_language_pack.bindings.make \
-            --include-package=tree_sitter_language_pack.bindings.cmake \
-            --include-package=tree_sitter_language_pack.bindings.python \
-            --include-package=tree_sitter_language_pack.bindings.javascript \
-            --include-package=tree_sitter_language_pack.bindings.typescript \
-            --include-package=tree_sitter_language_pack.bindings.java \
-            --include-package=tree_sitter_language_pack.bindings.c \
-            --include-package=tree_sitter_language_pack.bindings.cpp \
-            --include-package=tree_sitter_language_pack.bindings.go \
-            --include-package=tree_sitter_language_pack.bindings.rust \
-            --include-package=tree_sitter_language_pack.bindings.ruby \
-            --include-package=tree_sitter_language_pack.bindings.html \
-            --include-package=tree_sitter_language_pack.bindings.kotlin \
-            --include-package=tree_sitter_language_pack.bindings.json \
-            --include-package=tree_sitter_language_pack.bindings.tsx \
-            app/service.py
-
-          mkdir -p output
-          mv service.exe "output/windows-${ARCH}-${VERSION}.exe"
-
-
-      # 8 ▸ Upload the resulting artifact (OS-specific)
+      # 8 ▸ Upload the resulting artifact (Linux)
       - name: Upload Linux artifact
-        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: deputydev-linux-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
           path: output/linux-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.bin
-
-      - name: Upload Windows artifact
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: deputydev-windows-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
-          path: output/windows-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.exe
