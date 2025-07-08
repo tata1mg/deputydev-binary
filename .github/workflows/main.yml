@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest-4-cores, windows-latest-4-cores]
+        os: [ubuntu-latest, windows-latest]
         arch: [x86_64]
 
     permissions:
@@ -94,7 +94,7 @@ jobs:
           DIR="linux-x64-${VERSION}"
           mkdir -p $DIR
 
-          python3 -m nuitka --mode=app \
+          python -m nuitka --mode=app \
             --include-package=tree_sitter_language_pack.bindings.dockerfile \
             --include-package=tree_sitter_language_pack.bindings.make \
             --include-package=tree_sitter_language_pack.bindings.cmake \
