@@ -24,7 +24,7 @@ jobs:
       # 2 ▸ Extract version from the tag (strip leading “v”)
       - name: Determine version
         id: get_version
-        shell: pwsh
+        shell: powershell
         run: |
           $version = "${{ github.event.release.tag_name }}"
           $version = $version -replace "^v", ""
@@ -38,7 +38,7 @@ jobs:
 
       # 4 ▸ Write the SSH deploy key from repo secret
       - name: Write deploy key
-        shell: pwsh
+        shell: powershell
         run: |
           $keyPath = "$env:TEMP\deputydev_core_deploy"
           Set-Content -Path $keyPath -Value "${{ secrets.DEPUTYDEV_CORE_ACCESS_KEY }}" -NoNewline
@@ -46,7 +46,7 @@ jobs:
 
       # 5 ▸ Trust github.com host key
       - name: Add github.com to known_hosts
-        shell: pwsh
+        shell: powershell
         run: |
           $sshDir = "$env:USERPROFILE\.ssh"
           if (-not (Test-Path $sshDir)) {
@@ -56,7 +56,7 @@ jobs:
 
       # 6 ▸ Build .venv and install deps with uv
       - name: Build virtualenv and install deps
-        shell: pwsh
+        shell: powershell
         env:
           GIT_SSH_COMMAND: "ssh -i $env:TEMP/deputydev_core_deploy -o IdentitiesOnly=yes"
         run: |
@@ -72,7 +72,7 @@ jobs:
 
       # 7 ▸ Install ccache on Windows (optional)
       - name: Install ccache on Windows
-        shell: pwsh
+        shell: powershell
         run: |
           if (Get-Command choco -ErrorAction SilentlyContinue) {
             choco install -y ccache
@@ -82,7 +82,7 @@ jobs:
 
       # 8 ▸ Build standalone executable with Nuitka (Windows)
       - name: Build Windows binary
-        shell: pwsh
+        shell: powershell
         env:
           GIT_SSH_COMMAND: "ssh -i $env:TEMP/deputydev_core_deploy -o IdentitiesOnly=yes"
           NUITKA_CCACHE_AUTO_INSTALL: "yes"
