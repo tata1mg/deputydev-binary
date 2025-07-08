@@ -1,12 +1,13 @@
-name: Build DeputyDev Windows Binary
+name: Build DeputyDev macOS ARM64 Binary
 
 on:
   release:
     types: [published, prereleased]
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build-macos:
+    runs-on: self-hosted
+    name: Build macOS ARM64
 
     steps:
       - name: Checkout repository
@@ -16,7 +17,6 @@ jobs:
 
       - name: Determine version
         id: get_version
-        shell: bash
         run: |
           VERSION="${{ github.event.release.tag_name }}"
           VERSION="${VERSION#v}"
@@ -28,19 +28,16 @@ jobs:
           python-version: '3.11'
 
       - name: Write deploy key
-        shell: bash
         run: |
           echo "${{ secrets.DEPUTYDEV_CORE_ACCESS_KEY }}" > /tmp/deputydev_core_deploy
           chmod 600 /tmp/deputydev_core_deploy
 
       - name: Add github.com to known_hosts
-        shell: bash
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       - name: Build virtualenv and install deps
-        shell: bash
         env:
           GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
         run: |
@@ -48,28 +45,44 @@ jobs:
           pip install uv
 
           uv venv .venv
-          source .venv/Scripts/activate
+          source .venv/bin/activate
           uv sync --extra binarization
 
-      - name: Install ccache
-        run: choco install -y ccache
+      - name: Check for Clang
+        id: check_clang
+        run: |
+          if command -v clang >/dev/null 2>&1; then
+            echo "CLANG=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "CLANG=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Build Windows EXE
-        shell: bash
+      - name: Build macOS binary
         env:
           GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
           NUITKA_CCACHE_AUTO_INSTALL: "yes"
         run: |
           set -e
-          source .venv/Scripts/activate
+          source .venv/bin/activate
 
           VERSION="${{ steps.get_version.outputs.version }}"
-          DIR="windows-x64-${VERSION}"
-          mkdir -p $DIR
+          DIR="macos-arm64-${VERSION}"
+          mkdir -p "$DIR"
 
-          python -m nuitka --mode=app --show-modules --jobs=2 --show-scons \
+          CLANG_FLAG=""
+          if [ "${{ steps.check_clang.outputs.CLANG }}" = "true" ]; then
+            CLANG_FLAG="--clang"
+          fi
+
+          python3 -m nuitka \
+            --mode=app \
+            $CLANG_FLAG \
+            --jobs=$(sysctl -n hw.ncpu) \
+            --lto=no \
+            --static-libpython=yes \
+            --python-flag=static_hashes \
             --assume-yes-for-downloads \
-          	--show-progress	 \
+            --nofollow-import-to=nuitka.plugins.standard \
             --include-package=tree_sitter_language_pack.bindings.dockerfile \
             --include-package=tree_sitter_language_pack.bindings.make \
             --include-package=tree_sitter_language_pack.bindings.cmake \
@@ -88,39 +101,39 @@ jobs:
             --include-package=tree_sitter_language_pack.bindings.tsx \
             app/service.py
 
-          mv service.exe "$DIR/service.exe"
+          mv service.app "$DIR/service.app"
 
-          CHECKSUM=$(openssl dgst -sha256 "$DIR/service.exe" | awk '{print $2}')
+          CHECKSUM=$(shasum -a 256 "$DIR/service.app/Contents/MacOS/service" | awk '{print $1}')
           echo "checksum=$CHECKSUM" >> $GITHUB_OUTPUT
           echo "dir=$DIR" >> $GITHUB_OUTPUT
 
-          tar -czf "$DIR.tar.gz" -C "$DIR" service.exe
-        id: win_build
+          tar -czf "$DIR.tar.gz" -C "$DIR" service.app
+        id: macos_build
 
-      - name: Upload Windows tarball
+      - name: Upload macOS tarball
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.win_build.outputs.dir }}.tar.gz
-          path: ${{ steps.win_build.outputs.dir }}.tar.gz
+          name: ${{ steps.macos_build.outputs.dir }}.tar.gz
+          path: ${{ steps.macos_build.outputs.dir }}.tar.gz
 
       - name: Create manifest
         run: |
           cat > binaries-manifest.json <<EOF
           {
-            "win32": {
-              "x64": {
-                "directory": "${{ steps.win_build.outputs.dir }}",
-                "file_checksum": "${{ steps.win_build.outputs.checksum }}",
-                "file_path": "${{ steps.win_build.outputs.dir }}/service.exe",
-                "s3_key": "binaries/${{ steps.get_version.outputs.version }}/windows/${{ steps.win_build.outputs.dir }}.tar.gz",
-                "service_path": "${{ steps.win_build.outputs.dir }}/service.exe"
+            "darwin": {
+              "arm64": {
+                "directory": "${{ steps.macos_build.outputs.dir }}",
+                "file_checksum": "${{ steps.macos_build.outputs.checksum }}",
+                "file_path": "${{ steps.macos_build.outputs.dir }}/service.app",
+                "s3_key": "binaries/${{ steps.get_version.outputs.version }}/darwin/${{ steps.macos_build.outputs.dir }}.enc",
+                "service_path": "${{ steps.macos_build.outputs.dir }}/service.app/Contents/MacOS/service"
               }
             }
           }
           EOF
 
-      - name: Upload Windows manifest
+      - name: Upload macOS manifest
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-manifest-windows.json
+          name: binaries-manifest-macos.json
           path: binaries-manifest.json
