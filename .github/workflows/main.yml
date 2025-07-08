@@ -1,122 +1,234 @@
-name: Build DeputyDev Windows Binary
+name: Build DeputyDev Linux & Windows Binaries
 
 on:
   release:
     types: [published, prereleased]
 
 jobs:
-  build-windows:
-    runs-on: [self-hosted, windows]
+  build-cross:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest-4-cores, windows-latest-4-cores]
         arch: [x86_64]
 
     permissions:
       contents: read
 
     steps:
-      # 1 ▸ Checkout the code
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2 ▸ Extract version from the tag (strip leading “v”)
       - name: Determine version
         id: get_version
-        shell: powershell
+        shell: bash
         run: |
-          $version = "${{ github.event.release.tag_name }}"
-          $version = $version -replace "^v", ""
-          echo "version=$version" >> $env:GITHUB_OUTPUT
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # 3 ▸ Setup Python 3.11
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      # 4 ▸ Write the SSH deploy key from repo secret
       - name: Write deploy key
-        shell: powershell
+        shell: bash
         run: |
-          $keyPath = "$env:TEMP\deputydev_core_deploy"
-          Set-Content -Path $keyPath -Value "${{ secrets.DEPUTYDEV_CORE_ACCESS_KEY }}" -NoNewline
-          icacls $keyPath /inheritance:r /grant:r "$env:USERNAME:R"
+          echo "${{ secrets.DEPUTYDEV_CORE_ACCESS_KEY }}" > /tmp/deputydev_core_deploy
+          chmod 600 /tmp/deputydev_core_deploy
 
-      # 5 ▸ Trust github.com host key
       - name: Add github.com to known_hosts
-        shell: powershell
+        shell: bash
         run: |
-          $sshDir = "$env:USERPROFILE\.ssh"
-          if (-not (Test-Path $sshDir)) {
-            New-Item -Path $sshDir -ItemType Directory | Out-Null
-          }
-          ssh-keyscan github.com | Out-File -FilePath "$sshDir\known_hosts" -Append
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-      # 6 ▸ Build .venv and install deps with uv
       - name: Build virtualenv and install deps
-        shell: powershell
+        shell: bash
         env:
-          GIT_SSH_COMMAND: "ssh -i $env:TEMP/deputydev_core_deploy -o IdentitiesOnly=yes"
+          GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
         run: |
           python -m pip install --upgrade pip
           pip install uv
 
           uv venv .venv
 
-          & .venv\Scripts\Activate.ps1
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            ACTIVATE=".venv/Scripts/activate"
+          else
+            ACTIVATE=".venv/bin/activate"
+          fi
+          source "$ACTIVATE"
 
-          # install runtime & binarization extras (pulls Nuitka)
           uv sync --extra binarization
 
-      # 7 ▸ Install ccache on Windows (optional)
-      - name: Install ccache on Windows
-        shell: powershell
+      - name: Install ccache on Linux
+        if: runner.os == 'Linux'
+        shell: bash
         run: |
-          if (Get-Command choco -ErrorAction SilentlyContinue) {
-            choco install -y ccache
-          } else {
-            Write-Host "choco not found; skipping ccache install"
-          }
+          sudo apt-get update
+          sudo apt-get install -y ccache
 
-      # 8 ▸ Build standalone executable with Nuitka (Windows)
-      - name: Build Windows binary
-        shell: powershell
+      - name: Install ccache on Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install -y ccache
+
+      # ========== BUILD LINUX BIN ==========
+      - name: Build Linux binary
+        if: runner.os == 'Linux'
+        shell: bash
         env:
-          GIT_SSH_COMMAND: "ssh -i $env:TEMP/deputydev_core_deploy -o IdentitiesOnly=yes"
+          GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
           NUITKA_CCACHE_AUTO_INSTALL: "yes"
         run: |
-          & .venv\Scripts\Activate.ps1
+          set -e
+          source .venv/bin/activate
 
-          $VERSION = "${{ steps.get_version.outputs.version }}"
-          $ARCH = "x86_64"
+          VERSION="${{ steps.get_version.outputs.version }}"
+          ARCH="x86_64"
+          DIR="linux-x64-${VERSION}"
+          mkdir -p $DIR
 
-          python -m nuitka --mode=app --show-progress `
-            --include-package=tree_sitter_language_pack.bindings.dockerfile `
-            --include-package=tree_sitter_language_pack.bindings.make `
-            --include-package=tree_sitter_language_pack.bindings.cmake `
-            --include-package=tree_sitter_language_pack.bindings.python `
-            --include-package=tree_sitter_language_pack.bindings.javascript `
-            --include-package=tree_sitter_language_pack.bindings.typescript `
-            --include-package=tree_sitter_language_pack.bindings.java `
-            --include-package=tree_sitter_language_pack.bindings.c `
-            --include-package=tree_sitter_language_pack.bindings.cpp `
-            --include-package=tree_sitter_language_pack.bindings.go `
-            --include-package=tree_sitter_language_pack.bindings.rust `
-            --include-package=tree_sitter_language_pack.bindings.ruby `
-            --include-package=tree_sitter_language_pack.bindings.html `
-            --include-package=tree_sitter_language_pack.bindings.kotlin `
-            --include-package=tree_sitter_language_pack.bindings.json `
-            --include-package=tree_sitter_language_pack.bindings.tsx `
+          python3 -m nuitka --mode=app \
+            --include-package=tree_sitter_language_pack.bindings.dockerfile \
+            --include-package=tree_sitter_language_pack.bindings.make \
+            --include-package=tree_sitter_language_pack.bindings.cmake \
+            --include-package=tree_sitter_language_pack.bindings.python \
+            --include-package=tree_sitter_language_pack.bindings.javascript \
+            --include-package=tree_sitter_language_pack.bindings.typescript \
+            --include-package=tree_sitter_language_pack.bindings.java \
+            --include-package=tree_sitter_language_pack.bindings.c \
+            --include-package=tree_sitter_language_pack.bindings.cpp \
+            --include-package=tree_sitter_language_pack.bindings.go \
+            --include-package=tree_sitter_language_pack.bindings.rust \
+            --include-package=tree_sitter_language_pack.bindings.ruby \
+            --include-package=tree_sitter_language_pack.bindings.html \
+            --include-package=tree_sitter_language_pack.bindings.kotlin \
+            --include-package=tree_sitter_language_pack.bindings.json \
+            --include-package=tree_sitter_language_pack.bindings.tsx \
             app/service.py
 
-          if (!(Test-Path "output")) { New-Item -Path "output" -ItemType Directory | Out-Null }
-          Move-Item -Path "service.exe" -Destination "output/windows-$ARCH-$VERSION.exe"
+          mv service.bin "$DIR/service.bin"
 
-      # 9 ▸ Upload the resulting artifact (Windows)
-      - name: Upload Windows artifact
+          # Calculate checksum
+          CHECKSUM=$(sha256sum "$DIR/service.bin" | awk '{print $1}')
+          echo "$CHECKSUM" > "$DIR/service.bin.sha256"
+
+          # Tar
+          tar -czf "$DIR.tar.gz" "$DIR"
+
+          # Save info for JSON
+          echo "LINUX_DIR=$DIR" >> $GITHUB_ENV
+          echo "LINUX_FILE_CHECKSUM=$CHECKSUM" >> $GITHUB_ENV
+          echo "LINUX_TAR=$DIR.tar.gz" >> $GITHUB_ENV
+
+      # ========== BUILD WINDOWS EXE ==========
+      - name: Build Windows EXE
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          GIT_SSH_COMMAND: "ssh -i /tmp/deputydev_core_deploy -o IdentitiesOnly=yes"
+          NUITKA_CCACHE_AUTO_INSTALL: "yes"
+        run: |
+          set -e
+          source .venv/Scripts/activate
+
+          VERSION="${{ steps.get_version.outputs.version }}"
+          ARCH="x86_64"
+          DIR="windows-x64-${VERSION}"
+          mkdir -p $DIR
+
+          python -m nuitka --mode=app \
+            --include-package=tree_sitter_language_pack.bindings.dockerfile \
+            --include-package=tree_sitter_language_pack.bindings.make \
+            --include-package=tree_sitter_language_pack.bindings.cmake \
+            --include-package=tree_sitter_language_pack.bindings.python \
+            --include-package=tree_sitter_language_pack.bindings.javascript \
+            --include-package=tree_sitter_language_pack.bindings.typescript \
+            --include-package=tree_sitter_language_pack.bindings.java \
+            --include-package=tree_sitter_language_pack.bindings.c \
+            --include-package=tree_sitter_language_pack.bindings.cpp \
+            --include-package=tree_sitter_language_pack.bindings.go \
+            --include-package=tree_sitter_language_pack.bindings.rust \
+            --include-package=tree_sitter_language_pack.bindings.ruby \
+            --include-package=tree_sitter_language_pack.bindings.html \
+            --include-package=tree_sitter_language_pack.bindings.kotlin \
+            --include-package=tree_sitter_language_pack.bindings.json \
+            --include-package=tree_sitter_language_pack.bindings.tsx \
+            app/service.py
+
+          mv service.exe "$DIR/service.exe"
+
+          # Calculate checksum
+          CHECKSUM=$(sha256sum "$DIR/service.exe" | awk '{print $1}')
+          echo "$CHECKSUM" > "$DIR/service.exe.sha256"
+
+          # Tar
+          tar -czf "$DIR.tar.gz" "$DIR"
+
+          # Save info for JSON
+          echo "WINDOWS_DIR=$DIR" >> $GITHUB_ENV
+          echo "WINDOWS_FILE_CHECKSUM=$CHECKSUM" >> $GITHUB_ENV
+          echo "WINDOWS_TAR=$DIR.tar.gz" >> $GITHUB_ENV
+
+      # ========== UPLOAD ARTIFACTS ==========
+      - name: Upload Linux tarball
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
-          name: deputydev-windows-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}
-          path: output/windows-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.exe
+          name: ${{ env.LINUX_TAR }}
+          path: ${{ env.LINUX_TAR }}
+
+      - name: Upload Windows tarball
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.WINDOWS_TAR }}
+          path: ${{ env.WINDOWS_TAR }}
+
+      # ========== GENERATE JSON MANIFEST (ONCE) ==========
+      - name: Generate JSON Manifest
+        if: ${{ always() && runner.os == 'Linux' }}
+        shell: bash
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          linux_dir="linux-x64-${VERSION}"
+          windows_dir="windows-x64-${VERSION}"
+
+          linux_checksum=$(cat "${linux_dir}/service.bin.sha256")
+          windows_checksum=$(cat "${windows_dir}/service.exe.sha256")
+
+          cat > binaries-manifest.json <<EOF
+          {
+            "linux": {
+              "x64": {
+                "directory": "$linux_dir",
+                "file_checksum": "$linux_checksum",
+                "file_path": "$linux_dir/service.bin",
+                "s3_key": "binaries/$VERSION/linux/$linux_dir.tar.gz",
+                "service_path": "$linux_dir/service.bin"
+              }
+            },
+            "win32": {
+              "x64": {
+                "directory": "$windows_dir",
+                "file_checksum": "$windows_checksum",
+                "file_path": "$windows_dir/service.exe",
+                "s3_key": "binaries/$VERSION/windows/$windows_dir.tar.gz",
+                "service_path": "$windows_dir/service.exe"
+              }
+            }
+          }
+          EOF
+
+      - name: Upload Manifest JSON
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-manifest.json
+          path: binaries-manifest.json
