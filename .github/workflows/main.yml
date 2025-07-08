@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-4-cores
     strategy:
       matrix:
         arch: [x86_64]
