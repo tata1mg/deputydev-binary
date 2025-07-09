@@ -104,6 +104,7 @@ jobs:
           path: ${{ steps.win_build.outputs.dir }}.tar.gz
 
       - name: Create manifest
+        shell: bash
         run: |
           cat > binaries-manifest.json <<EOF
           {
