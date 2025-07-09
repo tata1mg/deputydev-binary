@@ -2,7 +2,15 @@
 MacOS arm64
 *****************************************************************
 
-python3 -m nuitka --mode=app \
+python3 -m nuitka \
+  --mode=app \
+  --clang \
+  --jobs=$(sysctl -n hw.ncpu) \
+  --lto=no \
+  --static-libpython=yes \
+  --python-flag=static_hashes \
+  --assume-yes-for-downloads \
+  --nofollow-import-to=nuitka.plugins.standard \
 --macos-signed-app-name="com.tata1mg.ddbinary" \
 --include-package=tree_sitter_language_pack.bindings.dockerfile \
 --include-package=tree_sitter_language_pack.bindings.make \
@@ -28,6 +36,7 @@ Windows x86_64 / Linux x86_64
 *****************************************************************
 
 python3 -m nuitka --mode=app \
+--assume-yes-for-downloads \
 --include-package=tree_sitter_language_pack.bindings.dockerfile \
 --include-package=tree_sitter_language_pack.bindings.make \
 --include-package=tree_sitter_language_pack.bindings.cmake \
