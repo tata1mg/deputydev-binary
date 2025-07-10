@@ -53,3 +53,7 @@ def parse_request_params(req: Request):
     for key, value in req.match_info.items():
         params[key] = value
     return params
+
+
+def flatten_multidict(multi: dict) -> dict:
+    return {k: v[0] if isinstance(v, list) else v for k, v in multi.items()}

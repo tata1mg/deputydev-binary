@@ -4,15 +4,12 @@ from sanic.response import json
 
 from app.dataclasses.review.main import ReviewRequest
 from app.services.review.review_service import ReviewService
+from app.utils.util import flatten_multidict
 
-review = Blueprint("review", url_prefix="review")
-
-
-def flatten_multidict(multi: dict) -> dict:
-    return {k: v[0] if isinstance(v, list) else v for k, v in multi.items()}
+review = Blueprint("review", url_prefix="")
 
 
-@review.route("/new", methods=["GET"])
+@review.route("review/new", methods=["GET"])
 async def server_sync(_request: Request):
     try:
         data = ReviewRequest(**flatten_multidict(_request.args))
@@ -20,7 +17,7 @@ async def server_sync(_request: Request):
         return json({"error": e.errors()}, status=400)
 
     response = await ReviewService.get_diff_summary(data.repo_path, data.target_branch, data.review_type)
-    return json(response.model_dump())
+    return json(response.model_dump(mode="json"))
 
 
 @review.route("/branches/get_source_branch", methods=["GET"])
@@ -35,4 +32,18 @@ async def server_sync(_request: Request):
     repo_path = _request.args.get("repo_path")
     keyword = _request.args.get("keyword")
     response = await ReviewService.search_branches(repo_path=repo_path, keyword=keyword)
+    return json(response.model_dump())
+
+
+@review.route("/review/start", methods=["POST"])
+async def server_sync(_request: Request):
+    data = ReviewRequest(**flatten_multidict(_request.args))
+    response = await ReviewService.start_review(repo_path=data.repo_path, review_type=data.review_type)
+    return json(response.model_dump())
+
+
+@review.route("/review/reset", methods=["POST"])
+async def server_sync(_request: Request):
+    repo_path = _request.args.get("repo_path")
+    response = await ReviewService.reset(repo_path=repo_path)
     return json(response.model_dump())
