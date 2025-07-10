@@ -1,7 +1,11 @@
 import json
 from typing import Any, Dict
 
+from deputydev_core.services.file_summarization.file_summarization_service import (
+    FileSummarizationService,
+)
 from deputydev_core.services.tools.iterative_file_reader.dataclass.main import (
+    FileSummaryReaderRequestParams,
     IterativeFileReaderRequestParams,
 )
 from deputydev_core.services.tools.iterative_file_reader.iterative_file_reader import (
@@ -41,6 +45,28 @@ async def read_file(_request: Request) -> HTTPResponse:
             },
         }
         return HTTPResponse(body=json.dumps(response))
+    except ValueError as ve:
+        raise ValueError(ve)
+    except Exception as e:  # noqa: BLE001
+        raise ServerError(str(e)) from e
+
+
+@codebase_read.route("/read-file-summary", methods=["POST"])
+async def read_file_summary(_request: Request) -> HTTPResponse:
+    json_body = _request.json
+    if not json_body:
+        raise BadRequest("Request payload is missing or invalid.")
+    try:
+        validated_body = FileSummaryReaderRequestParams(**json_body)
+    except Exception:  # noqa: BLE001
+        raise BadRequest("INVALID_PARAMS")
+
+    try:
+        file_summary = await FileSummarizationService().summarize_file(
+            file_path=validated_body.file_path, include_line_numbers=True
+        )
+
+        return HTTPResponse(body=json.dumps(file_summary.model_dump(mode="json")))
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as e:  # noqa: BLE001
