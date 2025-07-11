@@ -262,7 +262,7 @@ wheels = [
 
 [[package]]
 name = "deputydev-binary"
-version = "9.0.0"
+version = "9.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "bs4" },
