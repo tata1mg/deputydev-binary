@@ -26,11 +26,9 @@ def _handle_fallback_error(error: Exception) -> HTTPResponse:
     if isinstance(error, BadRequest):
         error_response: Dict[str, Optional[str]] = {
             "error_code": "400",
-            "error_type": str(error) if str(error) == "INVALID_PARAMS" else "BAD_REQUEST",
+            "error_type": "BAD_REQUEST",
             "error_subtype": None,
-            "error_message": "Request failed due to invalid parameters"
-            if str(error) == "INVALID_PARAMS"
-            else str(error),
+            "error_message": str(error),
             "traceback": str(traceback.format_exc()),
         }
         return HTTPResponse(body=json.dumps(error_response), status=400)
