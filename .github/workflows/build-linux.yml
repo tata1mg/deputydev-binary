@@ -2,7 +2,7 @@ name: Build DeputyDev Linux Binary
 
 on:
   release:
-    types: [published, prereleased]
+    types: [published]
 
 jobs:
   build-linux:
