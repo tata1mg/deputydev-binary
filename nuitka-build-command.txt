@@ -7,7 +7,6 @@ python3 -m nuitka \
   --clang \
   --jobs=$(sysctl -n hw.ncpu) \
   --lto=no \
-  --static-libpython=yes \
   --python-flag=static_hashes \
   --assume-yes-for-downloads \
   --nofollow-import-to=nuitka.plugins.standard \
