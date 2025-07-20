@@ -16,6 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 binarization = [
+  
     "nuitka>=2.7.1",
 ]
 

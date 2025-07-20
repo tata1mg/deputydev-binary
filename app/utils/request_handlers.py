@@ -43,12 +43,17 @@ def handle_mcp_exceptions(func):
 
 
 def handle_ide_review_exceptions(func):
+    """
+    Decorator to handle exceptions in IDE review service.
+    """
     @wraps(func)
     async def wrapper(*args, **kwargs):
         try:
             result = await func(*args, **kwargs)
             return McpResponse(is_error=False, data=result)
         except Exception as ex:
+            import traceback
+            print(traceback.format_exc())
             return McpResponse(is_error=True, meta=McpResponseMeta(message=str(ex)))
 
     return wrapper

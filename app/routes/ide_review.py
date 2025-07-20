@@ -1,10 +1,9 @@
 from pydantic_core._pydantic_core import ValidationError
 from sanic import Blueprint, Request
 from sanic.response import json
-
-from app.dataclasses.review.main import ReviewRequest
 from app.services.review.review_service import ReviewService
 from app.utils.util import flatten_multidict
+from app.services.review.dataclass.main import ReviewRequest
 
 review = Blueprint("review", url_prefix="")
 
