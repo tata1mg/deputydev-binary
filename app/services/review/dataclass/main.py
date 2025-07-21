@@ -51,6 +51,7 @@ class FileDiffs(BaseModel):
     source_commit: str
     target_commit: str
     origin_url: str
+    repo_name: str
 
 
 FILE_DIFF_STATUS_MAP = {

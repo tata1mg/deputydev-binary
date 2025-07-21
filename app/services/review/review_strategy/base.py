@@ -68,7 +68,8 @@ class BaseStrategy(ABC):
             source_branch=self.source_branch,
             source_commit=self.source_commit,
             target_commit=self.target_commit,
-            origin_url=self._git_utils.get_default_remote_name()
+            origin_url=self._git_utils.get_default_remote_name(),
+            repo_name=self._git_utils.get_default_remote_name().split("/")[-1].split(".")[0]
         )
 
 
