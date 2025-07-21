@@ -46,7 +46,7 @@ class BaseStrategy(ABC):
             str: The name of the target branch.
         """
         if self._target_branch is None:
-            self._target_branch = self._git_utils.get_default_branch()
+            self._target_branch = self._git_utils.get_origin_branch(self.source_branch)
         return self._target_branch
     
     async def get_changes(self) -> FileDiffs:
@@ -65,7 +65,10 @@ class BaseStrategy(ABC):
         return FileDiffs(
             file_wise_changes=diff_changes,
             target_branch=self.target_branch, 
-            source_branch=self.source_branch
+            source_branch=self.source_branch,
+            source_commit=self.source_commit,
+            target_commit=self.target_commit,
+            origin_url=self._git_utils.get_default_remote_name()
         )
 
 

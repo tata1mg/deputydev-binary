@@ -60,12 +60,3 @@ async def comment_validity(_request: Request) -> HTTPResponse:
         return HTTPResponse(body=json.dumps(result))
     except Exception as e:
         raise ServerError(str(e))
-
-@review.route("/check-comment-validity", methods=["POST"])
-async def comment_validity(_request: Request) -> HTTPResponse:
-    params = CommentValidityParams(**_request.json)
-    try:
-        result = await CommentValidator().is_comment_applicable(params)
-        return HTTPResponse(body=json.dumps(result))
-    except Exception as e:
-        raise ServerError(str(e))

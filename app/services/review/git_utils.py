@@ -16,14 +16,50 @@ class GitUtils:
         """
         Returns the default branch (e.g., 'main' or 'master') as set by origin/HEAD.
         """
-        ref = subprocess.check_output(
-            "git symbolic-ref refs/remotes/origin/HEAD",
-            cwd=self._repo_path,
-            shell=True,
-            text=True
-        ).strip()
-        return ref.split("/")[-1]
+        origin = self.git_repo.remotes.origin
+        head_ref = origin.refs.HEAD
+        target_branch = head_ref.ref.name.split("/")[-1]
+        print("Target branch: ", target_branch)
+        return target_branch
+    
+    def get_origin_branch(self, branch_name: str) -> str:
+        """
+        Detects the most likely branch from which the given branch originated.
+        It compares merge bases with all other branches and returns the one with the latest common ancestor.
+        """
+        from datetime import datetime
 
+        repo = self.git_repo
+        branches = [head.name for head in repo.heads if head.name != branch_name]
+
+        latest_origin = None
+        latest_time = None
+
+        for candidate in branches:
+            try:
+                merge_base = repo.git.merge_base(branch_name, candidate).strip()
+                commit = repo.commit(merge_base)
+                commit_time = datetime.fromtimestamp(commit.committed_date)
+
+                if not latest_time or commit_time > latest_time:
+                    latest_time = commit_time
+                    latest_origin = candidate
+            except Exception:
+                continue  # skip if branches don't have a merge base
+
+        if latest_origin:
+            return latest_origin
+        else:
+            # fallback — assume from default branch
+            return self.get_default_branch()
+
+
+    def get_default_remote_name(self) -> str:
+        """
+        Returns the fetch URL of the 'origin' remote.
+        """
+        origin = self.git_repo.remotes.origin
+        return origin.url
     
     def commit_hash(self, branch_name: str) -> str:
         """

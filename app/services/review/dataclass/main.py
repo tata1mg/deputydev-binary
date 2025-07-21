@@ -48,6 +48,9 @@ class FileDiffs(BaseModel):
     file_wise_changes: List[FileChanges]
     target_branch: str
     source_branch: str
+    source_commit: str
+    target_commit: str
+    origin_url: str
 
 
 FILE_DIFF_STATUS_MAP = {
