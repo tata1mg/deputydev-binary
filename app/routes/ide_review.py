@@ -4,6 +4,10 @@ from sanic.response import json
 from app.services.review.review_service import ReviewService
 from app.utils.util import flatten_multidict
 from app.services.review.dataclass.main import ReviewRequest
+from app.models.dtos.code_review_dtos.comment_validity_dto import CommentValidityParams
+from app.services.comment_validator import CommentValidator
+from sanic.response import HTTPResponse
+
 
 review = Blueprint("review", url_prefix="")
 
@@ -46,3 +50,22 @@ async def server_sync(_request: Request):
     repo_path = _request.args.get("repo_path")
     response = await ReviewService.reset(repo_path=repo_path)
     return json(response.model_dump())
+
+
+@review.route("/check-comment-validity", methods=["POST"])
+async def comment_validity(_request: Request) -> HTTPResponse:
+    params = CommentValidityParams(**_request.json)
+    try:
+        result = await CommentValidator().is_comment_applicable(params)
+        return HTTPResponse(body=json.dumps(result))
+    except Exception as e:
+        raise ServerError(str(e))
+
+@review.route("/check-comment-validity", methods=["POST"])
+async def comment_validity(_request: Request) -> HTTPResponse:
+    params = CommentValidityParams(**_request.json)
+    try:
+        result = await CommentValidator().is_comment_applicable(params)
+        return HTTPResponse(body=json.dumps(result))
+    except Exception as e:
+        raise ServerError(str(e))

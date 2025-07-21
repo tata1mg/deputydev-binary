@@ -1,6 +1,4 @@
 from typing import List, Optional
-
-from deputydev_core.services.ide_review.diff_selector.diff_change_tracker import DiffChangeTracker
 from app.utils.request_handlers import handle_ide_review_exceptions
 from app.services.review.git_utils import GitUtils
 from app.services.review.review_strategy.review_factory import ReviewFactory

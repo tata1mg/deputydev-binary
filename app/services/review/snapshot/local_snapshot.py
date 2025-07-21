@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Dict
 import shutil
 from deputydev_core.utils.app_logger import AppLogger
-from deputydev_core.services.ide_review.dataclass.main import FileChangeStatusTypes
 from .base import DiffSnapshotBase
 from app.constants import FILE_SNAPSHOT_PATH
 from app.constants import COMMIT_SNAPSHOT_PATH
 from app.constants import DIFF_SNAPSOT_PATH
+from app.services.review.dataclass.main import FileChangeStatusTypes
 
 
 class LocalDiffSnapshot(DiffSnapshotBase):
