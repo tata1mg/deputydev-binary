@@ -83,11 +83,9 @@ async def update_vector_store(request: Request, ws: Websocket) -> None:
         data = await ws.recv()
         payload = json.loads(data)
         payload = UpdateVectorStoreParams(**payload)
-        is_partial_indexing = False if payload.sync else True
         files_indexing_status = {}
 
         async def indexing_progress_callback(progress: float, indexing_status: List[Dict[str, str]]) -> None:
-            nonlocal is_partial_indexing
             nonlocal files_indexing_status
             """Sends progress updates to the WebSocket."""
             files_indexing_status = indexing_status
@@ -99,7 +97,6 @@ async def update_vector_store(request: Request, ws: Websocket) -> None:
                         "repo_path": payload.repo_path,
                         "progress": progress,
                         "indexing_status": list(indexing_status.values()),
-                        "is_partial_state": is_partial_indexing,
                     }
                 )
             )
@@ -132,7 +129,6 @@ async def update_vector_store(request: Request, ws: Websocket) -> None:
                                 "status": "COMPLETED",
                                 "repo_path": payload.repo_path,
                                 "progress": 100,
-                                "is_partial_state": is_partial_indexing,
                                 "indexing_status": list(files_indexing_status.values()),
                             }
                         )
