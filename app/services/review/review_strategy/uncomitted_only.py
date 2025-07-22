@@ -7,6 +7,8 @@ from typing import Dict
 from app.services.review.diff_utils import get_file_diff, clean_diff, format_diff_response
 from app.services.review.dataclass.main import FILE_DIFF_STATUS_MAP
 from deputydev_core.utils.app_logger import AppLogger
+from pathlib import Path
+from app.services.review.diff_utils import compare_files
 
 
 class UncomittedOnlyStrategy(BaseStrategy):
@@ -14,7 +16,11 @@ class UncomittedOnlyStrategy(BaseStrategy):
         return get_changes( self._snapshot_utils, self._git_utils)
     
     def snapshot(self):
-        self._snapshot_utils.take_diff_snapshot()
+        changes = self.get_diff_changes()
+        file_change_status_map: Dict[str, FileChangeStatusTypes] = {}
+        for change in changes:
+            file_change_status_map[change.file_path] = change.status
+        self._snapshot_utils.take_diff_snapshot(file_change_status_map)
 
     def reset(self):
         self._snapshot_utils.clean()    
@@ -32,16 +38,19 @@ class UncomittedOnlyStrategy(BaseStrategy):
         git_repo = self._git_utils.git_repo
         prev_files = self._snapshot_utils.get_previous_snapshot()
         current_changes = self.get_uncommited_changes()
-        
+        print(prev_files)
+        print(current_changes)
         current_changed_files = set(current_changes.keys())
         changes: List[FileChanges] = []
 
         # Check modified files
         for file in prev_files & current_changed_files:
             file_path = Path(file)
-            snap_file = self._snapshot_utils.get_snapshot_path() / file
+            snap_file = self._snapshot_utils.snapshot_path / file
+        
             if file_path.is_file() and snap_file.is_file() and not compare_files(file_path, snap_file):
                 try:
+                    print(file_path, snap_file, compare_files(file_path, snap_file))
                     diff = get_file_diff(git_repo, file, current_changes[file], self.get_comparable_commit())
                     changes.append(format_diff_response(file, diff, current_changes[file]))
                 except Exception as e:

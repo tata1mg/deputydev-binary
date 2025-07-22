@@ -56,7 +56,7 @@ class ReviewService:
         Resets the review session.
         """
         strategy = cls._get_review_strategy(repo_path, review_type, target_branch)
-        await strategy.reset()
+        strategy.reset()
 
     @classmethod
     @handle_ide_review_exceptions
@@ -68,4 +68,4 @@ class ReviewService:
         Starts a new review session.
         """
         strategy = cls._get_review_strategy(repo_path, review_type, target_branch)
-        return await strategy.take_diff_snapshot()
+        return strategy.snapshot()

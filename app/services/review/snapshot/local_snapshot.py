@@ -28,7 +28,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
     def snapshot_path(self):
         """Builds the snapshot path for the given source branch."""
         if not self._snapshot_path:
-            self._snapshot_path = self._repo_path / FILE_SNAPSHOT_PATH / self._source_branch
+            self._snapshot_path = self._repo_path / self._source_branch /  FILE_SNAPSHOT_PATH 
         return self._snapshot_path
 
     
@@ -96,6 +96,8 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         """Removes all snapshots for the current branch."""
         if self.snapshot_path.exists():
             shutil.rmtree(self.snapshot_path)
+        else:
+            print("Snapshot path does not exist", self.snapshot_path)
             
     def take_commit_snapshot(self, commit_id: str) -> None:
         """Takes a snapshot of the current commit ID.

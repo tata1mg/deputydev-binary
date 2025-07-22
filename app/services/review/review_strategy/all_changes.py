@@ -27,7 +27,11 @@ class AllChangesStrategy(UncomittedOnlyStrategy):
         Take commit snapshot
         """
         # take diff snapshot
-        self._snapshot_utils.take_diff_snapshot()
+        changes = self.get_diff_changes()
+        file_change_status_map: Dict[str, FileChangeStatusTypes]
+        for change in changes:
+            file_change_status_map[change.file] = change.status
+        self._snapshot_utils.take_diff_snapshot(file_change_status_map)
         # take commit snapshot
         self._snapshot_utils.take_commit_snapshot(self.target_commit)
     

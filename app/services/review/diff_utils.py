@@ -77,6 +77,11 @@ def clean_diff(diff_output: str) -> str:
     return diff_output
 
 
+def compare_files(file1: Path, file2: Path) -> bool:
+    with open(file1, 'r') as f1, open(file2, 'r') as f2:
+        return f1.read() == f2.read()
+
+
 def get_commit_changes(snapshot_utils: DiffSnapshotBase,
                  git_handler: GitUtils, 
                  commit_id: Optional[str] = None) -> List[FileChanges]:

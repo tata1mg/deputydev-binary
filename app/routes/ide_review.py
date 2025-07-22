@@ -41,14 +41,17 @@ async def server_sync(_request: Request):
 @review.route("/review/start", methods=["POST"])
 async def server_sync(_request: Request):
     data = ReviewRequest(**flatten_multidict(_request.args))
-    response = await ReviewService.start_review(repo_path=data.repo_path, review_type=data.review_type)
+    response = await ReviewService.start_review(repo_path=data.repo_path, review_type=data.review_type, target_branch=data.target_branch)
     return json(response.model_dump())
 
 
 @review.route("/review/reset", methods=["POST"])
 async def server_sync(_request: Request):
-    repo_path = _request.args.get("repo_path")
-    response = await ReviewService.reset(repo_path=repo_path)
+    data = ReviewRequest(**flatten_multidict(_request.args))
+    response = await ReviewService.reset(repo_path=data.repo_path, 
+        review_type=data.review_type, 
+        target_branch=data.target_branch
+    )
     return json(response.model_dump())
 
 
