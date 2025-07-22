@@ -72,8 +72,9 @@ def get_commited_changes(git_handler: GitUtils, target_branch: str, last_review_
 
 def clean_diff(diff_output: str) -> str:
     """Remove the first 4 lines from diff output (equivalent to tail -n +5)"""
-    lines = diff_output.split('\n')
-    return '\n'.join(lines[4:]) if len(lines) > 4 else ''
+    # lines = diff_output.split('\n')
+    # return '\n'.join(lines[4:]) if len(lines) > 4 else ''
+    return diff_output
 
 
 def get_commit_changes(snapshot_utils: DiffSnapshotBase,
@@ -174,6 +175,61 @@ def get_file_diff(repo: Repo, file_path: str, change_type: FileChangeStatusTypes
         print(f"Error generating diff for {file_path}: {e}")
         return ""
 
+# def get_file_diff(repo: Repo, file_path: str, change_type: FileChangeStatusTypes, commit_id: Optional[str] = None) -> str:
+#     """Get diff for a specific file based on change type and commit reference."""
+#     commit_ref = commit_id or "HEAD"
+#     file_path_obj = Path(repo.working_tree_dir) / file_path #type: ignore
+    
+#     try:
+#         if change_type == FileChangeStatusTypes.UNTRACKED:
+#             # For untracked files, we need to stage them temporarily or use git diff --no-index
+#             if file_path_obj.is_file():
+#                 # Use git show with empty tree to get proper diff format
+#                 empty_tree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"  # Git's empty tree SHA
+#                 return repo.git.diff('--no-prefix', empty_tree, '--', file_path)
+#             else:
+#                 return ""
+        
+#         elif change_type == FileChangeStatusTypes.REMOVED:
+#             # For deleted files, compare HEAD to working tree (file is missing)
+#             return repo.git.diff('--no-prefix', 'HEAD', '--', file_path)
+        
+#         elif change_type == FileChangeStatusTypes.MODIFIED:
+#             if commit_id:
+#                 # Compare specific commit to workspace
+#                 return repo.git.diff('--no-prefix', commit_ref, '--', file_path)
+#             else:
+#                 # Show unstaged changes first, then staged if no unstaged
+#                 unstaged_diff = repo.git.diff('--no-prefix', 'HEAD', '--', file_path)
+#                 if unstaged_diff:
+#                     return unstaged_diff
+#                 # If no unstaged changes, show staged changes
+#                 return repo.git.diff('--no-prefix', '--cached', 'HEAD', '--', file_path)
+        
+#         elif change_type == FileChangeStatusTypes.ADDED:
+#             if commit_id:
+#                 # Compare from specific commit (file didn't exist then)
+#                 return repo.git.diff('--no-prefix', commit_ref, 'HEAD', '--', file_path)
+#             else:
+#                 # For staged new files, show diff from empty
+#                 cached_diff = repo.git.diff('--no-prefix', '--cached', '--', file_path)
+#                 if cached_diff:
+#                     return cached_diff
+#                 # For unstaged new files, diff against empty tree
+#                 empty_tree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+#                 return repo.git.diff('--no-prefix', empty_tree, '--', file_path)
+        
+#         elif change_type == FileChangeStatusTypes.RENAMED:
+#             # For renamed files, show the rename diff with move detection
+#             return repo.git.diff('--no-prefix', '-M', commit_ref, '--', file_path)
+        
+#         else:
+#             # Fallback for other change types
+#             return repo.git.diff('--no-prefix', commit_ref, '--', file_path)
+            
+#     except Exception as e:
+#         print(f"Error generating diff for {file_path}: {e}")
+#         return ""
 
 def get_current_changes_new(repo: Repo, commit_id: Optional[str] = None) -> Dict[str, FileChangeStatusTypes]:
     """Get current changes, optionally compared to a specific commit."""

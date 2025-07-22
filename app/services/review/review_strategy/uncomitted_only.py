@@ -51,7 +51,7 @@ class UncomittedOnlyStrategy(BaseStrategy):
         for file in current_changed_files - prev_files:
             try:
                 diff = get_file_diff(git_repo, file, current_changes[file], self.get_comparable_commit())
-                diff = clean_diff(diff)
+                # diff = clean_diff(diff)
                 changes.append(format_diff_response(file, diff, current_changes[file]))
             except Exception as e:
                 AppLogger.error(f"Error getting diff for {file}: {e}")

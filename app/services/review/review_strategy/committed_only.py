@@ -1,8 +1,7 @@
 from .base import BaseStrategy
 from app.services.review.dataclass.main import FileChanges
 from app.services.review.dataclass.main import FILE_DIFF_STATUS_MAP
-from app.services.review.snapshot.base import DiffSnapshotBase
-from typing import Optional, List
+from typing import List
 from app.services.review.diff_utils import format_diff_response
 
 class CommittedOnlyStrategy(BaseStrategy):    

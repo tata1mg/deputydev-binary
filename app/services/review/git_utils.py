@@ -1,7 +1,7 @@
-import subprocess
 from git import Repo
 from git import Repo, InvalidGitRepositoryError, NoSuchPathError
 from typing import List
+from datetime import datetime
 
 
 
@@ -10,7 +10,14 @@ class GitUtils:
         self._repo_path = repo_path
         self.git_repo = Repo(self._repo_path)
         self._source_branch: str = None #type: ignore
-        
+    
+    def has_conflicts(self):
+
+        # Check for unmerged entries in the index
+        unmerged_blobs = self.git_repo.index.unmerged_blobs()
+
+        return bool(unmerged_blobs)
+
 
     def get_default_branch(self) -> str:
         """
@@ -27,11 +34,9 @@ class GitUtils:
         Detects the most likely branch from which the given branch originated.
         It compares merge bases with all other branches and returns the one with the latest common ancestor.
         """
-        from datetime import datetime
-
         repo = self.git_repo
         branches = [head.name for head in repo.heads if head.name != branch_name]
-
+        print("Branches: ", branches)
         latest_origin = None
         latest_time = None
 
@@ -115,7 +120,9 @@ class GitUtils:
                     all_branches.append(branch_name)
 
         # Filter by keyword
-        matches = [b for b in all_branches if keyword in b]
+        matches = []
+        if all_branches:
+            matches = [b for b in all_branches if keyword in b]
 
         # Return sorted unique branch names
         return sorted(set(matches))

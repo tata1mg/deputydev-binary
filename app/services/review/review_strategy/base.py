@@ -6,6 +6,10 @@ from pathlib import Path
 from app.services.review.snapshot.base import DiffSnapshotBase
 from app.services.review.dataclass.main import FileDiffs
 from typing import Optional
+from typing import List
+from deputydev_core.utils.config_manager import ConfigManager
+from app.services.review.file_ignore_utils import should_ignore_file
+
 
 
 
@@ -49,19 +53,58 @@ class BaseStrategy(ABC):
             self._target_branch = self._git_utils.get_origin_branch(self.source_branch)
         return self._target_branch
     
+    def is_large_pr_diff(self, diff_changes: List[FileChanges]):
+        """
+        Returns:
+            bool: True if the PR diff is large
+        """
+        diff_size = 0
+        for diff_change in diff_changes:
+            diff_size += len(diff_change.diff)
+        # TODO: Uncomment before final release
+        # max_diff_size = ConfigManager.configs["CODE_REVIEW"]["MAX_DIFF_SIZE"]
+        # if diff_size > max_diff_size:
+        #     raise Exception(f"PR diff is large. Max diff size allowed : {max_diff_size}, Actual diff size : {diff_size}")
+
+    
+    async def run_validations(self):
+        """
+        Run validations on the repo
+        """
+        # Check if the repo is a valid git repo
+        if not self._git_utils.is_git_repo():
+            raise Exception("Repo is not a valid git repo")
+        
+        # Check if the repo has conflicts
+        if self._git_utils.has_conflicts():
+            raise Exception("Repo has conflicts")
+    
+    def get_effective_pr_diff(self, diff_changes: List[FileChanges]) -> List[FileChanges]:
+        """
+        Returns:
+            List[FileChanges]: List of file changes
+        """
+        for diff_change in diff_changes:
+            if should_ignore_file(diff_change.file_path):
+                diff_changes.remove(diff_change)
+        return diff_changes
+        
+
     async def get_changes(self) -> FileDiffs:
         """
         Returns:
             FileDiffs: File diffs
         """
-        
-        # Check if the repo is a valid git repo
-        if not self._git_utils.is_git_repo():
-            raise Exception("Repo is not a valid git repo")
+        await self.run_validations()
         
         diff_changes =  self.get_diff_changes()
         
-        # format the diff changes
+        # Remove ignored files
+        diff_changes = self.get_effective_pr_diff(diff_changes)
+
+        # Check if the PR diff is large
+        self.is_large_pr_diff(diff_changes)
+        
         return FileDiffs(
             file_wise_changes=diff_changes,
             target_branch=self.target_branch, 

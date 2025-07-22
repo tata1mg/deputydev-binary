@@ -27,7 +27,6 @@ class AllChangesStrategy(UncomittedOnlyStrategy):
         Take commit snapshot
         """
         # take diff snapshot
-        print("hello")
         self._snapshot_utils.take_diff_snapshot()
         # take commit snapshot
         self._snapshot_utils.take_commit_snapshot(self.target_commit)
