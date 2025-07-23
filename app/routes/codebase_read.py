@@ -57,26 +57,24 @@ async def read_file_or_summary(_request: Request) -> HTTPResponse:
     end_line = validated_body.end_line
 
     reader = IterativeFileReader(file_path=file_path, repo_path=repo_path)
-    total_lines = await reader._count_total_lines()
+    total_lines = await reader.count_total_lines()
 
-    # If a specific region is requested and it's under the threshold, return that region
+    # If a specific region is requested, return that region
     if start_line is not None and end_line is not None:
-        region_length = end_line - start_line + 1
-        if region_length <= number_of_lines:
-            chunk_info, _ = await reader.read_lines(start_line, end_line)
-            response = {
-                "type": "selection",
-                "content": chunk_info.content,
-                "total_lines": total_lines,
-                "start_line": start_line,
-                "end_line": end_line,
-            }
-            return HTTPResponse(body=json.dumps(response))
+        chunk_info, _ = await reader.read_lines(start_line, end_line)
+        response: Dict[str, Any] = {
+            "type": "selection",
+            "content": chunk_info.content,
+            "total_lines": total_lines,
+            "start_line": start_line,
+            "end_line": end_line,
+        }
+        return HTTPResponse(body=json.dumps(response))
 
     # If the whole file is requested and it's under the threshold, return the full content
     if (start_line is None and end_line is None) and total_lines <= number_of_lines:
         chunk_info, _ = await reader.read_lines(1, total_lines)
-        response = {
+        response: Dict[str, Any] = {
             "type": "full",
             "content": chunk_info.content,
             "total_lines": total_lines,
@@ -84,8 +82,10 @@ async def read_file_or_summary(_request: Request) -> HTTPResponse:
         return HTTPResponse(body=json.dumps(response))
 
     # Otherwise, return a summary
-    summary = await FileSummarizationService.summarize_file(file_path, repo_path, max_lines=200, include_line_numbers=True)
-    response = {
+    summary = await FileSummarizationService.summarize_file(
+        file_path, repo_path, max_lines=200, include_line_numbers=True
+    )
+    response: Dict[str, Any] = {
         "type": "summary",
         "content": summary.summary_content,
         "total_lines": total_lines,
