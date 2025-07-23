@@ -27,11 +27,45 @@ python3 -m nuitka \
 --include-package=tree_sitter_language_pack.bindings.kotlin \
 --include-package=tree_sitter_language_pack.bindings.json \
 --include-package=tree_sitter_language_pack.bindings.tsx \
+--include-data-file=ripgrep/rg_darwin_arm=bin/rg \
 app/service.py
 
 
 *****************************************************************
-Windows x86_64 / Linux x86_64
+MacOS x64
+*****************************************************************
+
+python3 -m nuitka \
+  --mode=app \
+  --clang \
+  --jobs=$(sysctl -n hw.ncpu) \
+  --lto=no \
+  --python-flag=static_hashes \
+  --assume-yes-for-downloads \
+  --nofollow-import-to=nuitka.plugins.standard \
+--macos-signed-app-name="com.tata1mg.ddbinary" \
+--include-package=tree_sitter_language_pack.bindings.dockerfile \
+--include-package=tree_sitter_language_pack.bindings.make \
+--include-package=tree_sitter_language_pack.bindings.cmake \
+--include-package=tree_sitter_language_pack.bindings.python \
+--include-package=tree_sitter_language_pack.bindings.javascript \
+--include-package=tree_sitter_language_pack.bindings.typescript \
+--include-package=tree_sitter_language_pack.bindings.java \
+--include-package=tree_sitter_language_pack.bindings.c \
+--include-package=tree_sitter_language_pack.bindings.cpp \
+--include-package=tree_sitter_language_pack.bindings.go \
+--include-package=tree_sitter_language_pack.bindings.rust \
+--include-package=tree_sitter_language_pack.bindings.ruby \
+--include-package=tree_sitter_language_pack.bindings.html \
+--include-package=tree_sitter_language_pack.bindings.kotlin \
+--include-package=tree_sitter_language_pack.bindings.json \
+--include-package=tree_sitter_language_pack.bindings.tsx \
+--include-data-file=ripgrep/rg_darwin_x64=bin/rg \
+app/service.py
+
+
+*****************************************************************
+Windows x86_64 
 *****************************************************************
 
 python3 -m nuitka --mode=app \
@@ -52,4 +86,34 @@ python3 -m nuitka --mode=app \
 --include-package=tree_sitter_language_pack.bindings.kotlin \
 --include-package=tree_sitter_language_pack.bindings.json \
 --include-package=tree_sitter_language_pack.bindings.tsx \
+--include-data-file=ripgrep/rg_win_64.exe=bin/rg \
+app/service.py
+
+
+
+
+
+*****************************************************************
+Linux x86_64
+*****************************************************************
+
+python3 -m nuitka --mode=app \
+--assume-yes-for-downloads \
+--include-package=tree_sitter_language_pack.bindings.dockerfile \
+--include-package=tree_sitter_language_pack.bindings.make \
+--include-package=tree_sitter_language_pack.bindings.cmake \
+--include-package=tree_sitter_language_pack.bindings.python \
+--include-package=tree_sitter_language_pack.bindings.javascript \
+--include-package=tree_sitter_language_pack.bindings.typescript \
+--include-package=tree_sitter_language_pack.bindings.java \
+--include-package=tree_sitter_language_pack.bindings.c \
+--include-package=tree_sitter_language_pack.bindings.cpp \
+--include-package=tree_sitter_language_pack.bindings.go \
+--include-package=tree_sitter_language_pack.bindings.rust \
+--include-package=tree_sitter_language_pack.bindings.ruby \
+--include-package=tree_sitter_language_pack.bindings.html \
+--include-package=tree_sitter_language_pack.bindings.kotlin \
+--include-package=tree_sitter_language_pack.bindings.json \
+--include-package=tree_sitter_language_pack.bindings.tsx \
+--include-data-file=ripgrep/rg_linux_x64=bin/rg \
 app/service.py
