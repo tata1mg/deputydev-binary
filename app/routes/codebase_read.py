@@ -48,11 +48,13 @@ async def read_file_or_summary(_request: Request) -> HTTPResponse:
     json_body = _request.json
     if not json_body:
         raise BadRequest("Request payload is missing or invalid.")
-    file_path = json_body.get("file_path")
-    repo_path = json_body.get("repo_path", "")
-    number_of_lines = json_body.get("number_of_lines", 100)
-    start_line = json_body.get("start_line")
-    end_line = json_body.get("end_line")
+    validated_body = FileSummaryReaderRequestParams(**json_body)
+
+    file_path = validated_body.file_path
+    repo_path = validated_body.repo_path or ""
+    number_of_lines = validated_body.number_of_lines or 100
+    start_line = validated_body.start_line
+    end_line = validated_body.end_line
 
     reader = IterativeFileReader(file_path=file_path, repo_path=repo_path)
     total_lines = await reader._count_total_lines()
