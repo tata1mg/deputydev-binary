@@ -42,19 +42,50 @@ async def read_file(_request: Request) -> HTTPResponse:
     return HTTPResponse(body=json.dumps(response))
 
 
-@codebase_read.route("/read-file-summary", methods=["POST"])
+@codebase_read.route("/read-file-or-summary", methods=["POST"])
 @get_error_handler(special_handlers=[])
-async def read_file_summary(_request: Request) -> HTTPResponse:
+async def read_file_or_summary(_request: Request) -> HTTPResponse:
     json_body = _request.json
     if not json_body:
         raise BadRequest("Request payload is missing or invalid.")
-    try:
-        validated_body = FileSummaryReaderRequestParams(**json_body)
-    except Exception:  # noqa: BLE001
-        raise BadRequest("INVALID_PARAMS")
+    file_path = json_body.get("file_path")
+    repo_path = json_body.get("repo_path", "")
+    number_of_lines = json_body.get("number_of_lines", 100)
+    start_line = json_body.get("start_line")
+    end_line = json_body.get("end_line")
 
-    file_summary = await FileSummarizationService().summarize_file(
-        file_path=validated_body.file_path, include_line_numbers=True
-    )
+    reader = IterativeFileReader(file_path=file_path, repo_path=repo_path)
+    total_lines = await reader._count_total_lines()
 
-    return HTTPResponse(body=json.dumps(file_summary.model_dump(mode="json")))
+    # If a specific region is requested and it's under the threshold, return that region
+    if start_line is not None and end_line is not None:
+        region_length = end_line - start_line + 1
+        if region_length <= number_of_lines:
+            chunk_info, _ = await reader.read_lines(start_line, end_line)
+            response = {
+                "type": "selection",
+                "content": chunk_info.content,
+                "total_lines": total_lines,
+                "start_line": start_line,
+                "end_line": end_line,
+            }
+            return HTTPResponse(body=json.dumps(response))
+
+    # If the whole file is requested and it's under the threshold, return the full content
+    if (start_line is None and end_line is None) and total_lines <= number_of_lines:
+        chunk_info, _ = await reader.read_lines(1, total_lines)
+        response = {
+            "type": "full",
+            "content": chunk_info.content,
+            "total_lines": total_lines,
+        }
+        return HTTPResponse(body=json.dumps(response))
+
+    # Otherwise, return a summary
+    summary = await FileSummarizationService.summarize_file(file_path, repo_path, max_lines=200, include_line_numbers=True)
+    response = {
+        "type": "summary",
+        "content": summary.summary_content,
+        "total_lines": total_lines,
+    }
+    return HTTPResponse(body=json.dumps(response))
