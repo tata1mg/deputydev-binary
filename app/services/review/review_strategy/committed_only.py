@@ -16,7 +16,7 @@ class CommittedOnlyStrategy(BaseStrategy):
         Take diff snapshot
         Take commit snapshot
         """
-        self._snapshot_utils.take_commit_snapshot(self.target_commit)
+        self._snapshot_utils.take_commit_snapshot(self.source_commit)
 
     def get_diff_changes(self) -> List[FileChanges]:
         """
@@ -28,6 +28,8 @@ class CommittedOnlyStrategy(BaseStrategy):
         repo = self._git_utils.git_repo
 
         # Get the file change status between source and target commit
+        print("target_commit", self.target_commit)
+        print("source_commit", self.source_commit)
         name_status_output = repo.git.diff('--name-status', self.target_commit, self.source_commit)
         
         results: List[FileChanges] = []

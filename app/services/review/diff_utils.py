@@ -7,6 +7,7 @@ from app.services.review.dataclass.main import FileChanges, LineChange, FileChan
 from app.services.review.git_utils import GitUtils
 from app.services.review.snapshot.base import DiffSnapshotBase
 from app.services.review.dataclass.main import FILE_DIFF_STATUS_MAP
+import difflib  
 
 
 
@@ -101,7 +102,7 @@ def get_commit_changes(snapshot_utils: DiffSnapshotBase,
     # Check modified files
     for file in prev_files & current_changed_files:
         file_path = Path(file)
-        snap_file = snapshot_utils.get_snapshot_path() / file
+        snap_file = snapshot_utils.snapshot_path / file
         if file_path.is_file() and snap_file.is_file() and not compare_files(file_path, snap_file):
             try:
                 diff = get_file_diff(git_repo, file, current_changes[file], commit_id)
@@ -277,3 +278,19 @@ def get_current_changes_new(repo: Repo, commit_id: Optional[str] = None) -> Dict
             file_change_status_map[file] = FileChangeStatusTypes.UNTRACKED
 
     return file_change_status_map
+
+
+def get_file_diff_between_files(file_path: Path, snap_file: Path) -> str:
+    with file_path.open('r') as f1, snap_file.open('r') as f2:
+        f1_lines = f1.readlines()
+        f2_lines = f2.readlines()
+
+    diff = difflib.unified_diff(
+        f2_lines,               # old file (snapshot)
+        f1_lines,               # new file (current)
+        fromfile=str(snap_file),
+        tofile=str(file_path),
+        lineterm=''
+    )
+
+    return '\n'.join(diff)

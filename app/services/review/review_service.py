@@ -60,7 +60,7 @@ class ReviewService:
 
     @classmethod
     @handle_ide_review_exceptions
-    async def start_review(cls, repo_path: str, review_type: str, target_branch: str) -> str:
+    async def take_snapshot(cls, repo_path: str, review_type: str, target_branch: str) -> str:
         """
         repo_path: str : Path to the git repository
         review_type: str : Review type

@@ -28,11 +28,14 @@ class LocalDiffSnapshot(DiffSnapshotBase):
     def snapshot_path(self):
         """Builds the snapshot path for the given source branch."""
         if not self._snapshot_path:
-            self._snapshot_path = self._repo_path / self._source_branch /  FILE_SNAPSHOT_PATH 
+            self._snapshot_path = self._repo_path / FILE_SNAPSHOT_PATH / self._source_branch  
         return self._snapshot_path
 
-    
-    def take_diff_snapshot(self, file_change_map: Dict[str, FileChangeStatusTypes]):
+    @property
+    def temp_snapshot_path(self):
+        return self.snapshot_path / "temp"
+
+    def take_temp_diff_snapshot(self, file_change_map: Dict[str, FileChangeStatusTypes]):
         """Takes a snapshot of files based on their change status.
         
         Args:
@@ -43,29 +46,52 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         """
         try:
             # Remove previous snapshot if exists
-            if self.snapshot_path.exists() and self.snapshot_path.is_dir():
-                shutil.rmtree(self.snapshot_path)
+            if self.temp_snapshot_path.exists() and self.temp_snapshot_path.is_dir():
+                shutil.rmtree(self.temp_snapshot_path)
             
             # Create snapshot directory
-            self.snapshot_path.mkdir(parents=True, exist_ok=True)
+            self.temp_snapshot_path.mkdir(parents=True, exist_ok=True)
             
             # Write the status snapshot file
-            with open(self.snapshot_path  / DIFF_SNAPSOT_PATH, "w") as f:
+            with open(self.temp_snapshot_path / DIFF_SNAPSOT_PATH, "w") as f:
                 for file, status in file_change_map.items():
                     f.write(f"{status.value} {file}\n")
 
+            print("file_change_map", file_change_map)
             # Copy files to snapshot directory
             for file in file_change_map:
-                path = Path(file)
+                path = Path(self._repo_path / file)
                 # Copy which files exists
+                print("path", path)
+                print("path.is_file()", path.is_file())
                 if path.is_file():
-                    full_dest = self.snapshot_path / file
+                    print("path", path)
+                    full_dest = self.temp_snapshot_path / file
                     full_dest.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy(file, full_dest)
+                    shutil.copy(path, full_dest)
         except Exception as ex:
             AppLogger.log_error(f"Diff snapshot failed with error {ex}")
             raise Exception(f"Diff snapshot failed with error {ex}")
-            
+    
+    def take_diff_snapshot(self):
+        """Takes a snapshot of files based on their change status."""
+        """Moves contents of temp snapshot to snapshot path."""
+        if self.temp_snapshot_path.exists():
+            print(self.temp_snapshot_path)
+            print(self.snapshot_path)
+            self.snapshot_path.mkdir(parents=True, exist_ok=True)
+
+            for item in self.temp_snapshot_path.iterdir():
+                dest = self.snapshot_path / item.name
+                if dest.exists():
+                    if dest.is_dir():
+                        shutil.rmtree(dest)
+                    else:
+                        dest.unlink()
+
+                shutil.move(str(item), str(dest))
+
+            shutil.rmtree(self.temp_snapshot_path)
 
     def get_previous_snapshot(self) -> set[str]:
         """Retrieves the set of files from the previous snapshot.
@@ -80,17 +106,9 @@ class LocalDiffSnapshot(DiffSnapshotBase):
             # Read the status snapshot file
             with open(previous_snapshot) as f:
                 # Get the file paths from the snapshot
-                prev_files = set([line.strip().split(" ")[1] for line in f])
+                prev_files = set([line.strip().split(" ", 1)[1] for line in f])
 
         return prev_files 
-    
-    def get_snapshot_path(self) -> Path:
-        """Gets the path where snapshots are stored.
-        
-        Returns:
-            Path: Path to the snapshot directory
-        """
-        return self.snapshot_path
     
     def clean(self):
         """Removes all snapshots for the current branch."""
@@ -116,12 +134,11 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         Returns:
             str: The last reviewed commit ID, or empty string if no commit was reviewed
         """
-        self.snapshot_path.mkdir(parents=True, exist_ok=True)
         commit_file = self.snapshot_path / COMMIT_SNAPSHOT_PATH
-        
+
         if not commit_file.exists():
             return 
-
+        print("commit_file", commit_file)
         with open(commit_file, "r") as f:
             return f.read().strip()
         

@@ -12,7 +12,7 @@ from sanic.response import HTTPResponse
 review = Blueprint("review", url_prefix="")
 
 
-@review.route("review/new", methods=["GET"])
+@review.route("review/summary", methods=["GET"])
 async def server_sync(_request: Request):
     try:
         data = ReviewRequest(**flatten_multidict(_request.args))
@@ -38,10 +38,10 @@ async def server_sync(_request: Request):
     return json(response.model_dump())
 
 
-@review.route("/review/start", methods=["POST"])
+@review.route("/review/snapshot", methods=["POST"])
 async def server_sync(_request: Request):
     data = ReviewRequest(**flatten_multidict(_request.args))
-    response = await ReviewService.start_review(repo_path=data.repo_path, review_type=data.review_type, target_branch=data.target_branch)
+    response = await ReviewService.take_snapshot(repo_path=data.repo_path, review_type=data.review_type, target_branch=data.target_branch)
     return json(response.model_dump())
 
 

@@ -7,16 +7,18 @@ from abc import abstractmethod
 
 
 class DiffSnapshotBase(ABC):
-    def __init__(self, repo_path: Path, source_branch: str) -> None:
+    def __init__(self, repo_path: str, source_branch: str) -> None:
         self._repo_path = repo_path
         self.snapshot_path = self._repo_path / ".git" / "file-snapshots" / source_branch
     
     @abstractmethod
-    def take_diff_snapshot(self, status_map: Dict[str, FileChangeStatusTypes]) -> str:
+    def take_temp_diff_snapshot(self, status_map: Dict[str, FileChangeStatusTypes]):
+        """Takes a snapshot of files based on their change status."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def take_diff_snapshot(self) -> str:
         """Takes a snapshot of files based on their change status.
-        
-        Args:
-            status_map (Dict[str, FileChangeStatusTypes]): Mapping of file paths to their change status
             
         Returns:
             str: Success message if snapshot is completed
