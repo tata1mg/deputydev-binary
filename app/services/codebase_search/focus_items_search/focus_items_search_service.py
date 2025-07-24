@@ -1,5 +1,6 @@
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from deputydev_core.models.dto.chunk_file_dto import ChunkFileData, ChunkFileDTO
@@ -29,12 +30,17 @@ from app.dataclasses.codebase_search.focus_items_search.focus_items_search_datac
     FocusSearchParams,
     SearchKeywordType,
 )
+from app.utils.ripgrep_path import get_rg_path
 
 
 class FocusSearchService:
     @classmethod
     async def initialise_weaviate_client(cls, repo_path: str) -> WeaviateSyncAndAsyncClients:
-        initialization_manager = ExtensionInitialisationManager(repo_path=repo_path)
+        ripgrep_path = get_rg_path()
+        initialization_manager = ExtensionInitialisationManager(
+            repo_path=repo_path,
+            ripgrep_path=ripgrep_path,
+        )
         weaviate_client = await get_weaviate_client(initialization_manager)
         return weaviate_client
 
@@ -55,20 +61,20 @@ class FocusSearchService:
             results: List[FocusItem] = []
             seen_dirs: Set[str] = set()
 
-            abs_repo_path = repo_path
-            abs_text_path = os.path.join(abs_repo_path, keyword)
-            last_path_component = os.path.basename(abs_text_path)
+            abs_repo_path = Path(repo_path)
+            abs_text_path = abs_repo_path / keyword
+            last_path_component = abs_text_path.name
 
-            search_dir = os.path.dirname(abs_text_path) if last_path_component else abs_repo_path
+            search_dir = abs_text_path.parent if last_path_component else abs_repo_path
 
-            if not os.path.exists(search_dir):
+            if not search_dir.exists():
                 search_dir = abs_repo_path
 
             max_results = 7
 
             for root, dirs, _ in os.walk(search_dir, topdown=True):
                 for dir_name in dirs:
-                    abs_current_dir_path = os.path.join(root, dir_name)
+                    abs_current_dir_path = Path(root) / dir_name
                     rel_dir_path = os.path.relpath(abs_current_dir_path, abs_repo_path)
 
                     if last_path_component.lower() in dir_name.lower() and rel_dir_path not in seen_dirs:
@@ -85,13 +91,14 @@ class FocusSearchService:
 
                         if len(results) >= max_results:
                             return results
-
-                if root.count(os.sep) - abs_repo_path.count(os.sep) > 5:
+                max_depth = 5
+                current_depth = len(Path(root).relative_to(abs_repo_path).parts)
+                if current_depth > max_depth:
                     dirs[:] = []
 
             return results
 
-        except Exception as ex:
+        except Exception as ex:  # noqa: BLE001
             AppLogger.log_error(f"directory search failed with exception {ex}")
             return []
 
@@ -102,7 +109,7 @@ class FocusSearchService:
         chunk_file_dto: ChunkFileDTO,
         score: float,
         search_type: Optional[SearchKeywordType] = None,
-    ):
+    ) -> None:
         search_types_to_consider = (
             [
                 SearchKeywordType.CLASS,
@@ -121,7 +128,7 @@ class FocusSearchService:
             property_values = (
                 getattr(chunk_file_dto, search_type_to_search_property_map[search_type], [])
                 if search_type in [SearchKeywordType.CLASS, SearchKeywordType.FUNCTION]
-                else [os.path.basename(chunk_file_dto.file_path)]
+                else [Path(chunk_file_dto.file_path).name]
             )
             chunk_file_data = ChunkFileData(**chunk_file_dto.model_dump(mode="json"))
             for property_value in property_values:
@@ -173,7 +180,10 @@ class FocusSearchService:
                 # initializations
                 weaviate_client = await cls.initialise_weaviate_client(payload.repo_path)
                 chunk_files_service = ChunkFilesService(weaviate_client)
-                chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(payload.repo_path)
+                ripgrep_path = get_rg_path()
+                chunkable_files_and_hashes = await SharedChunksManager.initialize_chunks(
+                    payload.repo_path, ripgrep_path=ripgrep_path
+                )
 
                 # now, based on whether the type is defined or not, get the chunks from weaviate via specific fuctions
                 raw_search_result = []
@@ -205,6 +215,6 @@ class FocusSearchService:
 
             AppLogger.log_info(f"Total execution time: {time.perf_counter() - start_time:.6f} sec")
             return result
-        except Exception as ex:
+        except Exception as ex:  # noqa: BLE001
             AppLogger.log_error(f"autocomplete type search failed with exception {ex}")
             return result
