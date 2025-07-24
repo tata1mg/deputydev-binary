@@ -26,9 +26,10 @@ def get_project_root(marker: str = "pyproject.toml") -> Path:
 
 def get_rg_path() -> str:
     """Return the path to the correct ripgrep binary based on platform and environment."""
-    if getattr(sys, "frozen", False):
-        # Nuitka frozen binary
-        base_dir = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+
+    if "__compiled__" in globals():
+        # Nuitka compiled binary
+        base_dir = Path(sys.executable).parent
         rg_path = base_dir / "bin" / "rg"
     else:
         # Development mode
