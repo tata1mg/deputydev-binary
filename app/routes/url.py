@@ -91,6 +91,7 @@ async def delete(_request: Request, **kwargs: Any) -> HTTPResponse:
 
 
 @url_reader.route("/saved_url/list", methods=["GET"])
+@request_handler
 @get_error_handler(special_handlers=[])
 async def list_urls(_request: Request, **kwargs: Any) -> HTTPResponse:
     query_params = parse_request_params(_request)
