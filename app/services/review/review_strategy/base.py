@@ -111,7 +111,6 @@ class BaseStrategy(ABC):
 
             # Check if the PR diff is large
             self.is_large_pr_diff(diff_changes)
-            raise LargeDiffException("PR diff is large")
         except (LargeDiffException, ConflictException, InvalidGitRepositoryError) as ex:
             print("Exception", ex)
             print("Exception type", type(ex))
