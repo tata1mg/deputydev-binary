@@ -52,6 +52,8 @@ class FileDiffs(BaseModel):
     target_commit: str
     origin_url: str
     repo_name: str
+    fail_message: Optional[str] = None
+    eligible_for_review: bool
 
 
 FILE_DIFF_STATUS_MAP = {

@@ -101,7 +101,9 @@ class GitUtils:
         Search for branches (local and remote) that contain the keyword.
         Returns a list of matching branch names (without 'origin/' prefix).
         """
-
+        if not keyword:
+            raise ValueError("Keyword cannot be empty") 
+        
         all_branches:List[str] = []
 
         # Local branches
