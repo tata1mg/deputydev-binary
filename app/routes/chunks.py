@@ -12,7 +12,7 @@ from deputydev_core.services.tools.relevant_chunks.dataclass.main import Relevan
 from deputydev_core.services.tools.relevant_chunks.relevant_chunk import RelevantChunks
 from deputydev_core.utils.app_logger import AppLogger
 from sanic import Blueprint, HTTPResponse, Request, Websocket
-from sanic.exceptions import BadRequest, ServerError
+from sanic.exceptions import BadRequest
 
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.batch_chunk_search_service import BatchSearchService
@@ -27,6 +27,7 @@ chunks = Blueprint("chunks", url_prefix="")
 
 @chunks.websocket("/relevant_chunks")
 @request_handler
+@get_error_handler(special_handlers=[])
 async def relevant_chunks(request: Request, ws: Websocket) -> None:
     try:
         data = await ws.recv()
@@ -51,6 +52,7 @@ async def relevant_chunks(request: Request, ws: Websocket) -> None:
 
 @chunks.route("/get-focus-chunks", methods=["POST"])
 @request_handler
+@get_error_handler(special_handlers=[])
 async def focus_chunks(_request: Request) -> HTTPResponse:
     try:
         payload = _request.json
@@ -64,30 +66,26 @@ async def focus_chunks(_request: Request) -> HTTPResponse:
 
 @chunks.route("/get-directory-structure", methods=["POST"])
 @request_handler
+@get_error_handler(special_handlers=[ToolErrorHandler])
 async def directory_format(_request: Request) -> HTTPResponse:
-    try:
-        payload = _request.json
-        payload = DirectoryStructureParams(**payload)
-        relevant_chunks = RelevantChunks(payload.repo_path)
-        directory_tree = await relevant_chunks.get_directory_structure(payload)
-        return HTTPResponse(body=json.dumps(directory_tree))
-    except Exception:
-        AppLogger.log_error(traceback.format_exc())
-        raise Exception(traceback.format_exc())
+    payload = _request.json
+    payload = DirectoryStructureParams(**payload)
+    relevant_chunks = RelevantChunks(payload.repo_path)
+    directory_tree = await relevant_chunks.get_directory_structure(payload)
+    return HTTPResponse(body=json.dumps(directory_tree))
 
 
 @chunks.websocket("/update_chunks")
 @request_handler
+@get_error_handler(special_handlers=[])
 async def update_vector_store(request: Request, ws: Websocket) -> None:
     try:
         data = await ws.recv()
         payload = json.loads(data)
         payload = UpdateVectorStoreParams(**payload)
-        is_partial_indexing = False if payload.sync else True
         files_indexing_status = {}
 
         async def indexing_progress_callback(progress: float, indexing_status: List[Dict[str, str]]) -> None:
-            nonlocal is_partial_indexing
             nonlocal files_indexing_status
             """Sends progress updates to the WebSocket."""
             files_indexing_status = indexing_status
@@ -99,7 +97,6 @@ async def update_vector_store(request: Request, ws: Websocket) -> None:
                         "repo_path": payload.repo_path,
                         "progress": progress,
                         "indexing_status": list(indexing_status.values()),
-                        "is_partial_state": is_partial_indexing,
                     }
                 )
             )
@@ -132,7 +129,6 @@ async def update_vector_store(request: Request, ws: Websocket) -> None:
                                 "status": "COMPLETED",
                                 "repo_path": payload.repo_path,
                                 "progress": 100,
-                                "is_partial_state": is_partial_indexing,
                                 "indexing_status": list(files_indexing_status.values()),
                             }
                         )
@@ -163,12 +159,6 @@ async def get_autocomplete_keyword_type_chunks(_request: Request) -> HTTPRespons
     payload = _request.json
     if not payload:
         raise BadRequest("Request payload is missing or invalid.")
-    try:
-        payload = FocussedSnippetSearchParams(**payload)
-    except Exception:  # noqa: BLE001
-        raise BadRequest("INVALID_PARAMS")
-    try:
-        chunks = await BatchSearchService.search_code(payload)
-        return HTTPResponse(body=json.dumps(chunks))
-    except Exception as e:  # noqa: BLE001
-        raise ServerError(str(e))
+    payload = FocussedSnippetSearchParams(**payload)
+    chunks = await BatchSearchService.search_code(payload)
+    return HTTPResponse(body=json.dumps(chunks))

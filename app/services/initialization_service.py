@@ -2,7 +2,7 @@ import asyncio
 import time
 from asyncio import Task
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 
 from deputydev_core.services.auth_token_storage.auth_token_service import (
     AuthTokenService,
@@ -24,32 +24,41 @@ from deputydev_core.utils.custom_progress_bar import CustomProgressBar
 from deputydev_core.utils.file_indexing_monitor import FileIndexingMonitor
 from deputydev_core.utils.weaviate import weaviate_connection
 from sanic import Sanic
+from sanic.exceptions import WebsocketClosed
 
 from app.clients.one_dev_client import OneDevClient
 from app.models.dtos.update_vector_store_params import UpdateVectorStoreParams
 from app.services.url_service.url_service import UrlService
 from app.utils.constants import Headers
+from app.utils.ripgrep_path import get_rg_path
 
 
 class InitializationService:
     @classmethod
     async def update_chunks(
-        cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback
-    ):
+        cls,
+        payload: UpdateVectorStoreParams,
+        indexing_progress_callback: Callable[[float, List[Dict[str, str]]], Awaitable[None]],
+        embedding_progress_callback: Callable[[float], Awaitable[None]],
+    ) -> tuple[Union[Task[None], None], Union[Task[None], None]]:
         return await cls.update_vector_store(payload, indexing_progress_callback, embedding_progress_callback)
 
     @classmethod
     async def update_vector_store(
-        cls, payload: UpdateVectorStoreParams, indexing_progress_callback, embedding_progress_callback
+        cls,
+        payload: UpdateVectorStoreParams,
+        indexing_progress_callback: Callable[[float, List[Dict[str, str]]], Awaitable[None]],
+        embedding_progress_callback: Callable[[float], Awaitable[None]],
     ) -> tuple[Union[Task[None], None], Union[Task[None], None]]:
         repo_path = payload.repo_path
         auth_token = ContextValue.get(ContextValueKeys.EXTENSION_AUTH_TOKEN.value)
         chunkable_files = payload.chunkable_files
+        ripgrep_path = get_rg_path()
         with ProcessPoolExecutor(max_workers=ConfigManager.configs["NUMBER_OF_WORKERS"]) as executor:
             one_dev_client = OneDevClient()
             body = {"enable_grace_period": ConfigManager.configs["USE_GRACE_PERIOD_FOR_EMBEDDING"]}
             headers = {"Authorization": f"Bearer {auth_token}"}
-            token_data = await one_dev_client.verify_auth_token(headers=headers, payload=body)
+            token_data: Dict[str, Any] = await one_dev_client.verify_auth_token(headers=headers, payload=body)
             if token_data["status"] == AuthStatus.EXPIRED.value:
                 await cls.handle_expired_token(token_data)
 
@@ -58,20 +67,25 @@ class InitializationService:
                 auth_token_key=ContextValueKeys.EXTENSION_AUTH_TOKEN.value,
                 process_executor=executor,
                 one_dev_client=one_dev_client,
+                ripgrep_path=ripgrep_path,
             )
             local_repo = initialization_manager.get_local_repo(chunkable_files=chunkable_files)
             chunkable_files_and_hashes = await local_repo.get_chunkable_files_and_commit_hashes()
+            AppLogger.log_info(f"Chunkable files and hashes: {len(chunkable_files_and_hashes)}")
             await SharedChunksManager.update_chunks(repo_path, chunkable_files_and_hashes, chunkable_files)
-            weaviate_client = await weaviate_connection()
-            if weaviate_client:
-                initialization_manager.weaviate_client = weaviate_client
-            else:
-                await initialization_manager.initialize_vector_db()
-            indexing_progressbar = CustomProgressBar()
-            embedding_progressbar = CustomProgressBar()
-            files_with_indexing_status = {
-                key: {"file_path": key, "status": "IN_PROGRESS"} for key in chunkable_files_and_hashes
-            }
+            try:
+                weaviate_client = await weaviate_connection()
+                if weaviate_client:
+                    initialization_manager.weaviate_client = weaviate_client
+                else:
+                    await initialization_manager.initialize_vector_db()
+                indexing_progressbar = CustomProgressBar()
+                embedding_progressbar = CustomProgressBar()
+                files_with_indexing_status = {
+                    key: {"file_path": key, "status": "IN_PROGRESS"} for key in chunkable_files_and_hashes
+                }
+            except Exception as e:  # noqa: BLE001
+                AppLogger.log_error(f"Error initializing vector store: {e}")
             file_indexing_monitor = FileIndexingMonitor(files_with_indexing_status=files_with_indexing_status)
             if payload.sync:
                 _embedding_progress_monitor_task = asyncio.create_task(
@@ -93,11 +107,22 @@ class InitializationService:
             return _indexing_progress_monitor_task, None
 
     @classmethod
-    async def _monitor_indexing_progress(cls, progress_bar, progress_callback, file_indexing_monitor):
+    async def _monitor_indexing_progress(
+        cls,
+        progress_bar: CustomProgressBar,
+        progress_callback: Callable[[float, List[Dict[str, str]]], Awaitable[None]],
+        file_indexing_monitor: FileIndexingMonitor,
+    ) -> None:
         """A separate task that can monitor and report progress while chunking happens"""
         try:
             while True:
-                await progress_callback(progress_bar.total_percentage, file_indexing_monitor.files_with_indexing_status)
+                try:
+                    await progress_callback(
+                        progress_bar.total_percentage, file_indexing_monitor.files_with_indexing_status
+                    )
+                except WebsocketClosed:
+                    AppLogger.log_info("Websocket closed during indexing progress. Stopping progress monitoring.")
+                    return  # Or break
                 if progress_bar.is_completed():
                     return
                 await asyncio.sleep(0.5)
@@ -105,21 +130,27 @@ class InitializationService:
             return
 
     @classmethod
-    async def _monitor_embedding_progress(cls, progress_bar, progress_callback, repo_path):
+    async def _monitor_embedding_progress(
+        cls, progress_bar: CustomProgressBar, progress_callback: Callable[[float], Awaitable[None]], repo_path: str
+    ) -> None:
         """A separate task that can monitor and report progress while Embedding happens"""
         try:
             while True:
-                if not progress_bar.is_completed():
-                    await progress_callback(progress_bar.total_percentage)
-                else:
-                    AppLogger.log_info(f"Embedding done for {repo_path}")
-                    return
+                try:
+                    if not progress_bar.is_completed():
+                        await progress_callback(progress_bar.total_percentage)
+                    else:
+                        AppLogger.log_info(f"Embedding done for {repo_path}")
+                        return
+                except WebsocketClosed:
+                    AppLogger.log_info("Websocket closed during embedding progress. Stopping progress monitoring.")
+                    return  # Or break
                 await asyncio.sleep(2)
         except asyncio.CancelledError:
             return
 
     @classmethod
-    async def handle_expired_token(cls, token_data):
+    async def handle_expired_token(cls, token_data: Dict[str, Any]) -> str:
         auth_token = token_data["encrypted_session_data"]
         ContextValue.set(ContextValueKeys.EXTENSION_AUTH_TOKEN.value, auth_token)
         await AuthTokenService.store_token(get_context_value("headers").get(Headers.X_CLIENT))
@@ -135,7 +166,7 @@ class InitializationService:
             return await existing_client.is_ready()
 
     @classmethod
-    async def maintain_weaviate_heartbeat(cls):
+    async def maintain_weaviate_heartbeat(cls) -> None:
         while True:
             try:
                 is_reachable = await cls.is_weaviate_ready()
@@ -146,16 +177,16 @@ class InitializationService:
                     await existing_client.async_client.close()
                     existing_client.sync_client.close()
                     await existing_client.ensure_connected()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 AppLogger.log_error("Failed to maintain weaviate heartbeat")
             await asyncio.sleep(3)
 
     @classmethod
-    async def initialization(cls, payload):
+    async def initialization(cls, payload) -> None:  # noqa: ANN001
         app = Sanic.get_app()
 
         class ExtentionWeaviateSyncAndAsyncClients(WeaviateSyncAndAsyncClients):
-            async def ensure_connected(self):
+            async def ensure_connected(self) -> None:
                 if not await self.is_ready():
                     await cls.get_config(base_config=payload.get("config"))
                     (
@@ -204,7 +235,7 @@ class InitializationService:
                 if configs is None:
                     raise Exception("No configs fetched")
                 ConfigManager.set(configs)
-            except Exception as error:
+            except Exception as error:  # noqa: BLE001
                 AppLogger.log_error(f"Failed to fetch configs: {error}")
                 await cls.close_session_and_exit(one_dev_client)
 
@@ -212,6 +243,6 @@ class InitializationService:
         AppLogger.log_info(f"Time taken to fetch configs: {time_end - time_start}")
 
     @staticmethod
-    async def close_session_and_exit(one_dev_client):
+    async def close_session_and_exit(one_dev_client: OneDevClient) -> None:
         AppLogger.log_info("Exiting ...")
         await one_dev_client.close_session()

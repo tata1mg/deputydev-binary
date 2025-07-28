@@ -71,3 +71,6 @@ newrelic.ini
 
 db/schema.sql
 binary_config.json
+.secrets
+service.app.tar*
+service.app/*
