@@ -36,4 +36,4 @@ class AllChangesStrategy(UncomittedOnlyStrategy):
             if enum_value and path not in FILE_DIFF_STATUS_MAP: # type: ignore
                 file_change_status_map[path] = enum_value
         return file_change_status_map
-        
+    

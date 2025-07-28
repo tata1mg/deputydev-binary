@@ -3,6 +3,10 @@ from app.services.review.dataclass.main import FileChanges
 from app.services.review.dataclass.main import FILE_DIFF_STATUS_MAP
 from typing import List
 from app.services.review.diff_utils import format_diff_response
+from app.services.review.dataclass.main import FileChangeStatusTypes
+from typing import Dict
+
+
 
 class CommittedOnlyStrategy(BaseStrategy):    
     def reset(self):
@@ -57,3 +61,5 @@ class CommittedOnlyStrategy(BaseStrategy):
             results.append(format_diff_response(file_path, file_diff, FILE_DIFF_STATUS_MAP.get(change_type, 'A')))
         return results
     
+    def get_uncommited_changes(self) -> Dict[str, FileChangeStatusTypes]:
+        return {}

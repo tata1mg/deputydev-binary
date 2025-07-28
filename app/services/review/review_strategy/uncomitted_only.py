@@ -18,47 +18,6 @@ class UncomittedOnlyStrategy(BaseStrategy):
     def get_comparable_commit(self) -> str:
         return self.source_commit
     
-    def get_diff_changes(self) -> List[FileChanges]:
-        """
-        Returns:
-            List[FileChanges]: List of file changes
-        """
-
-        git_repo = self._git_utils.git_repo
-        prev_files = self._snapshot_utils.get_previous_snapshot()
-        current_changes = self.get_uncommited_changes()
-        print("prev_files", prev_files)
-        print("current_changes", current_changes)
-        current_changed_files = set(current_changes.keys())
-        changes: List[FileChanges] = []
-
-        # Check modified files
-        for file in prev_files & current_changed_files:
-            file_path = Path(self.repo_path / file)
-            snap_file = self._snapshot_utils.snapshot_path / file
-            print("file_path", file_path, file_path.exists())
-            print("snap_file", snap_file, snap_file.exists())
-            if file_path.is_file() and snap_file.is_file() and not compare_files(file_path, snap_file):
-                try:
-                    print(file_path, snap_file, compare_files(file_path, snap_file))
-                    diff = get_file_diff_between_files(file_path, snap_file)
-                    changes.append(format_diff_response(file, diff, current_changes[file]))
-                except Exception as e:
-                    AppLogger.error(f"Error getting diff for {file}: {e}")
-
-        # Check newly changed files (not in snapshot before)
-        for file in current_changed_files - prev_files:
-            try:
-                diff = get_file_diff(git_repo, file, current_changes[file], self.get_comparable_commit())
-                changes.append(format_diff_response(file, diff, current_changes[file]))
-            except Exception as e:
-                AppLogger.error(f"Error getting diff for {file}: {e}")
-        
-        # Take a snapshot of the current changes
-        print("current_changes", current_changes)
-        self._snapshot_utils.take_temp_diff_snapshot(current_changes)
-        return changes
-    
     def get_uncommited_changes(self) -> Dict[str, FileChangeStatusTypes]:
         """Get current changes, optionally compared to a specific commit."""
         file_change_status_map: Dict[str, FileChangeStatusTypes] = {}
