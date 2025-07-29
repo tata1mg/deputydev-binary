@@ -10,7 +10,7 @@ class DiffSnapshotBase(ABC):
         self.snapshot_path = self._repo_path / ".git" / "file-snapshots" / source_branch
 
     @abstractmethod
-    def take_temp_diff_snapshot(self, status_map: Dict[str, FileChangeStatusTypes]):
+    def take_temp_diff_snapshot(self, status_map: Dict[str, FileChangeStatusTypes]) -> None:
         """Takes a snapshot of files based on their change status."""
         raise NotImplementedError
 
@@ -37,14 +37,14 @@ class DiffSnapshotBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def clean(self):
+    def clean(self) -> None:
         """
         Removes all snapshots for the current branch.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def take_commit_snapshot(self, commit_id: str, target_branch: str):
+    def take_commit_snapshot(self, commit_id: str, target_branch: str) -> None:
         """Takes a snapshot of the current commit ID.
 
         Args:

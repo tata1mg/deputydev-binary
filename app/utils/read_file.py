@@ -3,7 +3,7 @@ from typing import Tuple
 import aiofiles
 
 
-async def read_file_lines(file_path, start_line: int, lines_to_read: int = 1) -> Tuple[str, int, bool]:
+async def read_file_lines(file_path: str, start_line: int, lines_to_read: int = 1) -> Tuple[str, int, bool]:
     """
     Reads the file line-by-line starting from `start_line`, reading up to `lines_to_read` lines.
     Returns:

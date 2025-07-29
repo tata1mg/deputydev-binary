@@ -5,7 +5,7 @@ from app.services.review.review_strategy.uncomitted_only import UncomittedOnlySt
 
 
 class AllChangesStrategy(UncomittedOnlyStrategy):
-    def snapshot(self, target_branch: Optional[str] = None):
+    def snapshot(self, target_branch: Optional[str] = None) -> None:
         """
         Take diff snapshot
         Take commit snapshot

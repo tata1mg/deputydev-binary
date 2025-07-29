@@ -13,7 +13,7 @@ class CommittedOnlyStrategy(BaseStrategy):
         """
         self._snapshot_utils.clean()
 
-    def snapshot(self, target_branch: Optional[str] = None):
+    def snapshot(self, target_branch: Optional[str] = None) -> None:
         """
         Take diff snapshot
         Take commit snapshot

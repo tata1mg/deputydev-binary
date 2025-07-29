@@ -29,17 +29,17 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         self._source_branch = source_branch
 
     @property
-    def snapshot_path(self):
+    def snapshot_path(self) -> Path:
         """Builds the snapshot path for the given source branch."""
         if not self._snapshot_path:
             self._snapshot_path = self._repo_path / FILE_SNAPSHOT_PATH / self._source_branch
         return self._snapshot_path
 
     @property
-    def temp_snapshot_path(self):
+    def temp_snapshot_path(self) -> Path:
         return self.snapshot_path / "temp"
 
-    def take_temp_diff_snapshot(self, file_change_map: Dict[str, FileChangeStatusTypes]):
+    def take_temp_diff_snapshot(self, file_change_map: Dict[str, FileChangeStatusTypes]) -> None:
         """Takes a snapshot of files based on their change status.
 
         Args:
@@ -73,7 +73,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
             AppLogger.log_error(f"Diff snapshot failed with error {ex}")
             raise Exception(f"Diff snapshot failed with error {ex}")
 
-    def take_diff_snapshot(self):
+    def take_diff_snapshot(self) -> None:
         """Takes a snapshot of files based on their change status."""
         """Moves contents of temp snapshot to snapshot path."""
         if self.temp_snapshot_path.exists():
@@ -108,7 +108,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
 
         return prev_files
 
-    def clean(self):
+    def clean(self) -> None:
         """Removes all snapshots for the current branch."""
         if self.snapshot_path.exists():
             shutil.rmtree(self.snapshot_path)

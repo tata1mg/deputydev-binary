@@ -1,7 +1,9 @@
+from typing import Union
+
 from pydantic_core._pydantic_core import ValidationError
 from sanic import Blueprint, Request
 from sanic.exceptions import ServerError
-from sanic.response import HTTPResponse, json
+from sanic.response import HTTPResponse, JSONResponse, json
 
 from app.models.dtos.code_review_dtos.comment_validity_dto import CommentValidityParams
 from app.services.comment_validator import CommentValidator
@@ -13,7 +15,7 @@ review = Blueprint("review", url_prefix="")
 
 
 @review.route("review/summary", methods=["GET"])
-async def get_diff_summary(_request: Request):
+async def get_diff_summary(_request: Request) -> JSONResponse:
     """
     Get diff summary for a given repo path and target branch
     """
@@ -27,7 +29,7 @@ async def get_diff_summary(_request: Request):
 
 
 @review.route("/branches/get_source_branch", methods=["GET"])
-async def get_source_branch(_request: Request):
+async def get_source_branch(_request: Request) -> JSONResponse:
     """
     Get source branch for a given repo path
     """
@@ -37,7 +39,7 @@ async def get_source_branch(_request: Request):
 
 
 @review.route("/branches/all", methods=["GET"])
-async def search_branches(_request: Request):
+async def search_branches(_request: Request) -> JSONResponse:
     """
     Search branches for a given repo path and keyword
     """
@@ -48,7 +50,7 @@ async def search_branches(_request: Request):
 
 
 @review.route("/review/snapshot", methods=["POST"])
-async def take_snapshot(_request: Request):
+async def take_snapshot(_request: Request) -> JSONResponse:
     """
     Take snapshot for a given repo path and target branch
     """
@@ -60,7 +62,7 @@ async def take_snapshot(_request: Request):
 
 
 @review.route("/review/reset", methods=["POST"])
-async def reset(_request: Request):
+async def reset(_request: Request) -> JSONResponse:
     """
     Reset review for a given repo path and target branch
     """
@@ -72,7 +74,7 @@ async def reset(_request: Request):
 
 
 @review.route("/check-comment-validity", methods=["POST"])
-async def check_comment_validity(_request: Request) -> HTTPResponse:
+async def check_comment_validity(_request: Request) -> Union[HTTPResponse, ServerError]:
     """
     Check comment validity for a given comment
     """

@@ -22,7 +22,7 @@ from app.services.review.snapshot.base import DiffSnapshotBase
 
 
 class BaseStrategy(ABC):
-    def __init__(self, repo_path: str, diff_snapshot: DiffSnapshotBase, target_branch: Optional[str] = None):
+    def __init__(self, repo_path: str, diff_snapshot: DiffSnapshotBase, target_branch: Optional[str] = None) -> None:
         """
         Args:
             repo_path (str): Path to the git repository
@@ -35,7 +35,7 @@ class BaseStrategy(ABC):
         self._target_commit: str = None  # type: ignore
         self._source_commit: str = None  # type: ignore
 
-    def snapshot(self, target_branch: Optional[str] = None):
+    def snapshot(self, target_branch: Optional[str] = None) -> None:
         self._snapshot_utils.take_diff_snapshot(target_branch)
 
     @property
@@ -63,7 +63,7 @@ class BaseStrategy(ABC):
             self._target_branch = self._git_utils.get_default_branch()
         return self._target_branch
 
-    def is_large_pr_diff(self, diff_changes: List[FileChanges]):
+    def is_large_pr_diff(self, diff_changes: List[FileChanges]) -> None:
         """
         Returns:
             bool: True if the PR diff is large
@@ -79,7 +79,7 @@ class BaseStrategy(ABC):
                 f"PR diff is large. Max diff size allowed : {max_diff_size}, Actual diff size : {diff_size}"
             )
 
-    async def run_validations(self):
+    async def run_validations(self) -> None:
         """
         Run validations on the repo
         """
@@ -209,7 +209,7 @@ class BaseStrategy(ABC):
                 self._target_commit = self._git_utils.commit_hash(self.target_branch)
         return self._target_commit
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the current review state
         """

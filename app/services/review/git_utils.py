@@ -10,7 +10,10 @@ class GitUtils:
         self.git_repo = Repo(self._repo_path)
         self._source_branch: str = None  # type: ignore
 
-    def has_conflicts(self):
+    def has_conflicts(self) -> bool:
+        """
+        Returns True if there are conflicts in the index, False otherwise.
+        """
         # Check for unmerged entries in the index
         unmerged_blobs = self.git_repo.index.unmerged_blobs()
 
@@ -44,7 +47,7 @@ class GitUtils:
                 if not latest_time or commit_time > latest_time:
                     latest_time = commit_time
                     latest_origin = candidate
-            except Exception:
+            except Exception: # type: ignore
                 continue  # skip if branches don't have a merge base
 
         if latest_origin:

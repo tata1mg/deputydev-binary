@@ -22,5 +22,6 @@ class CommentValidator:
             return {"is_applicable": False, "message": self.FILE_DELETED_OR_MOVED}
 
     @staticmethod
-    def sanitize_path(path):
+    def sanitize_path(path: str) -> str:
+        """Sanitize path"""
         return path if path.startswith("/") else f"/{path}"

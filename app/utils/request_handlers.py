@@ -43,7 +43,7 @@ def handle_mcp_exceptions(func: Callable[..., Any]) -> Callable[..., McpResponse
     return wrapper
 
 
-def handle_ide_review_exceptions(func):
+def handle_ide_review_exceptions(func) -> Callable[..., McpResponse]:
     """
     Decorator to handle exceptions in IDE review service.
     """

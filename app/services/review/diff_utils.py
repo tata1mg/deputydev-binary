@@ -1,11 +1,11 @@
 import difflib
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Tuple
 
 from deputydev_core.utils.app_logger import AppLogger
 from git import Optional, Repo
 
-from app.services.review.dataclass.main import FILE_DIFF_STATUS_MAP, FileChanges, FileChangeStatusTypes, LineChange
+from app.services.review.dataclass.main import FileChanges, FileChangeStatusTypes, LineChange
 
 
 def count_added_removed_lines_changed(diff_text: str) -> Tuple[int, int]:
@@ -35,9 +35,6 @@ def format_diff_response(file_path: str, diff: str, change_type: FileChangeStatu
 
 
 def clean_diff(diff_output: str) -> str:
-    """Remove the first 4 lines from diff output (equivalent to tail -n +5)"""
-    # lines = diff_output.split('\n')
-    # return '\n'.join(lines[4:]) if len(lines) > 4 else ''
     return diff_output
 
 
@@ -103,52 +100,9 @@ def get_file_diff(
             # Fallback for other change types
             return repo.git.diff(commit_ref, file_path)
 
-    except Exception as e:
+    except Exception as e:  # type: ignore
         AppLogger.log_error(f"Error generating diff for {file_path}: {e}")
         return ""
-
-
-def get_current_changes_new(repo: Repo, commit_id: Optional[str] = None) -> Dict[str, FileChangeStatusTypes]:
-    """Get current changes, optionally compared to a specific commit."""
-    commit_ref = commit_id or "HEAD"
-    file_change_status_map: Dict[str, FileChangeStatusTypes] = {}
-    if commit_id:
-        try:
-            # Get changes from commit directly to working directory
-            for diff in repo.commit(commit_ref).diff(None):  # type: ignore
-                path = diff.b_path if diff.b_path else diff.a_path  # type: ignore
-                change_type = diff.change_type  # type: ignore
-                enum_value = FILE_DIFF_STATUS_MAP.get(change_type)  # type: ignore
-                if enum_value and path not in file_change_status_map:  # type: ignore
-                    file_change_status_map[path] = enum_value
-
-        except Exception as e:
-            print(f"Error getting changes from commit {commit_ref}: {e}")
-    else:
-        # Staged changes
-        for diff in repo.index.diff(commit_ref):  # type: ignore
-            path = diff.b_path if diff.b_path else diff.a_path  # type: ignore
-            change_type = diff.change_type  # type: ignore
-            enum_value = FILE_DIFF_STATUS_MAP.get(change_type)  # type: ignore
-            if enum_value:
-                file_change_status_map[path] = enum_value
-
-        # Unstaged changes
-        for diff in repo.index.diff(None):  # type: ignore
-            path = diff.b_path if diff.b_path else diff.a_path  # type: ignore
-            change_type = diff.change_type  # type: ignore
-            enum_value = FILE_DIFF_STATUS_MAP.get(change_type)  # type: ignore
-            # Only add if not already staged, or mark as modified if different from staged
-            if enum_value:
-                if path in file_change_status_map:
-                    file_change_status_map[path] = FileChangeStatusTypes.MODIFIED
-                else:
-                    file_change_status_map[path] = enum_value
-
-    for file in repo.untracked_files:
-        file_change_status_map[file] = FileChangeStatusTypes.UNTRACKED
-
-    return file_change_status_map
 
 
 def get_file_diff_between_files(file_path: Path, snap_file: Path, abs_file_path: str) -> str:
