@@ -100,7 +100,7 @@ def get_file_diff( # noqa: C901
             # Fallback for other change types
             return repo.git.diff(commit_ref, file_path)
 
-    except Exception as e:  # type: ignore
+    except Exception as e:  # noqa: BLE001
         AppLogger.log_error(f"Error generating diff for {file_path}: {e}")
         return ""
 

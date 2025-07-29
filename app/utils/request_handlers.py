@@ -43,13 +43,13 @@ def handle_mcp_exceptions(func: Callable[..., Any]) -> Callable[..., McpResponse
     return wrapper
 
 
-def handle_ide_review_exceptions(func) -> Callable[..., McpResponse]:
+def handle_ide_review_exceptions(func: Callable[..., Any]) -> Callable[..., McpResponse]:
     """
     Decorator to handle exceptions in IDE review service.
     """
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> McpResponse:
         try:
             result = await func(*args, **kwargs)
             return McpResponse(is_error=False, data=result)

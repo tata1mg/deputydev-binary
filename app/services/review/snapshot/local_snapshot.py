@@ -177,7 +177,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
                     commit_id = f.read().strip()
                     if commit_id:
                         # Assume it was for 'main' branch
-                        return {"main": {"commit_id": commit_id, "timestamp": datetime.now().isoformat()}}
+                        return {"main": {"commit_id": commit_id, "timestamp": datetime.now().isoformat()}} # noqa: BLE001
             except Exception:
                 pass
 

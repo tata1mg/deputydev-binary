@@ -139,7 +139,7 @@ class BaseStrategy(ABC):
                 else "Not Found",
             )
 
-    def get_comparable_commit(self):
+    def get_comparable_commit(self) -> str:
         raise NotImplementedError
 
     def get_uncommited_changes(self) -> Dict[str, FileChangeStatusTypes]:

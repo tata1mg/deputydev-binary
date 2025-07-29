@@ -47,7 +47,7 @@ class GitUtils:
                 if not latest_time or commit_time > latest_time:
                     latest_time = commit_time
                     latest_origin = candidate
-            except Exception: # type: ignore
+            except Exception: # noqa: BLEO01
                 continue  # skip if branches don't have a merge base
 
         if latest_origin:
