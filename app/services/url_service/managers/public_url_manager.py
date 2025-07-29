@@ -86,23 +86,18 @@ class PublicUrlManager(UrlManager):
         asyncio.create_task(UrlsContentRepository(weaviate_client).bulk_update(updated_objects))
         return results
 
-    async def fetch_urls_content(self, payload: "UrlReaderParams") -> dict:
+    async def fetch_urls_content(self, payload: "UrlReaderParams", headers) -> dict:
         urls = payload.urls
         results = await self._read_urls(urls)
         url_contents = {url: obj.content for url, obj in results.items()}
         formatted_content = self._format_urls_content(url_contents)
         if len(formatted_content) > self.max_content_size and self.summarize_large_content:
-            summarized_content = await self._summarize_content(formatted_content, payload)
+            summarized_content = await self._summarize_content(formatted_content, payload, headers)
             return {"content": summarized_content}
         else:
             return {"content": formatted_content}
 
-    async def _summarize_content(self, content, payload):
-        headers = {}
-        if payload.session_id:
-            headers["X-Session-Id"] = str(payload.session_id)
-        if payload.session_type:
-            headers["X-Session-Type"] = payload.session_type
+    async def _summarize_content(self, content, payload, headers):
         payload = {"content": content}
         summarize_content = await OneDevClient().summarize_url_content(payload, headers)
         return summarize_content

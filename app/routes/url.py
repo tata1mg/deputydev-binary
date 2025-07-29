@@ -26,7 +26,7 @@ async def read_url(_request: Request, **kwargs: Any) -> HTTPResponse:
         raise BadRequest("Request payload is missing or invalid.")
 
     payload = UrlReaderParams(**payload)
-    content = await UrlService().fetch_urls_content(payload)
+    content = await UrlService().fetch_urls_content(payload, _request.headers)
     return HTTPResponse(body=json.dumps(content))
 
 

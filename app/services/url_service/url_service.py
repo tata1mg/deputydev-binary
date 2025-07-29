@@ -25,9 +25,9 @@ class UrlService:
         weaviate_client = await get_weaviate_client(initialization_manager)
         return weaviate_client
 
-    async def fetch_urls_content(self, payload: "UrlReaderParams") -> dict:
+    async def fetch_urls_content(self, payload: "UrlReaderParams", headers) -> dict:
         url_manager = UrlManagerFactory.url_manager(payload.url_type)()
-        content = await url_manager.fetch_urls_content(payload)
+        content = await url_manager.fetch_urls_content(payload, headers)
         return content
 
     async def save_url(self, payload: "SaveUrlParams") -> dict:

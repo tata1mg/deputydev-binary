@@ -82,9 +82,9 @@ class OneDevClient(BaseHTTPClient):
         return result
 
     @handle_client_response
-    async def summarize_url_content(self, payload: dict, headers: Dict[str, str] = {}):
+    async def summarize_url_content(self, payload: dict, headers):
         path = "/end_user/v1/urls/summarize_url"
-        headers = {**headers, **get_common_headers(add_auth=True)}
+        headers = {"X-Session-Type": headers.get("X-Session-Type"), **get_common_headers(add_auth=True)}
         result = await self.post(url=self._host + path, headers=headers, json=payload)
         return result
 
