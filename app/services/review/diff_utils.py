@@ -39,7 +39,7 @@ def clean_diff(diff_output: str) -> str:
 
 
 def compare_files(file1: Path, file2: Path) -> bool:
-    with open(file1, "r") as f1, open(file2, "r") as f2: # type: ignore
+    with open(file1, "r") as f1, open(file2, "r") as f2: # noqa: PTH123
         return f1.read() == f2.read()
 
 
