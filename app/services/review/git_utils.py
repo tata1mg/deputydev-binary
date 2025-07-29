@@ -26,7 +26,6 @@ class GitUtils:
         origin = self.git_repo.remotes.origin
         head_ref = origin.refs.HEAD
         target_branch = head_ref.ref.name.split("/")[-1]
-        print("Target branch: ", target_branch)
         return target_branch
     
     def get_origin_branch(self, branch_name: str) -> str:
@@ -36,7 +35,6 @@ class GitUtils:
         """
         repo = self.git_repo
         branches = [head.name for head in repo.heads if head.name != branch_name]
-        print("Branches: ", branches)
         latest_origin = None
         latest_time = None
 
@@ -103,7 +101,7 @@ class GitUtils:
         """
         if not keyword:
             raise ValueError("Keyword cannot be empty") 
-        
+
         all_branches:List[str] = []
 
         # Local branches

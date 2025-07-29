@@ -5,7 +5,7 @@ from typing import List
 from app.services.review.diff_utils import format_diff_response
 from app.services.review.dataclass.main import FileChangeStatusTypes
 from typing import Dict
-
+from typing import Optional
 
 
 class CommittedOnlyStrategy(BaseStrategy):    
@@ -15,12 +15,12 @@ class CommittedOnlyStrategy(BaseStrategy):
         """
         self._snapshot_utils.clean()
 
-    def snapshot(self):
+    def snapshot(self, target_branch: Optional[str] = None):
         """
         Take diff snapshot
         Take commit snapshot
         """
-        self._snapshot_utils.take_commit_snapshot(self.source_commit)
+        self._snapshot_utils.take_commit_snapshot(self.source_commit, target_branch)
 
     def get_diff_changes(self) -> List[FileChanges]:
         """

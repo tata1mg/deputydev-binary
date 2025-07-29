@@ -6,6 +6,7 @@ from app.utils.util import flatten_multidict
 from app.services.review.dataclass.main import ReviewRequest
 from app.models.dtos.code_review_dtos.comment_validity_dto import CommentValidityParams
 from app.services.comment_validator import CommentValidator
+from sanic.exceptions import ServerError
 from sanic.response import HTTPResponse
 
 
@@ -13,7 +14,10 @@ review = Blueprint("review", url_prefix="")
 
 
 @review.route("review/summary", methods=["GET"])
-async def server_sync(_request: Request):
+async def get_diff_summary(_request: Request):
+    """
+    Get diff summary for a given repo path and target branch
+    """
     try:
         data = ReviewRequest(**flatten_multidict(_request.args))
     except ValidationError as e:
@@ -24,14 +28,20 @@ async def server_sync(_request: Request):
 
 
 @review.route("/branches/get_source_branch", methods=["GET"])
-async def server_sync(_request: Request):
+async def get_source_branch(_request: Request):
+    """
+    Get source branch for a given repo path
+    """
     repo_path = _request.args.get("repo_path")
     response = await ReviewService.get_source_branch(repo_path=repo_path)
     return json(response.model_dump())
 
 
 @review.route("/branches/all", methods=["GET"])
-async def server_sync(_request: Request):
+async def search_branches(_request: Request):
+    """
+    Search branches for a given repo path and keyword
+    """
     repo_path = _request.args.get("repo_path")
     keyword = _request.args.get("keyword")
     response = await ReviewService.search_branches(repo_path=repo_path, keyword=keyword)
@@ -39,14 +49,20 @@ async def server_sync(_request: Request):
 
 
 @review.route("/review/snapshot", methods=["POST"])
-async def server_sync(_request: Request):
+async def take_snapshot(_request: Request):
+    """
+    Take snapshot for a given repo path and target branch
+    """
     data = ReviewRequest(**flatten_multidict(_request.args))
     response = await ReviewService.take_snapshot(repo_path=data.repo_path, review_type=data.review_type, target_branch=data.target_branch)
     return json(response.model_dump())
 
 
 @review.route("/review/reset", methods=["POST"])
-async def server_sync(_request: Request):
+async def reset(_request: Request):
+    """
+    Reset review for a given repo path and target branch
+    """
     data = ReviewRequest(**flatten_multidict(_request.args))
     response = await ReviewService.reset(repo_path=data.repo_path, 
         review_type=data.review_type, 
@@ -56,7 +72,10 @@ async def server_sync(_request: Request):
 
 
 @review.route("/check-comment-validity", methods=["POST"])
-async def comment_validity(_request: Request) -> HTTPResponse:
+async def check_comment_validity(_request: Request) -> HTTPResponse:
+    """
+    Check comment validity for a given comment
+    """
     params = CommentValidityParams(**_request.json)
     try:
         result = await CommentValidator().is_comment_applicable(params)

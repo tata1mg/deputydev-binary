@@ -68,4 +68,4 @@ class ReviewService:
         Starts a new review session.
         """
         strategy = cls._get_review_strategy(repo_path, review_type, target_branch)
-        return strategy.snapshot()
+        return strategy.snapshot(target_branch)

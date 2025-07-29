@@ -35,8 +35,8 @@ class BaseStrategy(ABC):
         self._target_commit: str = None #type: ignore
         self._source_commit: str = None #type: ignore
     
-    def snapshot(self):
-        self._snapshot_utils.take_diff_snapshot()
+    def snapshot(self, target_branch: Optional[str] = None):
+        self._snapshot_utils.take_diff_snapshot(target_branch)
         
     @property
     def source_branch(self) -> str:
@@ -119,15 +119,12 @@ class BaseStrategy(ABC):
             # Check if the PR diff is large
             self.is_large_pr_diff(diff_changes)
         except (LargeDiffException, ConflictException, InvalidGitRepositoryError) as ex:
-            print("Exception", ex)
-            print("Exception type", type(ex))
-            print("Exception args", str(ex))
+            AppLogger.log_info(f"Error getting review changes: {ex}")
             fail_message = str(ex)
         except Exception as ex:
             AppLogger.log_error(f"Error getting review changes: {ex}")
             fail_message = str(ex)
         finally:
-            print("fail_message", fail_message)
             return FileDiffs(
                 eligible_for_review=fail_message is None,
                 fail_message=fail_message,
@@ -156,8 +153,6 @@ class BaseStrategy(ABC):
         git_repo = self._git_utils.git_repo
         prev_files = self._snapshot_utils.get_previous_snapshot()
         current_changes = self.get_uncommited_changes()
-        print("prev_files", prev_files)
-        print("current_changes", current_changes)
         current_changed_files = set(current_changes.keys())
         changes: List[FileChanges] = []
 
@@ -165,15 +160,12 @@ class BaseStrategy(ABC):
         for file in prev_files & current_changed_files:
             file_path = Path(self.repo_path / file)
             snap_file = self._snapshot_utils.snapshot_path / file
-            print("file_path", file_path, file_path.exists())
-            print("snap_file", snap_file, snap_file.exists())
             if file_path.is_file() and snap_file.is_file() and not compare_files(file_path, snap_file):
                 try:
-                    print(file_path, snap_file, compare_files(file_path, snap_file))
-                    diff = get_file_diff_between_files(file_path, snap_file)
+                    diff = get_file_diff_between_files(file_path, snap_file, file)
                     changes.append(format_diff_response(file, diff, current_changes[file]))
                 except Exception as e:
-                    AppLogger.error(f"Error getting diff for {file}: {e}")
+                    AppLogger.log_error(f"Error getting diff for {file}: {e}")
 
         # Check newly changed files (not in snapshot before)
         for file in current_changed_files - prev_files:
@@ -181,10 +173,8 @@ class BaseStrategy(ABC):
                 diff = get_file_diff(git_repo, file, current_changes[file], self.get_comparable_commit())
                 changes.append(format_diff_response(file, diff, current_changes[file]))
             except Exception as e:
-                AppLogger.error(f"Error getting diff for {file}: {e}")
+                AppLogger.log_error(f"Error getting diff for {file}: {e}")
         
-        # Take a snapshot of the current changes
-        print("current_changes", current_changes)
         self._snapshot_utils.take_temp_diff_snapshot(current_changes)
         return changes
 
@@ -208,21 +198,20 @@ class BaseStrategy(ABC):
         """
         if self._target_commit:
             return self._target_commit
-
-        self._target_commit = self._snapshot_utils.get_last_reviewed_commit_id()
-        print("self._target_commit from last commit", self._target_commit)
+        
+        self._target_commit = self._snapshot_utils.get_last_reviewed_commit_id(self.target_branch)
         # If no last reviewed commit id is found, use the default branch commit
         
         if not self._target_commit:
             if self.target_branch:
                 self._target_commit = self._git_utils.commit_hash(self.target_branch)
-            else:
-                self._target_commit = self._git_utils.commit_hash(self._git_utils.get_default_branch())
-        print("self._target_commit", self._target_commit)
         return self._target_commit
     
     
-    @abstractmethod
     def reset(self):
-        raise NotImplementedError
+        """
+        Reset the current review state
+        """
+        self._snapshot_utils.clean()
+
         

@@ -1,10 +1,8 @@
-from app.services.review.diff_utils import get_commit_changes
 from app.services.review.review_strategy.base import BaseStrategy
 from app.services.review.dataclass.main import FileChanges  
 from typing import List
 from app.services.review.dataclass.main import FileChangeStatusTypes
 from typing import Dict
-from app.services.review.diff_utils import get_file_diff, clean_diff, format_diff_response
 from app.services.review.dataclass.main import FILE_DIFF_STATUS_MAP
 from deputydev_core.utils.app_logger import AppLogger
 from pathlib import Path

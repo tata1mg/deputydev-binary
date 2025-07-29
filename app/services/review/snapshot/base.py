@@ -17,7 +17,7 @@ class DiffSnapshotBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def take_diff_snapshot(self) -> str:
+    def take_diff_snapshot(self,) -> str:
         """Takes a snapshot of files based on their change status.
             
         Returns:
@@ -44,18 +44,28 @@ class DiffSnapshotBase(ABC):
         raise NotImplementedError
     
     @abstractmethod
-    def take_commit_snapshot(self, commit_id: str):
+    def take_commit_snapshot(self, commit_id: str, target_branch: str):
         """Takes a snapshot of the current commit ID.
         
         Args:
             commit_id (str): The git commit ID to snapshot
+            target_branch (str): The target branch this commit belongs to
+        
+        Raises:
+            Exception: If snapshot creation fails
         """
         raise NotImplementedError
     
     @abstractmethod
-    def get_last_reviewed_commit_id(self) -> str:
+    def get_last_reviewed_commit_id(self, target_branch: str) -> str:
         """
+        Args:
+            target_branch (str): The target branch to get commit for
+        
         Returns:
             str: The last reviewed commit ID, or empty string if no commit was reviewed
+
+        Raises:
+            Exception: If snapshot creation fails
         """
         raise NotImplementedError   

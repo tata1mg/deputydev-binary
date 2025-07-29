@@ -1,4 +1,3 @@
-import os
 import fnmatch
 
 IGNORED_PATTERNS = [

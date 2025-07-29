@@ -1,19 +1,13 @@
 from app.services.review.dataclass.main import FileChanges
-from app.services.review.diff_utils import get_commit_changes
 from app.services.review.review_strategy.uncomitted_only import UncomittedOnlyStrategy
 from typing import List, Dict
 from app.services.review.dataclass.main import FileChangeStatusTypes
 from app.services.review.dataclass.main import FILE_DIFF_STATUS_MAP
+from typing import Optional
 
 
 class AllChangesStrategy(UncomittedOnlyStrategy):
-    def reset(self):
-        """
-        Reset the current review state
-        """
-        self._snapshot_utils.clean()
-
-    def snapshot(self):
+    def snapshot(self, target_branch: Optional[str] = None):
         """
         Take diff snapshot
         Take commit snapshot
@@ -21,7 +15,7 @@ class AllChangesStrategy(UncomittedOnlyStrategy):
         # take diff snapshot
         self._snapshot_utils.take_diff_snapshot()
         # take commit snapshot
-        self._snapshot_utils.take_commit_snapshot(self.source_commit)
+        self._snapshot_utils.take_commit_snapshot(self.source_commit, target_branch)
     
     def get_comparable_commit(self) -> str:
         return self.target_commit

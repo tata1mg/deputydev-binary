@@ -8,6 +8,7 @@ from app.services.review.git_utils import GitUtils
 from app.services.review.snapshot.base import DiffSnapshotBase
 from app.services.review.dataclass.main import FILE_DIFF_STATUS_MAP
 import difflib  
+from deputydev_core.utils.app_logger import AppLogger
 
 
 
@@ -36,40 +37,6 @@ def format_diff_response(file_path: str, diff: str,
                             )
     return file_change
     
-    
-
-def get_commited_changes(git_handler: GitUtils, target_branch: str, last_review_commit_id: Optional[str] = None) -> List[FileChanges]:
-    repo = git_handler.git_repo
-    if not target_branch:
-        target_branch = git_handler.get_default_branch()
-        
-    source_commit = git_handler.commit_hash(git_handler.get_source_branch())
-    target_commit = last_review_commit_id or git_handler.commit_hash(target_branch)
-    
-    # Get file status using git diff --name-status
-    name_status_output = repo.git.diff('--name-status', target_commit, source_commit)
-    
-    results: List[FileChanges] = []
-    
-    # Parse the name-status output
-    for line in name_status_output.strip().split('\n'):
-        if not line:
-            continue
-            
-        parts = line.split('\t')
-        if len(parts) >= 2:
-            change_type = parts[0]
-            file_path = parts[1]
-            
-            # Get diff for this specific file
-            try:
-                file_diff = repo.git.diff(target_commit, source_commit, '--', file_path)
-                results.append(format_diff_response(file_path, file_diff, FILE_DIFF_STATUS_MAP[change_type]))
-            except Exception:
-                pass
-    
-    return results
-
 
 def clean_diff(diff_output: str) -> str:
     """Remove the first 4 lines from diff output (equivalent to tail -n +5)"""
@@ -81,45 +48,6 @@ def clean_diff(diff_output: str) -> str:
 def compare_files(file1: Path, file2: Path) -> bool:
     with open(file1, 'r') as f1, open(file2, 'r') as f2:
         return f1.read() == f2.read()
-
-
-def get_commit_changes(snapshot_utils: DiffSnapshotBase,
-                 git_handler: GitUtils, 
-                 commit_id: Optional[str] = None) -> List[FileChanges]:
-
-    """
-    Returns:
-        List[FileChanges]: List of file changes
-    """
-    
-    git_repo = git_handler.git_repo
-    prev_files = snapshot_utils.get_previous_snapshot()
-    current_changes = get_current_changes_new(git_repo, commit_id)
-    
-    current_changed_files = set(current_changes.keys())
-    changes: List[FileChanges] = []
-    
-    # Check modified files
-    for file in prev_files & current_changed_files:
-        file_path = Path(file)
-        snap_file = snapshot_utils.snapshot_path / file
-        if file_path.is_file() and snap_file.is_file() and not compare_files(file_path, snap_file):
-            try:
-                diff = get_file_diff(git_repo, file, current_changes[file], commit_id)
-                changes.append(format_diff_response(file, diff, current_changes[file]))
-            except Exception as e:
-                print(f"Error getting diff for {file}: {e}")
-
-    # Check newly changed files (not in snapshot before)
-    for file in current_changed_files - prev_files:
-        try:
-            diff = get_file_diff(git_repo, file, current_changes[file], commit_id)
-            diff = clean_diff(diff)
-            changes.append(format_diff_response(file, diff, current_changes[file]))
-        except Exception as e:
-            print(f"Error getting diff for {file}: {e}")
-    
-    return changes
 
 
 def get_file_diff(repo: Repo, file_path: str, change_type: FileChangeStatusTypes, commit_id: Optional[str] = None) -> str:
@@ -178,64 +106,9 @@ def get_file_diff(repo: Repo, file_path: str, change_type: FileChangeStatusTypes
             return repo.git.diff(commit_ref, file_path)
             
     except Exception as e:
-        print(f"Error generating diff for {file_path}: {e}")
+        AppLogger.log_error(f"Error generating diff for {file_path}: {e}")
         return ""
 
-# def get_file_diff(repo: Repo, file_path: str, change_type: FileChangeStatusTypes, commit_id: Optional[str] = None) -> str:
-#     """Get diff for a specific file based on change type and commit reference."""
-#     commit_ref = commit_id or "HEAD"
-#     file_path_obj = Path(repo.working_tree_dir) / file_path #type: ignore
-    
-#     try:
-#         if change_type == FileChangeStatusTypes.UNTRACKED:
-#             # For untracked files, we need to stage them temporarily or use git diff --no-index
-#             if file_path_obj.is_file():
-#                 # Use git show with empty tree to get proper diff format
-#                 empty_tree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"  # Git's empty tree SHA
-#                 return repo.git.diff('--no-prefix', empty_tree, '--', file_path)
-#             else:
-#                 return ""
-        
-#         elif change_type == FileChangeStatusTypes.REMOVED:
-#             # For deleted files, compare HEAD to working tree (file is missing)
-#             return repo.git.diff('--no-prefix', 'HEAD', '--', file_path)
-        
-#         elif change_type == FileChangeStatusTypes.MODIFIED:
-#             if commit_id:
-#                 # Compare specific commit to workspace
-#                 return repo.git.diff('--no-prefix', commit_ref, '--', file_path)
-#             else:
-#                 # Show unstaged changes first, then staged if no unstaged
-#                 unstaged_diff = repo.git.diff('--no-prefix', 'HEAD', '--', file_path)
-#                 if unstaged_diff:
-#                     return unstaged_diff
-#                 # If no unstaged changes, show staged changes
-#                 return repo.git.diff('--no-prefix', '--cached', 'HEAD', '--', file_path)
-        
-#         elif change_type == FileChangeStatusTypes.ADDED:
-#             if commit_id:
-#                 # Compare from specific commit (file didn't exist then)
-#                 return repo.git.diff('--no-prefix', commit_ref, 'HEAD', '--', file_path)
-#             else:
-#                 # For staged new files, show diff from empty
-#                 cached_diff = repo.git.diff('--no-prefix', '--cached', '--', file_path)
-#                 if cached_diff:
-#                     return cached_diff
-#                 # For unstaged new files, diff against empty tree
-#                 empty_tree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-#                 return repo.git.diff('--no-prefix', empty_tree, '--', file_path)
-        
-#         elif change_type == FileChangeStatusTypes.RENAMED:
-#             # For renamed files, show the rename diff with move detection
-#             return repo.git.diff('--no-prefix', '-M', commit_ref, '--', file_path)
-        
-#         else:
-#             # Fallback for other change types
-#             return repo.git.diff('--no-prefix', commit_ref, '--', file_path)
-            
-#     except Exception as e:
-#         print(f"Error generating diff for {file_path}: {e}")
-#         return ""
 
 def get_current_changes_new(repo: Repo, commit_id: Optional[str] = None) -> Dict[str, FileChangeStatusTypes]:
     """Get current changes, optionally compared to a specific commit."""
@@ -280,16 +153,19 @@ def get_current_changes_new(repo: Repo, commit_id: Optional[str] = None) -> Dict
     return file_change_status_map
 
 
-def get_file_diff_between_files(file_path: Path, snap_file: Path) -> str:
+def get_file_diff_between_files(file_path: Path, snap_file: Path, abs_file_path: str) -> str:
     with file_path.open('r') as f1, snap_file.open('r') as f2:
         f1_lines = f1.readlines()
         f2_lines = f2.readlines()
 
+    fromfile = f"a/{abs_file_path}"
+    tofile = f"b/{abs_file_path}"
+
     diff = difflib.unified_diff(
-        f2_lines,               # old file (snapshot)
-        f1_lines,               # new file (current)
-        fromfile=str(snap_file),
-        tofile=str(file_path),
+        f2_lines,  # old file (snapshot)
+        f1_lines,  # new file (current)
+        fromfile=fromfile,
+        tofile=tofile,
         lineterm=''
     )
 

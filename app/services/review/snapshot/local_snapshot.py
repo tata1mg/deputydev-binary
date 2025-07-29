@@ -7,6 +7,9 @@ from app.constants import FILE_SNAPSHOT_PATH
 from app.constants import COMMIT_SNAPSHOT_PATH
 from app.constants import DIFF_SNAPSOT_PATH
 from app.services.review.dataclass.main import FileChangeStatusTypes
+import json
+from datetime import datetime
+
 
 
 class LocalDiffSnapshot(DiffSnapshotBase):
@@ -57,15 +60,11 @@ class LocalDiffSnapshot(DiffSnapshotBase):
                 for file, status in file_change_map.items():
                     f.write(f"{status.value} {file}\n")
 
-            print("file_change_map", file_change_map)
             # Copy files to snapshot directory
             for file in file_change_map:
                 path = Path(self._repo_path / file)
                 # Copy which files exists
-                print("path", path)
-                print("path.is_file()", path.is_file())
                 if path.is_file():
-                    print("path", path)
                     full_dest = self.temp_snapshot_path / file
                     full_dest.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy(path, full_dest)
@@ -77,8 +76,6 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         """Takes a snapshot of files based on their change status."""
         """Moves contents of temp snapshot to snapshot path."""
         if self.temp_snapshot_path.exists():
-            print(self.temp_snapshot_path)
-            print(self.snapshot_path)
             self.snapshot_path.mkdir(parents=True, exist_ok=True)
 
             for item in self.temp_snapshot_path.iterdir():
@@ -114,31 +111,85 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         """Removes all snapshots for the current branch."""
         if self.snapshot_path.exists():
             shutil.rmtree(self.snapshot_path)
-        else:
-            print("Snapshot path does not exist", self.snapshot_path)
-            
-    def take_commit_snapshot(self, commit_id: str) -> None:
-        """Takes a snapshot of the current commit ID.
+    
+    def take_commit_snapshot(self, commit_id: str, target_branch: str) -> None:
+        """Takes a snapshot of the current commit ID for a specific branch.
         
         Args:
             commit_id (str): The git commit ID to snapshot
+            target_branch (str): The target branch this commit belongs to
         """
         self.snapshot_path.mkdir(parents=True, exist_ok=True)
-        with open(self.snapshot_path  / COMMIT_SNAPSHOT_PATH, "w") as f:
-            f.write(f"{commit_id}")
         
+        # Load existing snapshots
+        snapshots = self._load_snapshots()
+        
+        # Update the snapshot for this branch
+        snapshots[target_branch] = {
+            "commit_id": commit_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Save updated snapshots
+        with open(self.snapshot_path / COMMIT_SNAPSHOT_PATH, "w") as f:
+            json.dump(snapshots, f, indent=2)
+
+
     
-    def get_last_reviewed_commit_id(self) -> str | None:
-        """Gets the last reviewed commit ID.
+    def get_last_reviewed_commit_id(self, target_branch: str = None) -> str | None:
+        """Gets the last reviewed commit ID for a branch.
+        
+        Args:
+            target_branch (str): The target branch to get commit for
+            
+        Returns:
+            str: The last reviewed commit ID, or None if no commit was reviewed
+        """
+        if not target_branch:
+            return None
+            
+        snapshots = self._load_snapshots()
+        branch_data = snapshots.get(target_branch)
+        
+        return branch_data.get("commit_id") if branch_data else None
+
+
+    
+    def _load_snapshots(self) -> dict:
+        """Loads the branch snapshots from file.
         
         Returns:
-            str: The last reviewed commit ID, or empty string if no commit was reviewed
+            dict: Dictionary with branch names as keys
         """
         commit_file = self.snapshot_path / COMMIT_SNAPSHOT_PATH
-
-        if not commit_file.exists():
-            return 
-        print("commit_file", commit_file)
-        with open(commit_file, "r") as f:
-            return f.read().strip()
         
+        if not commit_file.exists():
+            return {}
+        
+        try:
+            with open(commit_file, "r") as f:
+                data = json.load(f)
+                
+                # If it's already a dict, return it
+                if isinstance(data, dict):
+                    return data
+                else:
+                    return {}
+                    
+        except json.JSONDecodeError:
+            # Handle old plain text format - migrate to new format
+            try:
+                with open(commit_file, "r") as f:
+                    commit_id = f.read().strip()
+                    if commit_id:
+                        # Assume it was for 'main' branch
+                        return {
+                            "main": {
+                                "commit_id": commit_id,
+                                "timestamp": datetime.now().isoformat()
+                            }
+                        }
+            except Exception:
+                pass
+            
+            return {}
