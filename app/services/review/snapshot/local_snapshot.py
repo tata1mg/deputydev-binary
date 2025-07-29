@@ -2,7 +2,7 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 from deputydev_core.utils.app_logger import AppLogger
 
@@ -57,7 +57,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
             self.temp_snapshot_path.mkdir(parents=True, exist_ok=True)
 
             # Write the status snapshot file
-            with open(self.temp_snapshot_path / DIFF_SNAPSOT_PATH, "w") as f:
+            with open(self.temp_snapshot_path / DIFF_SNAPSOT_PATH, "w") as f: # noqa: PTH123
                 for file, status in file_change_map.items():
                     f.write(f"{status.value} {file}\n")
 
@@ -178,7 +178,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
                     if commit_id:
                         # Assume it was for 'main' branch
                         return {"main": {"commit_id": commit_id, "timestamp": datetime.now().isoformat()}} # noqa: BLE001
-            except Exception:
+            except Exception: # noqa: BLE001
                 pass
 
             return {}
