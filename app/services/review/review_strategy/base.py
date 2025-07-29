@@ -37,7 +37,7 @@ class BaseStrategy(ABC):
         self._source_commit: str = None  # type: ignore
 
     def snapshot(self, target_branch: Optional[str] = None) -> None:
-        self._snapshot_utils.take_diff_snapshot(target_branch)
+        self._snapshot_utils.take_diff_snapshot()
 
     @property
     def source_branch(self) -> str:
