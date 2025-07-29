@@ -6,7 +6,7 @@ from app.services.review.dataclass.main import FILE_DIFF_STATUS_MAP
 
 
 class UncomittedOnlyStrategy(BaseStrategy):
-    def reset(self):
+    def reset(self) -> None:
         self._snapshot_utils.clean()    
     
     def get_comparable_commit(self) -> str:

@@ -82,5 +82,5 @@ async def check_comment_validity(_request: Request) -> Union[HTTPResponse, Serve
     try:
         result = await CommentValidator().is_comment_applicable(params)
         return HTTPResponse(body=json.dumps(result))
-    except Exception as e:
+    except Exception as e: # type: ignore
         raise ServerError(str(e))

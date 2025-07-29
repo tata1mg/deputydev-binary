@@ -7,7 +7,7 @@ from .base import BaseStrategy
 
 
 class CommittedOnlyStrategy(BaseStrategy):
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the current review state
         """
@@ -30,8 +30,6 @@ class CommittedOnlyStrategy(BaseStrategy):
         repo = self._git_utils.git_repo
 
         # Get the file change status between source and target commit
-        print("target_commit", self.target_commit)
-        print("source_commit", self.source_commit)
         name_status_output = repo.git.diff("--name-status", self.target_commit, self.source_commit)
 
         results: List[FileChanges] = []

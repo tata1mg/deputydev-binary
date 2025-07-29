@@ -12,13 +12,14 @@ from app.services.review.diff_utils import (
     get_file_diff_between_files,
 )
 from app.services.review.exceptions.review_exceptions import (
-    ConflictException,
+    ConflictError,
     InvalidGitRepositoryError,
-    LargeDiffException,
+    LargeDiffError,
 )
 from app.services.review.file_ignore_utils import should_ignore_file
 from app.services.review.git_utils import GitUtils
 from app.services.review.snapshot.base import DiffSnapshotBase
+from deputydev_core.utils.config_manager import ConfigManager
 
 
 class BaseStrategy(ABC):
@@ -72,10 +73,9 @@ class BaseStrategy(ABC):
         for diff_change in diff_changes:
             diff_size += len(diff_change.diff)
         # TODO: Uncomment before final release
-        max_diff_size = 100000
-        # max_diff_size = ConfigManager.configs["CODE_REVIEW"]["MAX_DIFF_SIZE"]
+        max_diff_size = ConfigManager.configs["CODE_REVIEW"]["MAX_DIFF_SIZE"]
         if diff_size > max_diff_size:
-            raise LargeDiffException(
+            raise LargeDiffError(
                 f"PR diff is large. Max diff size allowed : {max_diff_size}, Actual diff size : {diff_size}"
             )
 
@@ -89,7 +89,7 @@ class BaseStrategy(ABC):
 
         # Check if the repo has conflicts
         if self._git_utils.has_conflicts():
-            raise ConflictException("Repo has conflicts")
+            raise ConflictError("Repo has conflicts")
 
     def get_effective_pr_diff(self, diff_changes: List[FileChanges]) -> List[FileChanges]:
         """
@@ -118,10 +118,10 @@ class BaseStrategy(ABC):
 
             # Check if the PR diff is large
             self.is_large_pr_diff(diff_changes)
-        except (LargeDiffException, ConflictException, InvalidGitRepositoryError) as ex:
+        except (LargeDiffError, ConflictError, InvalidGitRepositoryError) as ex:
             AppLogger.log_info(f"Error getting review changes: {ex}")
             fail_message = str(ex)
-        except Exception as ex:
+        except Exception as ex:  # noqa: BLE001
             AppLogger.log_error(f"Error getting review changes: {ex}")
             fail_message = str(ex)
         finally:
@@ -138,6 +138,9 @@ class BaseStrategy(ABC):
                 if self._git_utils.get_default_remote_name()
                 else "Not Found",
             )
+
+    def get_comparable_commit(self):
+        raise NotImplementedError
 
     def get_uncommited_changes(self) -> Dict[str, FileChangeStatusTypes]:
         """
@@ -166,7 +169,7 @@ class BaseStrategy(ABC):
                 try:
                     diff = get_file_diff_between_files(file_path, snap_file, file)
                     changes.append(format_diff_response(file, diff, current_changes[file]))
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     AppLogger.log_error(f"Error getting diff for {file}: {e}")
 
         # Check newly changed files (not in snapshot before)
