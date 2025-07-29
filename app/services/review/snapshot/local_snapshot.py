@@ -57,7 +57,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
             self.temp_snapshot_path.mkdir(parents=True, exist_ok=True)
 
             # Write the status snapshot file
-            with open(self.temp_snapshot_path / DIFF_SNAPSOT_PATH, "w") as f: # noqa: PTH123
+            with open(self.temp_snapshot_path / DIFF_SNAPSOT_PATH, "w") as f:  # noqa: PTH123
                 for file, status in file_change_map.items():
                     f.write(f"{status.value} {file}\n")
 
@@ -69,7 +69,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
                     full_dest = self.temp_snapshot_path / file
                     full_dest.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy(path, full_dest)
-        except Exception as ex: # noqa: BLE001
+        except Exception as ex:  # noqa: BLE001
             AppLogger.log_error(f"Diff snapshot failed with error {ex}")
             raise Exception(f"Diff snapshot failed with error {ex}")
 
@@ -102,7 +102,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         # If previous snapshot exists
         if previous_snapshot.exists():
             # Read the status snapshot file
-            with open(previous_snapshot) as f: #noqa: PTH123
+            with open(previous_snapshot) as f:  # noqa: PTH123
                 # Get the file paths from the snapshot
                 prev_files = set([line.strip().split(" ", 1)[1] for line in f])
 
@@ -129,7 +129,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         snapshots[target_branch] = {"commit_id": commit_id, "timestamp": datetime.now().isoformat()}
 
         # Save updated snapshots
-        with open(self.snapshot_path / COMMIT_SNAPSHOT_PATH, "w") as f: #noqa: PTH123
+        with open(self.snapshot_path / COMMIT_SNAPSHOT_PATH, "w") as f:  # noqa: PTH123
             json.dump(snapshots, f, indent=2)
 
     def get_last_reviewed_commit_id(self, target_branch: str = None) -> str | None:
@@ -161,7 +161,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
             return {}
 
         try:
-            with open(commit_file, "r") as f: #noqa: PTH123
+            with open(commit_file, "r") as f:  # noqa: PTH123
                 data = json.load(f)
 
                 # If it's already a dict, return it
@@ -173,12 +173,12 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         except json.JSONDecodeError:
             # Handle old plain text format - migrate to new format
             try:
-                with open(commit_file, "r") as f: #noqa: PTH123
+                with open(commit_file, "r") as f:  # noqa: PTH123
                     commit_id = f.read().strip()
                     if commit_id:
                         # Assume it was for 'main' branch
-                        return {"main": {"commit_id": commit_id, "timestamp": datetime.now().isoformat()}} # noqa: BLE001
-            except Exception: # noqa: BLE001
+                        return {"main": {"commit_id": commit_id, "timestamp": datetime.now().isoformat()}}  # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 pass
 
             return {}

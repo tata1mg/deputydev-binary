@@ -82,5 +82,5 @@ async def check_comment_validity(_request: Request) -> Union[HTTPResponse, Serve
     try:
         result = await CommentValidator().is_comment_applicable(params)
         return HTTPResponse(body=json.dumps(result))
-    except Exception as e: # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         raise ServerError(str(e))

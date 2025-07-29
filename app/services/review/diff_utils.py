@@ -39,11 +39,11 @@ def clean_diff(diff_output: str) -> str:
 
 
 def compare_files(file1: Path, file2: Path) -> bool:
-    with open(file1, "r") as f1, open(file2, "r") as f2: # noqa: PTH123
+    with open(file1, "r") as f1, open(file2, "r") as f2:  # noqa: PTH123
         return f1.read() == f2.read()
 
 
-def get_file_diff( # noqa: C901
+def get_file_diff(  # noqa: C901
     repo: Repo, file_path: str, change_type: FileChangeStatusTypes, commit_id: Optional[str] = None
 ) -> str:
     """Get diff for a specific file based on change type and commit reference."""

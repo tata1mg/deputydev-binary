@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from deputydev_core.utils.app_logger import AppLogger
+from deputydev_core.utils.config_manager import ConfigManager
 
 from app.services.review.dataclass.main import FileChanges, FileChangeStatusTypes, FileDiffs
 from app.services.review.diff_utils import (
@@ -19,7 +20,6 @@ from app.services.review.exceptions.review_exceptions import (
 from app.services.review.file_ignore_utils import should_ignore_file
 from app.services.review.git_utils import GitUtils
 from app.services.review.snapshot.base import DiffSnapshotBase
-from deputydev_core.utils.config_manager import ConfigManager
 
 
 class BaseStrategy(ABC):
@@ -177,7 +177,7 @@ class BaseStrategy(ABC):
             try:
                 diff = get_file_diff(git_repo, file, current_changes[file], self.get_comparable_commit())
                 changes.append(format_diff_response(file, diff, current_changes[file]))
-            except Exception as e: # noqa: BLE001
+            except Exception as e:  # noqa: BLE001
                 AppLogger.log_error(f"Error getting diff for {file}: {e}")
 
         self._snapshot_utils.take_temp_diff_snapshot(current_changes)

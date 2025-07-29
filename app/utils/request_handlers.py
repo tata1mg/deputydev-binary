@@ -53,7 +53,7 @@ def handle_ide_review_exceptions(func: Callable[..., Any]) -> Callable[..., McpR
         try:
             result = await func(*args, **kwargs)
             return McpResponse(is_error=False, data=result)
-        except Exception as ex: #noqa: BLE001
+        except Exception as ex:  # noqa: BLE001
             return McpResponse(is_error=True, meta=McpResponseMeta(message=str(ex)))
 
     return wrapper

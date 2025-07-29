@@ -60,8 +60,7 @@ def flatten_multidict(multi: dict) -> dict:
     return {k: v[0] if isinstance(v, list) else v for k, v in multi.items()}
 
 
-def hash_content(content: str, strip_content: bool=False) -> str:
+def hash_content(content: str, strip_content: bool = False) -> str:
     if strip_content:
         content = content.strip()
     return hashlib.md5(content.encode()).hexdigest()
-

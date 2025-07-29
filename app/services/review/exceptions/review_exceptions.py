@@ -1,4 +1,4 @@
-class LargeDiffError(Exception): # type: ignore
+class LargeDiffError(Exception):  # type: ignore
     """Exception raised when the diff is too large."""
 
     def __init__(self, message: str) -> None:
@@ -6,7 +6,7 @@ class LargeDiffError(Exception): # type: ignore
         super().__init__(f"{self.message}")
 
 
-class ConflictError(Exception): # type: ignore
+class ConflictError(Exception):  # type: ignore
     """Exception raised when there is a conflict."""
 
     def __init__(self, message: str) -> None:
@@ -14,7 +14,7 @@ class ConflictError(Exception): # type: ignore
         super().__init__(f"{self.message}")
 
 
-class InvalidGitRepositoryError(Exception): # type: ignore
+class InvalidGitRepositoryError(Exception):  # type: ignore
     """Exception raised when the review type is invalid."""
 
     def __init__(self, message: str) -> None:
