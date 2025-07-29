@@ -1,23 +1,20 @@
-from git import Repo
-from git import Repo, InvalidGitRepositoryError, NoSuchPathError
-from typing import List
 from datetime import datetime
+from typing import List
 
+from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 
 
 class GitUtils:
     def __init__(self, repo_path: str):
         self._repo_path = repo_path
         self.git_repo = Repo(self._repo_path)
-        self._source_branch: str = None #type: ignore
-    
-    def has_conflicts(self):
+        self._source_branch: str = None  # type: ignore
 
+    def has_conflicts(self):
         # Check for unmerged entries in the index
         unmerged_blobs = self.git_repo.index.unmerged_blobs()
 
         return bool(unmerged_blobs)
-
 
     def get_default_branch(self) -> str:
         """
@@ -27,7 +24,7 @@ class GitUtils:
         head_ref = origin.refs.HEAD
         target_branch = head_ref.ref.name.split("/")[-1]
         return target_branch
-    
+
     def get_origin_branch(self, branch_name: str) -> str:
         """
         Detects the most likely branch from which the given branch originated.
@@ -56,14 +53,13 @@ class GitUtils:
             # fallback — assume from default branch
             return self.get_default_branch()
 
-
     def get_default_remote_name(self) -> str:
         """
         Returns the fetch URL of the 'origin' remote.
         """
         origin = self.git_repo.remotes.origin
         return origin.url
-    
+
     def commit_hash(self, branch_name: str) -> str:
         """
         Returns the latest commit hash for the given branch name, local or remote.
@@ -79,35 +75,33 @@ class GitUtils:
             raise ValueError(f"Branch '{branch_name}' not found locally or on origin.")
 
         return commit.hexsha
-    
+
     def is_git_repo(self) -> bool:
         try:
             _ = self.git_repo.git_dir
             return True
         except (InvalidGitRepositoryError, NoSuchPathError):
             return False
-    
-    
+
     def get_source_branch(self) -> str:
         if not self._source_branch:
             self._source_branch = self.git_repo.active_branch.name
         return self._source_branch
-    
-    
+
     def search_branches(self, keyword: str, add_remote: bool = False) -> List[str]:
         """
         Search for branches (local and remote) that contain the keyword.
         Returns a list of matching branch names (without 'origin/' prefix).
         """
         if not keyword:
-            raise ValueError("Keyword cannot be empty") 
+            raise ValueError("Keyword cannot be empty")
 
-        all_branches:List[str] = []
+        all_branches: List[str] = []
 
         # Local branches
         for head in self.git_repo.heads:
             all_branches.append(head.name)
-        
+
         if add_remote:
             # Remote branches
             for remote in self.git_repo.remotes:
@@ -126,4 +120,3 @@ class GitUtils:
 
         # Return sorted unique branch names
         return sorted(set(matches))
-    

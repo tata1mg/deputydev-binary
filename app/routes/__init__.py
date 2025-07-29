@@ -22,7 +22,7 @@ blueprints = [
     codebase_read,
     url_reader,
     mcp,
-    review
+    review,
 ]
 
 v1_binary_blueprints = Blueprint.group(*blueprints, url_prefix="v1")

@@ -1,14 +1,13 @@
 from pydantic_core._pydantic_core import ValidationError
 from sanic import Blueprint, Request
-from sanic.response import json
-from app.services.review.review_service import ReviewService
-from app.utils.util import flatten_multidict
-from app.services.review.dataclass.main import ReviewRequest
+from sanic.exceptions import ServerError
+from sanic.response import HTTPResponse, json
+
 from app.models.dtos.code_review_dtos.comment_validity_dto import CommentValidityParams
 from app.services.comment_validator import CommentValidator
-from sanic.exceptions import ServerError
-from sanic.response import HTTPResponse
-
+from app.services.review.dataclass.main import ReviewRequest
+from app.services.review.review_service import ReviewService
+from app.utils.util import flatten_multidict
 
 review = Blueprint("review", url_prefix="")
 
@@ -54,7 +53,9 @@ async def take_snapshot(_request: Request):
     Take snapshot for a given repo path and target branch
     """
     data = ReviewRequest(**flatten_multidict(_request.args))
-    response = await ReviewService.take_snapshot(repo_path=data.repo_path, review_type=data.review_type, target_branch=data.target_branch)
+    response = await ReviewService.take_snapshot(
+        repo_path=data.repo_path, review_type=data.review_type, target_branch=data.target_branch
+    )
     return json(response.model_dump())
 
 
@@ -64,9 +65,8 @@ async def reset(_request: Request):
     Reset review for a given repo path and target branch
     """
     data = ReviewRequest(**flatten_multidict(_request.args))
-    response = await ReviewService.reset(repo_path=data.repo_path, 
-        review_type=data.review_type, 
-        target_branch=data.target_branch
+    response = await ReviewService.reset(
+        repo_path=data.repo_path, review_type=data.review_type, target_branch=data.target_branch
     )
     return json(response.model_dump())
 

@@ -1,5 +1,6 @@
-from typing import Dict, List
 import hashlib
+from typing import Dict, List
+
 from deputydev_core.services.chunking.chunk_info import ChunkInfo
 from deputydev_core.utils.constants.enums import ContextValueKeys
 from deputydev_core.utils.context_value import ContextValue
@@ -54,8 +55,10 @@ def parse_request_params(req: Request) -> Dict[str, str]:
         params[key] = value
     return params
 
+
 def flatten_multidict(multi: dict) -> dict:
     return {k: v[0] if isinstance(v, list) else v for k, v in multi.items()}
+
 
 def hash_content(content: str, strip_content=False) -> str:
     if strip_content:

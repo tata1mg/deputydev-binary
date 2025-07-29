@@ -1,5 +1,5 @@
-from app.utils.read_file import read_file_lines
 from app.models.dtos.code_review_dtos.comment_validity_dto import CommentValidityParams
+from app.utils.read_file import read_file_lines
 from app.utils.util import hash_content
 
 

@@ -1,15 +1,18 @@
 from typing import List, Optional
-from app.utils.request_handlers import handle_ide_review_exceptions
-from app.services.review.git_utils import GitUtils
-from app.services.review.review_strategy.review_factory import ReviewFactory
-from app.services.review.review_strategy.base import BaseStrategy
+
 from app.services.review.dataclass.main import FileDiffs
+from app.services.review.git_utils import GitUtils
+from app.services.review.review_strategy.base import BaseStrategy
+from app.services.review.review_strategy.review_factory import ReviewFactory
 from app.services.review.snapshot.local_snapshot import LocalDiffSnapshot
+from app.utils.request_handlers import handle_ide_review_exceptions
 
 
 class ReviewService:
     @classmethod
-    def _get_review_strategy(cls, repo_path: str, review_type: str, target_branch: Optional[str] = None) -> BaseStrategy:
+    def _get_review_strategy(
+        cls, repo_path: str, review_type: str, target_branch: Optional[str] = None
+    ) -> BaseStrategy:
         """
         review_type: str : Review type
         target_branch: Optional[str] : Target branch
@@ -19,9 +22,7 @@ class ReviewService:
         source_branch = GitUtils(repo_path).get_source_branch()
         diff_snapshot = LocalDiffSnapshot(repo_path, source_branch)
         return ReviewFactory.get_strategy(review_type)(
-            repo_path=repo_path,
-            target_branch=target_branch,
-            diff_snapshot=diff_snapshot
+            repo_path=repo_path, target_branch=target_branch, diff_snapshot=diff_snapshot
         )
 
     @classmethod
