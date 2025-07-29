@@ -41,3 +41,19 @@ def handle_mcp_exceptions(func: Callable[..., Any]) -> Callable[..., McpResponse
             return McpResponse(is_error=True, meta=McpResponseMeta(message=str(ex)))
 
     return wrapper
+
+
+def handle_ide_review_exceptions(func: Callable[..., Any]) -> Callable[..., McpResponse]:
+    """
+    Decorator to handle exceptions in IDE review service.
+    """
+
+    @wraps(func)
+    async def wrapper(*args: Any, **kwargs: Any) -> McpResponse:
+        try:
+            result = await func(*args, **kwargs)
+            return McpResponse(is_error=False, data=result)
+        except Exception as ex:  # noqa: BLE001
+            return McpResponse(is_error=True, meta=McpResponseMeta(message=str(ex)))
+
+    return wrapper
