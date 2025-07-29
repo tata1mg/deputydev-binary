@@ -3,7 +3,7 @@ from typing import Tuple
 from urllib.parse import urlparse
 
 import html2text
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from requests.structures import CaseInsensitiveDict
 
 from app.clients.web_client import WebClient
@@ -22,9 +22,44 @@ class HtmlScrapper:
         response_headers = CaseInsensitiveDict(response_headers)
         return content, response_headers, status
 
-    def clean_html(self, raw_html: str, url: str) -> BeautifulSoup:
+    def clean_html(self, raw_html: str, url: str) -> Tag:
         soup = BeautifulSoup(raw_html, "html.parser")
-        return soup
+        # 1. Remove noise
+        for tag in soup(["script", "style", "noscript", "footer", "nav", "header", "aside", "form", "input"]):
+            tag.decompose()
+
+        # 2. Define likely content selectors
+        selectors = [
+            "main",
+            "article",
+            "div#main",
+            "div.main",
+            "div#content",
+            "div.content",
+            "section",
+        ]
+
+        # 3. Collect meaningful blocks
+        blocks = []
+        for sel in selectors:
+            for tag in soup.select(sel):
+                if tag and len(tag.get_text(strip=True)) > 200:
+                    blocks.append(tag)
+
+        # 4. If no meaningful blocks found, fallback
+        if not blocks:
+            return soup
+
+        # 5. Merge blocks into a new parent div
+        merged = BeautifulSoup("<div></div>", "html.parser").div
+        seen = set()
+        for block in blocks:
+            # avoid duplicates from selectors
+            if str(block) not in seen:
+                merged.append(block)
+                seen.add(str(block))
+
+        return merged
 
     def convert_html_to_markdown(self, cleaned_html: str) -> str:
         return html2text.html2text(cleaned_html)
