@@ -5,7 +5,7 @@ from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 
 
 class GitUtils:
-    def __init__(self, repo_path: str):
+    def __init__(self, repo_path: str) -> None:
         self._repo_path = repo_path
         self.git_repo = Repo(self._repo_path)
         self._source_branch: str = None  # type: ignore

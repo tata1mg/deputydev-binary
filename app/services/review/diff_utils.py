@@ -43,7 +43,7 @@ def compare_files(file1: Path, file2: Path) -> bool:
         return f1.read() == f2.read()
 
 
-def get_file_diff( # type: ignore
+def get_file_diff( # noqa: C901
     repo: Repo, file_path: str, change_type: FileChangeStatusTypes, commit_id: Optional[str] = None
 ) -> str:
     """Get diff for a specific file based on change type and commit reference."""

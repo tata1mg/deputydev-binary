@@ -177,7 +177,7 @@ class BaseStrategy(ABC):
             try:
                 diff = get_file_diff(git_repo, file, current_changes[file], self.get_comparable_commit())
                 changes.append(format_diff_response(file, diff, current_changes[file]))
-            except Exception as e:
+            except Exception as e: # noqa: BLE001
                 AppLogger.log_error(f"Error getting diff for {file}: {e}")
 
         self._snapshot_utils.take_temp_diff_snapshot(current_changes)
