@@ -85,13 +85,10 @@ jobs:
             --include-data-file=ripgrep/rg_darwin_x64=bin/rg \
             app/service.py
 
-          mv service.bin "$DIR/service.bin"
-
-          CHECKSUM=$(shasum -a 256 "$DIR/service.bin" | awk '{print $1}')
-          echo "checksum=$CHECKSUM" >> $GITHUB_OUTPUT
+          mv service.app "$DIR/service.app"
           echo "dir=$DIR" >> $GITHUB_OUTPUT
 
-          tar -czf "$DIR.tar.gz" -C "$DIR" service.bin
+          tar -czf "$DIR.tar.gz" -C "$DIR" service.app
         id: macos_build
 
       - name: Upload macOS tarball
@@ -107,10 +104,9 @@ jobs:
             "macos": {
               "x64": {
                 "directory": "${{ steps.macos_build.outputs.dir }}",
-                "file_checksum": "${{ steps.macos_build.outputs.checksum }}",
-                "file_path": "${{ steps.macos_build.outputs.dir }}/service.bin",
+                "file_path": "${{ steps.macos_build.outputs.dir }}/service.app/Contents/MacOS/service",
                 "s3_key": "binaries/${{ steps.get_version.outputs.version }}/macos/${{ steps.macos_build.outputs.dir }}.tar.gz",
-                "service_path": "${{ steps.macos_build.outputs.dir }}/service.bin"
+                "service_path": "${{ steps.macos_build.outputs.dir }}/service.app/Contents/MacOS/service"
               }
             }
           }
