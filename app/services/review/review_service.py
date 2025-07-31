@@ -6,7 +6,8 @@ from app.services.review.review_strategy.base import BaseStrategy
 from app.services.review.review_strategy.review_factory import ReviewFactory
 from app.services.review.snapshot.local_snapshot import LocalDiffSnapshot
 from app.utils.request_handlers import handle_ide_review_exceptions
-
+from app.services.review.exceptions.review_exceptions import InvalidGitRepositoryError
+from git import Repo
 
 class ReviewService:
     @classmethod
@@ -19,11 +20,17 @@ class ReviewService:
         repo_path: str : Path to the git repository
         Returns the review strategy for the given review type and target branch.
         """
+        try:
+            if not Repo(repo_path).git_dir:
+                raise InvalidGitRepositoryError("Invalid git repository")
+        except Exception as Ex:
+            raise InvalidGitRepositoryError("Invalid git repository") from Ex
+        
         source_branch = GitUtils(repo_path).get_source_branch()
         diff_snapshot = LocalDiffSnapshot(repo_path, source_branch)
         return ReviewFactory.get_strategy(review_type)(
             repo_path=repo_path, target_branch=target_branch, diff_snapshot=diff_snapshot
-        )
+        )        
 
     @classmethod
     @handle_ide_review_exceptions
