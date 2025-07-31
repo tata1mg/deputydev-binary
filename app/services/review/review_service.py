@@ -8,6 +8,7 @@ from app.services.review.snapshot.local_snapshot import LocalDiffSnapshot
 from app.utils.request_handlers import handle_ide_review_exceptions
 from app.services.review.exceptions.review_exceptions import InvalidGitRepositoryError
 from git import Repo
+from pathlib import Path
 
 class ReviewService:
     @classmethod
@@ -24,7 +25,7 @@ class ReviewService:
             if not Repo(repo_path).git_dir:
                 raise InvalidGitRepositoryError("Invalid git repository")
         except Exception as Ex:
-            raise InvalidGitRepositoryError("Invalid git repository") from Ex
+            raise InvalidGitRepositoryError(f" The directory {Path(repo_path).resolve().name} \n is not a valid Git repository.") from Ex
         
         source_branch = GitUtils(repo_path).get_source_branch()
         diff_snapshot = LocalDiffSnapshot(repo_path, source_branch)
