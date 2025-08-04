@@ -80,5 +80,9 @@ async def grep_search(_request: Request) -> HTTPResponse:
             }
             for chunk in grep_search_results
         ],
+        "search_term": validated_body.search_term,
+        "directory_path": validated_body.directory_path,
+        "case_insensitive": validated_body.case_insensitive,
+        "use_regex": validated_body.use_regex,
     }
     return HTTPResponse(body=json.dumps(response))
