@@ -1,6 +1,10 @@
+from pathlib import Path
 from typing import List, Optional
 
+from git import Repo
+
 from app.services.review.dataclass.main import FileDiffs
+from app.services.review.exceptions.review_exceptions import InvalidGitRepositoryError
 from app.services.review.git_utils import GitUtils
 from app.services.review.review_strategy.base import BaseStrategy
 from app.services.review.review_strategy.review_factory import ReviewFactory
@@ -19,6 +23,14 @@ class ReviewService:
         repo_path: str : Path to the git repository
         Returns the review strategy for the given review type and target branch.
         """
+        try:
+            if not Repo(repo_path).git_dir:
+                raise InvalidGitRepositoryError("Invalid git repository")
+        except Exception as Ex:
+            raise InvalidGitRepositoryError(
+                f" The directory {Path(repo_path).resolve().name} \n is not a valid Git repository."
+            ) from Ex
+
         source_branch = GitUtils(repo_path).get_source_branch()
         diff_snapshot = LocalDiffSnapshot(repo_path, source_branch)
         return ReviewFactory.get_strategy(review_type)(
