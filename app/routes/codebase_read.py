@@ -7,6 +7,7 @@ from deputydev_core.services.file_summarization.file_summarization_service impor
 from deputydev_core.services.tools.iterative_file_reader.dataclass.main import (
     FileSummaryReaderRequestParams,
     IterativeFileReaderRequestParams,
+    IterativeFileReaderResponse,
 )
 from deputydev_core.services.tools.iterative_file_reader.iterative_file_reader import (
     IterativeFileReader,
@@ -28,15 +29,17 @@ async def read_file(_request: Request) -> HTTPResponse:
     if not json_body:
         raise BadRequest("Request payload is missing or invalid.")
     validated_body = IterativeFileReaderRequestParams(**json_body)
-    file_content, eof_reached = await IterativeFileReader(
+    file_reader: IterativeFileReaderResponse = await IterativeFileReader(
         file_path=validated_body.file_path,
         repo_path=validated_body.repo_path,
     ).read_lines(start_line=validated_body.start_line, end_line=validated_body.end_line)
 
     response: Dict[str, Any] = {
         "data": {
-            "chunk": file_content.model_dump(mode="json"),
-            "eof_reached": eof_reached,
+            "chunk": file_reader.chunk.model_dump(mode="json"),
+            "eof_reached": file_reader.eof,
+            "was_summary": file_reader.was_summary,
+            "total_lines": file_reader.total_lines,
         },
     }
     return HTTPResponse(body=json.dumps(response))
