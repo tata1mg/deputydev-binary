@@ -64,10 +64,10 @@ async def read_file_or_summary(_request: Request) -> HTTPResponse:
 
     # If a specific region is requested, return that region
     if start_line is not None and end_line is not None:
-        chunk_info, _ = await reader.read_lines(start_line, end_line)
+        file_reader_response: IterativeFileReaderResponse = await reader.read_lines(start_line, end_line)
         response: Dict[str, Any] = {
             "type": "selection",
-            "content": chunk_info.content,
+            "content": file_reader_response.chunk.content,
             "total_lines": total_lines,
             "start_line": start_line,
             "end_line": end_line,
@@ -76,10 +76,10 @@ async def read_file_or_summary(_request: Request) -> HTTPResponse:
 
     # If the whole file is requested and it's under the threshold, return the full content
     if (start_line is None and end_line is None) and total_lines <= number_of_lines:
-        chunk_info, _ = await reader.read_lines(1, total_lines)
+        file_reader_response: IterativeFileReaderResponse = await reader.read_lines(1, total_lines)
         response: Dict[str, Any] = {
             "type": "full",
-            "content": chunk_info.content,
+            "content": file_reader_response.chunk.content,
             "total_lines": total_lines,
         }
         return HTTPResponse(body=json.dumps(response))
