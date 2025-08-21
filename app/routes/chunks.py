@@ -19,6 +19,7 @@ from app.services.batch_chunk_search_service import BatchSearchService
 from app.services.initialization_service import InitializationService
 from app.services.relevant_chunk_service import RelevantChunksService
 from app.utils.request_handlers import request_handler
+from app.utils.ripgrep_path import get_rg_path
 from app.utils.route_error_handler.error_type_handlers.tool_handler import ToolErrorHandler
 from app.utils.route_error_handler.route_error_handler import get_error_handler
 
@@ -70,7 +71,8 @@ async def focus_chunks(_request: Request) -> HTTPResponse:
 async def directory_format(_request: Request) -> HTTPResponse:
     payload = _request.json
     payload = DirectoryStructureParams(**payload)
-    relevant_chunks = RelevantChunks(payload.repo_path)
+    ripgrep_path = get_rg_path()
+    relevant_chunks = RelevantChunks(payload.repo_path, ripgrep_path)
     directory_tree = await relevant_chunks.get_directory_structure(payload)
     return HTTPResponse(body=json.dumps(directory_tree))
 
