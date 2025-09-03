@@ -105,34 +105,28 @@ deputydev-binary/
 ## Installation & Setup
 
 ### Prerequisites
-- Python 3.11 (exactly, not 3.12+)
-- UV package manager
-- Git access to required repositories
+- Python >= 3.11, < 3.12
+- uv (recommended): https://docs.astral.sh/uv/
+- Git
 
-### Development Setup
+### Local setup (uv)
 
-1. **Clone the repository:**
-   ```bash
-   git clone git@bitbucket.org:tata1mg/deputydev-binary.git
-   cd deputydev-binary
-   ```
+1) Create and activate a virtual environment
+   - uv venv
+   - source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+2) Install dependencies (including dev tools)
+   - uv sync --group dev
+3) Install git hooks
+   - pre-commit install
+4) Run formatters/linters locally
+   - ruff format .
+   - ruff check .
 
-2. **Set up Python environment:**
-   ```bash
-   uv venv --python 3.11
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   uv sync
-   ```
-
-4. **Configure the application:**
-   ```bash
-   # Create binary_config.json with your configuration
-   cp binary_config.json.example binary_config.json  # If example exists
-   ```
+Alternative (pip) setup:
+- python -m venv .venv && source .venv/bin/activate
+- pip install -e .
+- pip install "pre-commit>=4.2.0" "ruff==0.12.0"
+- pre-commit install
 
 ### Production Deployment
 
@@ -330,6 +324,4 @@ The service includes comprehensive logging and monitoring:
 
 ## Version Information
 
-- **Current Version**: 7.2.1
 - **Python Requirement**: >=3.11,<3.12
-- **Core Dependency**: deputydev-core@4.3.3
