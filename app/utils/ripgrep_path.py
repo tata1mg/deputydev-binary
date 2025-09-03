@@ -46,9 +46,12 @@ def get_rg_path() -> str:
         binary_name = rg_map.get((system, machine))
         if not binary_name:
             raise RuntimeError(f"Unsupported platform: {system} on {machine}")
-
-        project_root = get_project_root()
-        rg_path = (project_root / "ripgrep" / binary_name).resolve()
+        base_dir = Path(sys.executable).parent
+        rg_path = (base_dir / binary_name).resolve()
+        if not rg_path.exists():
+            # fallback: look in repo root /ripgrep/ (dev mode)
+            project_root = get_project_root()
+            rg_path = (project_root / "ripgrep" / binary_name).resolve()
 
     ensure_executable(rg_path)
     return str(rg_path)

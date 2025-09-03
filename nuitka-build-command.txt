@@ -27,6 +27,7 @@ python3 -m nuitka \
 --include-package=tree_sitter_language_pack.bindings.kotlin \
 --include-package=tree_sitter_language_pack.bindings.json \
 --include-package=tree_sitter_language_pack.bindings.tsx \
+--include-package=tree_sitter_language_pack.bindings.swift \
 --include-data-file=ripgrep/rg_darwin_arm=bin/rg \
 app/service.py
 
