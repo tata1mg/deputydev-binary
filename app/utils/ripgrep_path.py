@@ -40,7 +40,7 @@ def get_rg_path() -> str:
             ("darwin", "arm64"): "rg_darwin_arm",
             ("darwin", "x86_64"): "rg_darwin_x64",
             ("linux", "x86_64"): "rg_linux_x64",
-            ("windows", "amd64"): "rg_win_64.exe",
+            ("windows", "amd64"): "rg_windows_x64.exe",
         }
 
         binary_name = rg_map.get((system, machine))
