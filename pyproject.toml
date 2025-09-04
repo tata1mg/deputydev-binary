@@ -1,6 +1,6 @@
 [project]
 name = "deputydev-binary"
-version = "11.0.7"
+version = "11.0.8"
 description = "Installable binary for running Deputy Dev algorithms"
 readme = "README.md"
 authors = [{ name = "Deputy Dev", email = "deputydev@1mg.com" }]
