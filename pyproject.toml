@@ -28,6 +28,3 @@ dev = [
 
 [tool.setuptools]
 packages = ["app"]
-
-[project.scripts]
-deputydev-binary = "app.service:main"

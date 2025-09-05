@@ -34,7 +34,6 @@ VERSION="$(grep -E '^version\s*=' pyproject.toml | head -1 | cut -d'"' -f2)"
 # Config (override with env vars if you like)
 # ----------------------------
 : "${PY_DIR:=./binary_service}"   # where PBS Python is extracted
-: "${ENTRYPOINT_BIN:=deputydev-binary}"  # console script name from [project.scripts]
 : "${STRIP_BINARIES:=0}"           # set to 1 to strip .so/rg to reduce size
 
 # ----------------------------

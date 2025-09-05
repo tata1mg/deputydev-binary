@@ -31,7 +31,6 @@ VERSION="$(grep -E '^version\s*=' pyproject.toml | head -1 | cut -d'"' -f2)"
 # Config (override with env vars if you like)
 # ----------------------------
 : "${PY_DIR:=./binary_service}"        # where PBS Python is extracted
-: "${ENTRYPOINT_BIN:=deputydev-binary}"# console script name from [project.scripts]
 : "${STRIP_BINARIES:=0}"               # set to 1 to strip .pyd/.dll/rg to reduce size
 
 # ----------------------------
@@ -111,7 +110,7 @@ msg "Embedded Python: $("$PYTHON" -V)"
 # ----------------------------
 msg "Installing project into embedded interpreter (with uv pip)…"
 export PYTHONNOUSERSITE=1
-env -u PYTHONPATH uv pip install --python "$PYTHON" .
+env -u PYTHONPATH uv pip install --python "$PYTHON" . 
 
 # ----------------------------
 # 4) Trim tree-sitter to only requested bindings
