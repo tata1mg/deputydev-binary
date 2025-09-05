@@ -256,11 +256,40 @@ tar -czf "$PKG_TARBALL" "$PY_DIR"
 # ----------------------------
 if command -v node >/dev/null 2>&1; then
   msg "Computing checksum of $PY_DIR …"
-  node hash-binary.js "$PY_DIR" || warn "Checksum failed"
+  CHECKSUM="$(node hash-binary.js "$PY_DIR" | awk '/^Checksum:/ {print $2}')"
+  if [[ -n "$CHECKSUM" ]]; then
+    echo "  -> checksum is $CHECKSUM"
+  else
+    warn "Checksum failed or empty"
+  fi
 else
   warn "node not found, skipping checksum."
 fi
 
+
+# ----------------------------
+# 9) Create binary_manifest.json
+# ----------------------------
+msg "Creating binary_manifest.json manifest …"
+
+cat > binary_manifest.json <<EOF
+{
+  "${VERSION}": {
+    "${OS}": {
+      "${ARCH}": {
+        "directory": "${PKG_TARBALL}",
+        "file_checksum": "${CHECKSUM}",
+        "file_path": "${PKG_TARBALL}/binary_service",
+        "s3_key": "binaries/${VERSION}/${OS}/${PKG_TARBALL}.tar.gz",
+        "service_path": "${PKG_TARBALL}/binary_service/bin/python3",
+        "use_python_module": true
+      }
+    }
+  }
+}
+EOF
+
+echo "  -> wrote binary_manifest.json"
 
 
 msg "Done."

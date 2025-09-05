@@ -31,8 +31,18 @@ jobs:
       - name: Build macOS/Linux binary
         run: ./build-macos-linux-binary.sh
 
-      - name: Upload tarball artifact
+      - name: Detect platform + arch
+        id: platform
+        run: |
+          OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          ARCH=$(uname -m)
+          echo "artifact_name=${OS}-${ARCH}-bundle" >> "$GITHUB_OUTPUT"
+
+      - name: Upload binary + manifest bundle
         uses: actions/upload-artifact@v4
         with:
-          name: binary-tarball
-          path: ./*.tar.gz
+          name: ${{ steps.platform.outputs.artifact_name }}
+          path: |
+            ./*.tar.gz
+            binary_manifest.json
+
