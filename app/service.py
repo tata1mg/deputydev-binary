@@ -19,8 +19,13 @@ app.config.WEBSOCKET_MAX_SIZE = 10 * 1024 * 1024  # 10 MB
 for listener in listeners:
     app.register_listener(listener[0], listener[1])
 
-if __name__ == "__main__":
+
+def main() -> None:
     multiprocessing.freeze_support()
     os.environ["SSL_CERT_FILE"] = f"{certifi.where()}"
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8001  # Default: 8001
-    app.run(host="0.0.0.0", port=port, debug=False, legacy=True)
+    app.run(host="127.0.0.1", port=port, debug=False, legacy=True)
+
+
+if __name__ == "__main__":
+    main()

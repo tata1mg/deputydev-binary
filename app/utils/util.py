@@ -63,4 +63,4 @@ def flatten_multidict(multi: dict) -> dict:
 def hash_content(content: str, strip_content: bool = False) -> str:
     if strip_content:
         content = content.strip()
-    return hashlib.md5(content.encode()).hexdigest()
+    return hashlib.sha256(content.encode()).hexdigest()
