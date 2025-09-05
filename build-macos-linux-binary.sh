@@ -26,8 +26,8 @@ case "$ARCH" in
 esac
 
 VERSION="$(grep -E '^version\s*=' pyproject.toml | head -1 | cut -d'"' -f2)"
-
-: "${PKG_TARBALL:=${OS}-${ARCH}-${VERSION}.tar.gz}"
+PKG_NAME="${OS}-${ARCH}-${VERSION}"
+: "${PKG_TARBALL:=${PKG_NAME}.tar.gz}"
 
 
 
@@ -278,18 +278,17 @@ cat > binary_manifest.json <<EOF
   "${VERSION}": {
     "${OG_OS}": {
       "${ARCH}": {
-        "directory": "${PKG_TARBALL}",
+        "directory": "${PKG_NAME}",
         "file_checksum": "${CHECKSUM}",
-        "file_path": "${PKG_TARBALL}/binary_service",
-        "s3_key": "binaries/${VERSION}/${OG_OS}/${PKG_TARBALL}.tar.gz",
-        "service_path": "${PKG_TARBALL}/binary_service/bin/python3",
+        "file_path": "${PKG_NAME}/binary_service",
+        "s3_key": "binaries/${VERSION}/${OG_OS}/${PKG_NAME}.tar.gz",
+        "service_path": "${PKG_NAME}/binary_service/bin/python3",
         "use_python_module": true
       }
     }
   }
 }
 EOF
-
 echo "  -> wrote binary_manifest.json"
 
 
