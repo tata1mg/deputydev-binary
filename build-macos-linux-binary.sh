@@ -13,7 +13,7 @@ umask 022
 # Platform / Arch / Version
 # ----------------------------
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
-OG_OS = "$OS"
+OG_OS="$OS"
 case "$OS" in
   darwin)  OS="macos" ;;
   linux)   OS="linux" ;;
