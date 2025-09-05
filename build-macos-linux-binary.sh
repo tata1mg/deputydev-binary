@@ -232,15 +232,34 @@ if [[ "$STRIP_BINARIES" == "1" ]]; then
   fi
 fi
 
-
 # ----------------------------
 # 6) Smoke test
 # ----------------------------
 msg "Smoke testing the embedded app… (entry point may not support --help)"
 "$PYTHON" - <<'PY'
-import sys, sysconfig
+import sys, sysconfig, warnings
+
 print("ok: using", sys.executable)
 print("site-packages:", sysconfig.get_paths().get("purelib"))
+
+# Check Sanic
+try:
+    import sanic
+    print("ok: Sanic installed ->", sanic.__version__)
+except ImportError:
+    print("✖ Sanic not installed")
+
+# Check your own package
+try:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        import app.services.mcp_service
+        print("ok: app.services.mcp_service import works")
+        if w:
+            for warn in w:
+                print("  ! Warning:", warn.message)
+except ImportError as e:
+    print("✖ app.services.mcp_service not importable:", e)
 PY
 
 # ----------------------------
