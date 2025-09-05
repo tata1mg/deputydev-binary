@@ -50,16 +50,3 @@ jobs:
           path: |
             ./*.tar.gz
             binary_manifest.json
-
-      - name: Upload tarball to FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: eu-central-1.sftpcloud.io
-          username: a9e10c4329c04f279f566380644690d9
-          password: dAg8ajMjoYRVgaryMjtjxgoQoR0cLdoI
-          protocol: ftp
-          port: 21
-          local-dir: ./
-          exclude: |
-            **/*
-            !*.tar.gz
