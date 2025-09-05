@@ -26,5 +26,6 @@ dev = [
     "ruff==0.12.0",
 ]
 
-[tool.setuptools]
-packages = ["app"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
