@@ -1,0 +1,39 @@
+name: Build DeputyDev Linux Binary
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.15"
+
+      - name: Write deploy key
+        run: |
+          echo "${{ secrets.DEPUTYDEV_CORE_ACCESS_KEY }}" > /tmp/deputydev_core_deploy
+          chmod 600 /tmp/deputydev_core_deploy
+
+      - name: Add github.com to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Build macOS/Linux binary
+        run: ./build-macos-linux-binary.sh
+
+      - name: Upload tarball artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-tarball
+          path: |
+            ./*.tar.gz
