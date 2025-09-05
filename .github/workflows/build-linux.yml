@@ -1,11 +1,11 @@
-name: Build DeputyDev Linux Binary
+name: Build macos Linux Binary
 
 on:
   workflow_dispatch:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
