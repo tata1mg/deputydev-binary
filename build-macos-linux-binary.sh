@@ -13,6 +13,7 @@ umask 022
 # Platform / Arch / Version
 # ----------------------------
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+OG_OS = "$OS"
 case "$OS" in
   darwin)  OS="macos" ;;
   linux)   OS="linux" ;;
@@ -275,12 +276,12 @@ msg "Creating binary_manifest.json manifest …"
 cat > binary_manifest.json <<EOF
 {
   "${VERSION}": {
-    "${OS}": {
+    "${OG_OS}": {
       "${ARCH}": {
         "directory": "${PKG_TARBALL}",
         "file_checksum": "${CHECKSUM}",
         "file_path": "${PKG_TARBALL}/binary_service",
-        "s3_key": "binaries/${VERSION}/${OS}/${PKG_TARBALL}.tar.gz",
+        "s3_key": "binaries/${VERSION}/${OG_OS}/${PKG_TARBALL}.tar.gz",
         "service_path": "${PKG_TARBALL}/binary_service/bin/python3",
         "use_python_module": true
       }

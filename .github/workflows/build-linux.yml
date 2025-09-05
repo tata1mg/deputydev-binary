@@ -1,11 +1,14 @@
-name: Build macOS/Linux Binary
+name: Build macOS Binaries
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-macos-linux:
+  build-macos:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x86_64]
 
     steps:
       - name: Checkout repository
@@ -28,14 +31,17 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-      - name: Build macOS/Linux binary
-        run: ./build-macos-linux-binary.sh
+      - name: Build macOS binary
+        run: |
+          echo "Building for ${{ matrix.arch }}"
+          # Force the arch into your build script if needed
+          ARCH=${{ matrix.arch }} ./build-macos-linux-binary.sh
 
       - name: Detect platform + arch
         id: platform
         run: |
           OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          ARCH=$(uname -m)
+          ARCH=${{ matrix.arch }}
           echo "artifact_name=${OS}-${ARCH}-bundle" >> "$GITHUB_OUTPUT"
 
       - name: Upload binary + manifest bundle
@@ -45,4 +51,3 @@ jobs:
           path: |
             ./*.tar.gz
             binary_manifest.json
-
