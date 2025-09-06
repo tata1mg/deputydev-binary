@@ -232,32 +232,6 @@ if [[ "$STRIP_BINARIES" == "1" ]]; then
   fi
 fi
 
-
-# ----------------------------
-# Debug: show how 'app' was installed
-# ----------------------------
-SITE_PACKAGES="$("$PYTHON" - <<'PY'
-import sysconfig, site
-pure = sysconfig.get_paths().get("purelib")
-print(pure if pure else site.getsitepackages()[0])
-PY
-)"
-
-echo ">>> Checking for app/ inside $SITE_PACKAGES"
-if [ -d "$SITE_PACKAGES/app" ]; then
-  echo ">>> Contents of app/:"
-  ls -R "$SITE_PACKAGES/app"
-else
-  echo ">>> No app/ directory found"
-fi
-
-if [ -f "$SITE_PACKAGES/app.pth" ]; then
-  echo ">>> Found app.pth:"
-  cat "$SITE_PACKAGES/app.pth"
-else
-  echo ">>> No app.pth found"
-fi
-
 # ----------------------------
 # 6) Smoke test
 # ----------------------------
