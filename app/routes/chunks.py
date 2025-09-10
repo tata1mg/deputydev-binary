@@ -26,7 +26,7 @@ from app.utils.route_error_handler.route_error_handler import get_error_handler
 chunks = Blueprint("chunks", url_prefix="")
 
 
-@chunks.websocket("/relevant_chunks")
+@chunks.websocket("/relevant_chunks", name="relevant_chunks_ws")
 @request_handler
 @get_error_handler(special_handlers=[])
 async def relevant_chunks(request: Request, ws: Websocket) -> None:
@@ -51,7 +51,7 @@ async def relevant_chunks(request: Request, ws: Websocket) -> None:
         AppLogger.log_error(traceback.format_exc())
 
 
-@chunks.route("/get-focus-chunks", methods=["POST"])
+@chunks.route("/get-focus-chunks", methods=["POST"], name="get_focus_chunks")
 @request_handler
 @get_error_handler(special_handlers=[])
 async def focus_chunks(_request: Request) -> HTTPResponse:
@@ -65,7 +65,7 @@ async def focus_chunks(_request: Request) -> HTTPResponse:
         raise Exception(traceback.format_exc())
 
 
-@chunks.route("/get-directory-structure", methods=["POST"])
+@chunks.route("/get-directory-structure", methods=["POST"], name="get_directory_structure")
 @request_handler
 @get_error_handler(special_handlers=[ToolErrorHandler])
 async def directory_format(_request: Request) -> HTTPResponse:
@@ -77,7 +77,7 @@ async def directory_format(_request: Request) -> HTTPResponse:
     return HTTPResponse(body=json.dumps(directory_tree))
 
 
-@chunks.websocket("/update_chunks")
+@chunks.websocket("/update_chunks", name="update_chunks_ws")
 @request_handler
 @get_error_handler(special_handlers=[])
 async def update_vector_store(request: Request, ws: Websocket) -> None:
@@ -155,7 +155,7 @@ async def update_vector_store(request: Request, ws: Websocket) -> None:
         await ws.send(json.dumps({"status": "FAILED", "message": traceback.format_exc()}))
 
 
-@chunks.route("/batch_chunks_search", methods=["POST"])
+@chunks.route("/batch_chunks_search", methods=["POST"], name="batch_chunks_search")
 @get_error_handler(special_handlers=[ToolErrorHandler])
 async def get_autocomplete_keyword_type_chunks(_request: Request) -> HTTPResponse:
     payload = _request.json

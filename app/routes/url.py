@@ -17,7 +17,7 @@ from app.utils.util import parse_request_params
 url_reader = Blueprint("url_reader", url_prefix="")
 
 
-@url_reader.route("/read_urls", methods=["POST"])
+@url_reader.route("/read_urls", methods=["POST"], name="read_urls")
 @request_handler
 @get_error_handler(special_handlers=[])
 async def read_url(_request: Request, **kwargs: Any) -> HTTPResponse:
@@ -39,7 +39,7 @@ async def save_url_or_index_url(_request: Request, **kwargs: Any) -> HTTPRespons
     return HTTPResponse(body=json.dumps(url))
 
 
-@url_reader.route("/saved_url", methods=["POST"])
+@url_reader.route("/saved_url", methods=["POST"], name="save_url")
 @request_handler
 @get_error_handler(special_handlers=[])
 async def save_url(_request: Request, **kwargs: Any) -> HTTPResponse:
@@ -53,7 +53,7 @@ async def index_url(_request: Request, **kwargs: Any) -> HTTPResponse:
     return await save_url_or_index_url(_request, **kwargs)
 
 
-@url_reader.route("/saved_url", methods=["PUT"])
+@url_reader.route("/saved_url", methods=["PUT"], name="update_url")
 @request_handler
 @get_error_handler(special_handlers=[])
 async def update_url(_request: Request, **kwargs: Any) -> HTTPResponse:
@@ -65,7 +65,7 @@ async def update_url(_request: Request, **kwargs: Any) -> HTTPResponse:
     return HTTPResponse(body=json.dumps(url))
 
 
-@url_reader.route("/search_url", methods=["GET"])
+@url_reader.route("/search_url", methods=["GET"], name="search_url")
 @request_handler
 @get_error_handler(special_handlers=[])
 async def search(_request: Request, **kwargs: Any) -> HTTPResponse:
@@ -77,7 +77,7 @@ async def search(_request: Request, **kwargs: Any) -> HTTPResponse:
     return HTTPResponse(body=json.dumps(search_results))
 
 
-@url_reader.route("/saved_url/delete", methods=["GET"])
+@url_reader.route("/saved_url/delete", methods=["GET"], name="delete_url")
 @request_handler
 @get_error_handler(special_handlers=[])
 async def delete(_request: Request, **kwargs: Any) -> HTTPResponse:
@@ -90,7 +90,7 @@ async def delete(_request: Request, **kwargs: Any) -> HTTPResponse:
     return HTTPResponse(body=json.dumps(result))
 
 
-@url_reader.route("/saved_url/list", methods=["GET"])
+@url_reader.route("/saved_url/list", methods=["GET"], name="list_urls")
 @request_handler
 @get_error_handler(special_handlers=[])
 async def list_urls(_request: Request, **kwargs: Any) -> HTTPResponse:

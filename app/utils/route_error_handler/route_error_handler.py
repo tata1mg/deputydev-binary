@@ -1,6 +1,7 @@
 import json
 import traceback
 from collections.abc import Awaitable
+from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type
 
 from sanic.exceptions import BadRequest
@@ -58,6 +59,7 @@ def _handle_fallback_error(error: Exception) -> HTTPResponse:
 def _error_handler(
     func: Callable[..., Awaitable[HTTPResponse]], special_handlers: List[Type[BaseErrorTypeHandler]] = []
 ) -> Callable[..., Awaitable[HTTPResponse]]:
+    @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> HTTPResponse:
         try:
             return await func(*args, **kwargs)
