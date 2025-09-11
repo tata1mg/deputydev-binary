@@ -2,6 +2,12 @@ name: Build macOS Binaries
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Custom version string for the build"
+        required: true
+        default: ""
+
 
 jobs:
   build-macos:
@@ -33,9 +39,14 @@ jobs:
 
       - name: Build macOS binary
         run: |
-          echo "Building for ${{ matrix.arch }}"
+          VERSION="${{ github.event.inputs.version }}"
+          echo "Building for ${{ matrix.arch }} with version=${VERSION:-none}"
           cd $GITHUB_WORKSPACE
-          ARCH=${{ matrix.arch }} ./build-macos-linux-binary.sh
+          if [ -n "$VERSION" ]; then
+            ARCH=${{ matrix.arch }} ./build-macos-linux-binary.sh --version "$VERSION"
+          else
+            ARCH=${{ matrix.arch }} ./build-macos-linux-binary.sh
+          fi
 
 
       - name: Detect platform + arch
