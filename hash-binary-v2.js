@@ -1,10 +1,10 @@
-// Usage: node hash-binary.js <path>
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+// Usage: node hash-binary-crc32.js <path>
+const fs = require("fs");
+const path = require("path");
+const CRC32 = require("crc-32"); // npm install crc-32
 
 async function recursivelyHashPath(targetPath, relativeTo = targetPath) {
-  const fileHashes = {}; // BagIt-style manifest
+  const fileHashes = {};
   const queue = [targetPath];
 
   while (queue.length > 0) {
@@ -13,21 +13,22 @@ async function recursivelyHashPath(targetPath, relativeTo = targetPath) {
     const relPath = path.relative(relativeTo, current);
 
     if (stat.isDirectory()) {
-      const entries = fs.readdirSync(current).sort().reverse(); // consistent order
+      const entries = fs.readdirSync(current).sort().reverse();
       for (const entry of entries) {
         queue.push(path.join(current, entry));
       }
     } else if (stat.isFile()) {
       // Skip AppleDouble + .pyc files
       if (/\/\._/.test(relPath)) continue;
-      if (relPath.endsWith('.pyc')) continue;
+      if (relPath.endsWith(".pyc")) continue;
 
-      // Hash the file itself
-      const fileBuffer = fs.readFileSync(current);
-      const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+      const buffer = fs.readFileSync(current);
+      // CRC32.buf returns signed 32-bit int; we convert to unsigned and hex
+      const signed = CRC32.buf(buffer);
+      const unsigned = signed >>> 0; // convert to unsigned
+      const hex = unsigned.toString(16).padStart(8, "0");
 
-      // Save relative path -> hash
-      fileHashes[relPath] = fileHash;
+      fileHashes[relPath] = hex;
     }
   }
 
@@ -38,7 +39,7 @@ async function getChecksumsForBinaryPath(binaryFilePath) {
   try {
     return await recursivelyHashPath(binaryFilePath);
   } catch (err) {
-    console.error('Error:', err);
+    console.error("Error:", err);
     return {};
   }
 }
@@ -48,7 +49,7 @@ async function getChecksumsForBinaryPath(binaryFilePath) {
   const [, , targetPath] = process.argv;
 
   if (!targetPath) {
-    console.error('Usage: node hash-binary.js <path>');
+    console.error("Usage: node hash-binary-crc32.js <path>");
     process.exit(1);
   }
 
@@ -58,13 +59,11 @@ async function getChecksumsForBinaryPath(binaryFilePath) {
   let outFile;
 
   if (stat.isDirectory()) {
-    // Write inside the target directory
-    outFile = path.join(targetPath, 'checksums.json');
+    outFile = path.join(targetPath, "checksums.json");
   } else {
-    // Write in current working directory
-    outFile = path.join(process.cwd(), 'checksums.json');
+    outFile = path.join(process.cwd(), "checksums.json");
   }
 
-  fs.writeFileSync(outFile, JSON.stringify(manifest, null, 2), 'utf-8');
-  console.log(`BagIt-style manifest written to ${outFile}`);
+  fs.writeFileSync(outFile, JSON.stringify(manifest, null, 2), "utf-8");
+  console.log(`CRC32 manifest written to ${outFile}`);
 })();

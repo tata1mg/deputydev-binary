@@ -31,6 +31,9 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           version: "0.8.15"
+      
+      - name: Add a package
+        run: npm install crc-32
 
       - name: Add github.com to known_hosts
         run: |

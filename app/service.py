@@ -9,7 +9,10 @@ from app.listeners import listeners
 from app.routes import binary_blueprints
 
 try:
-    multiprocessing.set_start_method("fork")
+    if sys.platform == "win32":
+        multiprocessing.set_start_method("spawn", force=True)
+    else:
+        multiprocessing.set_start_method("fork", force=True)
 except RuntimeError:
     pass
 app = Sanic("BinaryServer")
@@ -28,7 +31,7 @@ def main() -> None:
     multiprocessing.freeze_support()
     os.environ["SSL_CERT_FILE"] = f"{certifi.where()}"
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8001  # Default: 8001
-    app.run(host="127.0.0.1", port=port, debug=False)
+    app.run(host="127.0.0.1", port=port, debug=False, legacy=True)
 
 
 if __name__ == "__main__":
