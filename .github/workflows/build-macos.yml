@@ -4,9 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Custom version string for the build"
-        required: true
+        description: "Custom version prefix for the build"
+        required: false
         default: ""
+      upload_to_s3:
+        description: "Upload built binaries to S3?"
+        required: true
+        type: choice
+        options:
+          - "yes"
+          - "no"
+        default: "no"
 
 
 jobs:
@@ -14,7 +22,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        arch: [arm64, x86_64]
+        arch: [arm64]
 
     steps:
       - name: Checkout repository
@@ -66,3 +74,34 @@ jobs:
           path: |
             ./*.tar.gz
             binary_manifest.json
+
+
+      # --- S3 Upload sequence, conditional on input ---
+      - name: Extract S3 key from manifest
+        id: manifest
+        if: ${{ github.event.inputs.upload_to_s3 == 'yes' }}
+        run: |
+          S3_KEY=$(jq -r '.. | .s3_key? // empty' binary_manifest.json)
+          TAR_GZ_FILE=$(basename "$S3_KEY")
+          echo "s3_key=$S3_KEY" >> "$GITHUB_OUTPUT"
+          echo "tar_gz_file=$TAR_GZ_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Get presigned S3 URL
+        id: presign
+        if: ${{ github.event.inputs.upload_to_s3 == 'yes' }}
+        run: |
+          RESPONSE=$(curl -s --location 'https://api.deputydev.ai/end_user/v1/binary-upload/get-presigned-url' \
+            --header "authorization: ${{ secrets.BINARY_UPLOAD_AUTH_KEY }}" \
+            --header 'Content-Type: application/json' \
+            --data "{\"s3_key\": \"${{ steps.manifest.outputs.s3_key }}\"}")
+          PRESIGNED_URL=$(echo "$RESPONSE" | jq -r '.data.presigned_url')
+          echo "presigned_url=$PRESIGNED_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Upload binary to S3
+        if: ${{ github.event.inputs.upload_to_s3 == 'yes' }}
+        run: |
+          echo "Uploading ${{ steps.manifest.outputs.tar_gz_file }} to S3..."
+          curl -X PUT \
+            -H "Cache-Control: max-age=7776000" \
+            -T "./${{ steps.manifest.outputs.tar_gz_file }}" \
+            "${{ steps.presign.outputs.presigned_url }}"
