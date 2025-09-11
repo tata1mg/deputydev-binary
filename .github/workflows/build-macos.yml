@@ -22,7 +22,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        arch: [arm64]
+        arch: [arm64, x86_64]
 
     steps:
       - name: Checkout repository
@@ -75,6 +75,11 @@ jobs:
             ./*.tar.gz
             binary_manifest.json
 
+      - name: Upload manifest separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.platform.outputs.artifact_name }}_manifest.json
+          path: binary_manifest.json
 
       # --- S3 Upload sequence, conditional on input ---
       - name: Extract S3 key from manifest
