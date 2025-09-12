@@ -9,6 +9,23 @@ IFS=$'\n\t'
 umask 022
 
 # ----------------------------
+# Parse args
+# ----------------------------
+CUSTOM_VERSION=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --version|-v)
+      CUSTOM_VERSION="$2"
+      shift 2
+      ;;
+    *)
+      echo "✖ Unknown argument: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# ----------------------------
 # Platform / Arch / Version
 # ----------------------------
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
@@ -25,7 +42,17 @@ case "$ARCH" in
 esac
 
 VERSION="$(grep -E '^version\s*=' pyproject.toml | head -1 | cut -d'"' -f2)"
-: "${PKG_TARBALL:=windows-${ARCH}-${VERSION}.tar.gz}"
+# ----------------------------
+# Package naming
+# ----------------------------
+if [[ -n "$CUSTOM_VERSION" ]]; then
+  PKG_NAME="windows-${ARCH}-${VERSION}-${CUSTOM_VERSION}"
+else
+  PKG_NAME="windows-${ARCH}-${VERSION}"
+fi
+
+: "${PKG_TARBALL:=${PKG_NAME}.tar.gz}"
+
 
 # ----------------------------
 # Config (override with env vars if you like)
@@ -188,23 +215,41 @@ print("ok: using", sys.executable)
 print("site-packages:", sysconfig.get_paths().get("purelib"))
 PY
 
+
 # ----------------------------
-# 7) Package
+# 7) Checksum of each file
+# ----------------------------
+if command -v node >/dev/null 2>&1; then
+  msg "Computing checksum of $PY_DIR …"
+  node hash-binary-v2.js "$PY_DIR"
+
+  if [[ -f "$PY_DIR/checksums.json" ]]; then
+    echo "  -> checksum manifest written to $PY_DIR/checksums.json"
+  else
+    warn "Checksum failed or checksums.json missing"
+  fi
+else
+  warn "node not found, skipping checksum."
+fi
+
+
+
+# ----------------------------
+# 8) Package
 # ----------------------------
 msg "Creating tarball $PKG_TARBALL …"
 # (COPYFILE_DISABLE is macOS-specific; harmless here but unnecessary)
 tar -czf "$PKG_TARBALL" "$PY_DIR"
 
 # ----------------------------
-# 8) Checksum (use Windows path for Node if available)
+# 9) Checksum of tarball (use Windows path for Node if available)
 # ----------------------------
 if command -v node >/dev/null 2>&1; then
-  msg "Computing checksum of $PY_DIR …"
+  msg "Computing checksum of $PKG_TARBALL …"
   if command -v cygpath >/dev/null 2>&1; then
-    WIN_PY_DIR="$(cygpath -w "$PY_DIR")"
-    CHECKSUM="$(node hash-binary.js "$WIN_PY_DIR" | awk '/^Checksum:/ {print $2}')"
+    CHECKSUM="$(node hash-binary.js "$PKG_TARBALL" | awk '/^Checksum:/ {print $2}')"
   else
-    CHECKSUM="$(node hash-binary.js "$PY_DIR" | awk '/^Checksum:/ {print $2}')"
+    CHECKSUM="$(node hash-binary.js "$PKG_TARBALL" | awk '/^Checksum:/ {print $2}')"
   fi
 
   if [[ -n "${CHECKSUM:-}" ]]; then
@@ -228,11 +273,11 @@ cat > binary_manifest.json <<EOF
   "${VERSION}": {
     "${OS}": {
       "${ARCH}": {
-        "directory": "${PKG_TARBALL}",
+        "directory": "${PKG_NAME}",
         "file_checksum": "${CHECKSUM}",
-        "file_path": "${PKG_TARBALL}/binary_service",
-        "s3_key": "binaries/${VERSION}/${OS}/${PKG_TARBALL}.tar.gz",
-        "service_path": "${PKG_TARBALL}/binary_service/python.exe",
+        "file_path": "${PKG_NAME}/binary_service",
+        "s3_key": "binaries/${VERSION}/${OS}/${PKG_NAME}.tar.gz",
+        "service_path": "${PKG_NAME}/binary_service/python.exe",
         "use_python_module": true
       }
     }
