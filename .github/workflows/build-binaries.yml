@@ -1,4 +1,4 @@
-name: Build macOS Binaries
+name: Build Binaries [macOS x64, Linux x64, Windows x64]
 
 on:
   workflow_dispatch:
@@ -16,13 +16,23 @@ on:
           - "no"
         default: "no"
 
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  build-macos:
-    runs-on: macos-latest
+  build:
     strategy:
       matrix:
-        arch: [arm64, x86_64]
+        include:
+          - os: macos-latest
+            arch: x86_64
+          - os: ubuntu-latest
+            arch: x86_64
+          - os: windows-latest
+            arch: x86_64
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
@@ -42,21 +52,36 @@ jobs:
       
       - name: Add a package
         run: npm install crc-32
+      
+      - name: Install jq on Windows
+        if: ${{ runner.os == 'Windows' && github.event.inputs.upload_to_s3 == 'yes' }}
+        shell: pwsh
+        run: choco install jq -y
 
       - name: Add github.com to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-      - name: Build macOS binary
+      - name: Build ${{ matrix.os }} - ${{ matrix.arch }} binary
+        shell: bash
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          echo "Building for ${{ matrix.arch }} with version=${VERSION:-none}"
+          echo "Building for ${{ runner.os }} / ${{ matrix.arch }} with version=${VERSION:-none}"
           cd $GITHUB_WORKSPACE
-          if [ -n "$VERSION" ]; then
-            ARCH=${{ matrix.arch }} ./build-macos-linux-binary.sh --version "$VERSION"
+          
+          # Pick script based on OS
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            BUILD_SCRIPT=./build-windows-binary.sh
           else
-            ARCH=${{ matrix.arch }} ./build-macos-linux-binary.sh
+            BUILD_SCRIPT=./build-macos-linux-binary.sh
+          fi
+          
+          # Run with or without version
+          if [ -n "$VERSION" ]; then
+            ARCH=${{ matrix.arch }} $BUILD_SCRIPT --version "$VERSION"
+          else
+            ARCH=${{ matrix.arch }} $BUILD_SCRIPT
           fi
 
 
@@ -68,6 +93,7 @@ jobs:
           echo "artifact_name=${OS}-${ARCH}-bundle" >> "$GITHUB_OUTPUT"
 
       - name: Upload binary + manifest bundle
+        if: ${{ github.event.inputs.upload_to_s3 != 'yes' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.platform.outputs.artifact_name }}
