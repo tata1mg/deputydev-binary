@@ -76,7 +76,7 @@ case "$OS-$ARCH" in
     RIPGREP_DEST_REL="bin/rg_darwin_x64"
     ;;
   linux-x64)
-    PBS_URL="https://github.com/astral-sh/python-build-standalone/releases/download/20250902/cpython-3.11.13+20250902-x86_64_v4-unknown-linux-gnu-install_only_stripped.tar.gz"
+    PBS_URL="https://github.com/astral-sh/python-build-standalone/releases/download/20250902/cpython-3.11.13+20250902-x86_64_v3-unknown-linux-gnu-install_only_stripped.tar.gz"
     RIPGREP_SRC="ripgrep/rg_linux_x64"
     RIPGREP_DEST_REL="bin/rg_linux_x64"
     ;;
