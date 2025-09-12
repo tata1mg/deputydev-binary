@@ -1,4 +1,4 @@
-name: Build macOS Binaries
+name: Build Binary [macOS arm64]
 
 on:
   workflow_dispatch:
