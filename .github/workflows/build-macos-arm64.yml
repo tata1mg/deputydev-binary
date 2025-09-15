@@ -1,4 +1,4 @@
-name: Build macOS Binaries
+name: Build Binary [macOS arm64]
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        arch: [arm64, x86_64]
+        arch: [arm64]
 
     steps:
       - name: Checkout repository

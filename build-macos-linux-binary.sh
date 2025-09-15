@@ -10,6 +10,23 @@ umask 022
 
 
 # ----------------------------
+# Parse args
+# ----------------------------
+CUSTOM_VERSION=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --version|-v)
+      CUSTOM_VERSION="$2"
+      shift 2
+      ;;
+    *)
+      echo "✖ Unknown argument: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# ----------------------------
 # Platform / Arch / Version
 # ----------------------------
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
@@ -26,7 +43,14 @@ case "$ARCH" in
 esac
 
 VERSION="$(grep -E '^version\s*=' pyproject.toml | head -1 | cut -d'"' -f2)"
-PKG_NAME="${OS}-${ARCH}-${VERSION}"
+# ----------------------------
+# Package naming
+# ----------------------------
+if [[ -n "$CUSTOM_VERSION" ]]; then
+  PKG_NAME="${OS}-${ARCH}-${VERSION}-${CUSTOM_VERSION}"
+else
+  PKG_NAME="${OS}-${ARCH}-${VERSION}"
+fi
 : "${PKG_TARBALL:=${PKG_NAME}.tar.gz}"
 
 
@@ -52,7 +76,7 @@ case "$OS-$ARCH" in
     RIPGREP_DEST_REL="bin/rg_darwin_x64"
     ;;
   linux-x64)
-    PBS_URL="https://github.com/astral-sh/python-build-standalone/releases/download/20250902/cpython-3.11.13+20250902-x86_64_v4-unknown-linux-gnu-install_only_stripped.tar.gz"
+    PBS_URL="https://github.com/astral-sh/python-build-standalone/releases/download/20250902/cpython-3.11.13+20250902-x86_64_v3-unknown-linux-gnu-install_only_stripped.tar.gz"
     RIPGREP_SRC="ripgrep/rg_linux_x64"
     RIPGREP_DEST_REL="bin/rg_linux_x64"
     ;;
@@ -262,6 +286,23 @@ except ImportError as e:
     print("✖ app.services.mcp_service not importable:", e)
 PY
 
+
+# ----------------------------
+# 7) Checksum of each file
+# ----------------------------
+if command -v node >/dev/null 2>&1; then
+  msg "Computing checksum of $PY_DIR …"
+  node hash-binary-v2.js "$PY_DIR"
+
+  if [[ -f "$PY_DIR/checksums.json" ]]; then
+    echo "  -> checksum manifest written to $PY_DIR/checksums.json"
+  else
+    warn "Checksum failed or checksums.json missing"
+  fi
+else
+  warn "node not found, skipping checksum."
+fi
+
 # ----------------------------
 # 7) Package
 # ----------------------------
@@ -272,11 +313,11 @@ tar -czf "$PKG_TARBALL" "$PY_DIR"
 
 
 # ----------------------------
-# 8) Checksum
+# 8) Checksum of TARBALL
 # ----------------------------
 if command -v node >/dev/null 2>&1; then
-  msg "Computing checksum of $PY_DIR …"
-  CHECKSUM="$(node hash-binary.js "$PY_DIR" | awk '/^Checksum:/ {print $2}')"
+  msg "Computing checksum of $PKG_TARBALL …"
+  CHECKSUM="$(node hash-binary.js "$PKG_TARBALL" | awk '/^Checksum:/ {print $2}')"
   if [[ -n "$CHECKSUM" ]]; then
     echo "  -> checksum is $CHECKSUM"
   else
