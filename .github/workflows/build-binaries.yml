@@ -27,10 +27,10 @@ jobs:
         include:
           - os: macos-latest
             arch: x86_64
-          # - os: ubuntu-latest
-          #   arch: x86_64
-          # - os: windows-latest
-          #   arch: x86_64
+          - os: ubuntu-latest
+            arch: x86_64
+          - os: windows-latest
+            arch: x86_64
 
     runs-on: ${{ matrix.os }}
 
@@ -63,11 +63,11 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-      - name: Build ${{ runner.os }} - ${{ runner.arch }} binary
+      - name: Build ${{ runner.os }} - ${{ matrix.arch }} binary
         shell: bash
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          echo "Building for ${{ runner.os }} / ${{ runner.arch }} with version=${VERSION:-none}"
+          echo "Building for ${{ runner.os }} / ${{ matrix.arch }} with version=${VERSION:-none}"
           cd $GITHUB_WORKSPACE
           
           # Pick script based on OS
@@ -79,17 +79,27 @@ jobs:
           
           # Run with or without version
           if [ -n "$VERSION" ]; then
-            ARCH=${{ runner.arch }} $BUILD_SCRIPT --version "$VERSION"
+            CMD="$BUILD_SCRIPT --version \"$VERSION\""
           else
-            ARCH=${{ runner.arch }} $BUILD_SCRIPT
+            CMD="$BUILD_SCRIPT"
           fi
+          
+          # Special case: macOS x86_64 → force Rosetta
+          if [ "${{ runner.os }}" = "macOS" ] && [ "${{ matrix.arch }}" = "x86_64" ]; then
+            echo "Running under Rosetta (x86_64)..."
+            CMD="arch -x86_64 $CMD"
+          fi
+          
+          echo "Executing: $CMD"
+          ARCH=${{ matrix.arch }} eval $CMD
+
 
 
       - name: Detect platform + arch
         id: platform
         run: |
           OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          ARCH=${{ runner.arch }}
+          ARCH=${{ matrix.arch }}
           echo "artifact_name=${OS}-${ARCH}-bundle" >> "$GITHUB_OUTPUT"
 
       - name: Upload binary + manifest bundle
