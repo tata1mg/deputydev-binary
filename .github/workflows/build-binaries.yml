@@ -27,10 +27,10 @@ jobs:
         include:
           - os: macos-latest
             arch: x86_64
-          # - os: ubuntu-latest
-          #   arch: x86_64
-          # - os: windows-latest
-          #   arch: x86_64
+          - os: ubuntu-latest
+            arch: x86_64
+          - os: windows-latest
+            arch: x86_64
 
     runs-on: ${{ matrix.os }}
 
