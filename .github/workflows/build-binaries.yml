@@ -63,11 +63,11 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-      - name: Build ${{ matrix.os }} - ${{ matrix.arch }} binary
+      - name: Build ${{ runner.os }} - ${{ runner.arch }} binary
         shell: bash
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          echo "Building for ${{ runner.os }} / ${{ matrix.arch }} with version=${VERSION:-none}"
+          echo "Building for ${{ runner.os }} / ${{ runner.arch }} with version=${VERSION:-none}"
           cd $GITHUB_WORKSPACE
           
           # Pick script based on OS
@@ -79,9 +79,9 @@ jobs:
           
           # Run with or without version
           if [ -n "$VERSION" ]; then
-            ARCH=${{ matrix.arch }} $BUILD_SCRIPT --version "$VERSION"
+            ARCH=${{ runner.arch }} $BUILD_SCRIPT --version "$VERSION"
           else
-            ARCH=${{ matrix.arch }} $BUILD_SCRIPT
+            ARCH=${{ runner.arch }} $BUILD_SCRIPT
           fi
 
 
@@ -89,7 +89,7 @@ jobs:
         id: platform
         run: |
           OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          ARCH=${{ matrix.arch }}
+          ARCH=${{ runner.arch }}
           echo "artifact_name=${OS}-${ARCH}-bundle" >> "$GITHUB_OUTPUT"
 
       - name: Upload binary + manifest bundle
