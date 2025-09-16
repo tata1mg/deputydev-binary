@@ -6,7 +6,7 @@ from typing import Dict, Optional
 
 from deputydev_core.utils.app_logger import AppLogger
 
-from app.constants import COMMIT_SNAPSHOT_PATH, DIFF_SNAPSOT_PATH, FILE_SNAPSHOT_PATH
+from app.constants import COMMIT_SNAPSHOT_PATH, DIFF_SNAPSOT_PATH, FILE_SNAPSHOT_PATH, SNAPSHOT_META
 from app.services.review.dataclass.main import FileChangeStatusTypes
 
 from .base import DiffSnapshotBase
@@ -91,6 +91,9 @@ class LocalDiffSnapshot(DiffSnapshotBase):
 
             shutil.rmtree(self.temp_snapshot_path)
 
+            # Increment review count after successful snapshot
+            self._increment_review_count()
+
     def get_previous_snapshot(self) -> set[str]:
         """Retrieves the set of files from the previous snapshot.
 
@@ -109,7 +112,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         return prev_files
 
     def clean(self) -> None:
-        """Removes all snapshots for the current branch."""
+        """Removes all snapshots for the current branch"""
         if self.snapshot_path.exists():
             shutil.rmtree(self.snapshot_path)
 
@@ -182,3 +185,53 @@ class LocalDiffSnapshot(DiffSnapshotBase):
                 pass
 
             return {}
+
+    def _load_meta_data(self) -> dict:
+        """Loads the snapshot metadata from file.
+
+        Returns:
+            dict: Dictionary containing metadata like review_count
+        """
+        meta_file = self.snapshot_path / SNAPSHOT_META
+
+        if not meta_file.exists():
+            return {}
+
+        try:
+            with open(meta_file, "r") as f:  # noqa: PTH123
+                return json.load(f)
+        except (json.JSONDecodeError, Exception):  # noqa: BLE001
+            return {}
+
+    def _save_meta_data(self, meta_data: dict) -> None:
+        """Saves the snapshot metadata to file.
+
+        Args:
+            meta_data (dict): Dictionary containing metadata to save
+        """
+        try:
+            self.snapshot_path.mkdir(parents=True, exist_ok=True)
+            meta_file = self.snapshot_path / SNAPSHOT_META
+
+            with open(meta_file, "w") as f:  # noqa: PTH123
+                json.dump(meta_data, f, indent=2)
+        except Exception as ex:  # noqa: BLE001
+            AppLogger.log_error(f"Failed to save metadata: {ex}")
+
+    def _increment_review_count(self) -> None:
+        """Increments the review count in metadata."""
+        meta_data = self._load_meta_data()
+        current_count = meta_data.get("review_count", 0)
+        meta_data["review_count"] = current_count + 1
+        meta_data["last_review_timestamp"] = datetime.now().isoformat()
+        self._save_meta_data(meta_data)
+        AppLogger.log_info(f"Review count incremented to {meta_data['review_count']}")
+
+    def get_review_count(self) -> int:
+        """Gets the current review count.
+
+        Returns:
+            int: The number of reviews completed
+        """
+        meta_data = self._load_meta_data()
+        return meta_data.get("review_count", 0)

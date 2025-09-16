@@ -55,6 +55,7 @@ class FileDiffs(BaseModel):
     repo_name: str
     fail_message: Optional[str] = None
     eligible_for_review: bool
+    review_count: int = 0
 
 
 FILE_DIFF_STATUS_MAP = {
