@@ -69,3 +69,17 @@ class DiffSnapshotBase(ABC):
             Exception: If snapshot creation fails
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def get_review_count(self) -> int:
+        """Gets the current review count.
+
+        Returns:
+            int: The number of reviews completed
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def increment_review_count(self) -> int:
+        """Increments the review count in metadata."""
+        raise NotImplementedError
