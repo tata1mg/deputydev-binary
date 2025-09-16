@@ -38,6 +38,7 @@ class BaseStrategy(ABC):
 
     def snapshot(self, target_branch: Optional[str] = None) -> None:
         self._snapshot_utils.take_diff_snapshot()
+        self._snapshot_utils.increment_review_count()
 
     @property
     def source_branch(self) -> str:

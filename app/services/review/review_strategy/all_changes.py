@@ -14,6 +14,7 @@ class AllChangesStrategy(UncomittedOnlyStrategy):
         self._snapshot_utils.take_diff_snapshot()
         # take commit snapshot
         self._snapshot_utils.take_commit_snapshot(self.source_commit, target_branch)
+        self._snapshot_utils.increment_review_count()
 
     def get_comparable_commit(self) -> str:
         return self.target_commit

@@ -91,9 +91,6 @@ class LocalDiffSnapshot(DiffSnapshotBase):
 
             shutil.rmtree(self.temp_snapshot_path)
 
-            # Increment review count after successful snapshot
-            self._increment_review_count()
-
     def get_previous_snapshot(self) -> set[str]:
         """Retrieves the set of files from the previous snapshot.
 
@@ -218,7 +215,7 @@ class LocalDiffSnapshot(DiffSnapshotBase):
         except Exception as ex:  # noqa: BLE001
             AppLogger.log_error(f"Failed to save metadata: {ex}")
 
-    def _increment_review_count(self) -> None:
+    def increment_review_count(self) -> None:
         """Increments the review count in metadata."""
         meta_data = self._load_meta_data()
         current_count = meta_data.get("review_count", 0)

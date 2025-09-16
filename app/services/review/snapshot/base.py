@@ -78,3 +78,8 @@ class DiffSnapshotBase(ABC):
             int: The number of reviews completed
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def increment_review_count(self) -> int:
+        """Increments the review count in metadata."""
+        raise NotImplementedError

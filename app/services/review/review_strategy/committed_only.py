@@ -19,6 +19,7 @@ class CommittedOnlyStrategy(BaseStrategy):
         Take commit snapshot
         """
         self._snapshot_utils.take_commit_snapshot(self.source_commit, target_branch)
+        self._snapshot_utils.increment_review_count()
 
     def get_diff_changes(self) -> List[FileChanges]:
         """
