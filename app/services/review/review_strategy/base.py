@@ -29,8 +29,8 @@ class BaseStrategy(ABC):
             repo_path (str): Path to the git repository
         """
         self.repo_path = Path(repo_path).resolve()
-        self._git_utils = GitUtils(self.repo_path)
-        self._source_branch: str = None  # type: ignore
+        self._git_utils = GitUtils(repo_path)
+        self._source_branch: Optional[str] = None
         self._target_branch: Optional[str] = target_branch  # type: ignore
         self._snapshot_utils: DiffSnapshotBase = diff_snapshot
         self._target_commit: str = None  # type: ignore
@@ -38,6 +38,7 @@ class BaseStrategy(ABC):
 
     def snapshot(self, target_branch: Optional[str] = None) -> None:
         self._snapshot_utils.take_diff_snapshot()
+        self._snapshot_utils.increment_review_count()
 
     @property
     def source_branch(self) -> str:
@@ -74,6 +75,7 @@ class BaseStrategy(ABC):
             diff_size += len(diff_change.diff)
         # TODO: Uncomment before final release
         max_diff_size = ConfigManager.configs["CODE_REVIEW"]["MAX_DIFF_SIZE"]
+        AppLogger.log_info(f"Diff size: {diff_size}")
         if diff_size > max_diff_size:
             raise LargeDiffError(
                 f"PR diff is large. Max diff size allowed : {max_diff_size}, Actual diff size : {diff_size}"
@@ -106,9 +108,9 @@ class BaseStrategy(ABC):
         Returns:
             FileDiffs: File diffs
         """
+        fail_message: Optional[str] = None
+        diff_changes: List[FileChanges] = []
         try:
-            fail_message = None
-            diff_changes: List[FileChanges] = []
             await self.run_validations()
 
             diff_changes = self.get_diff_changes()
@@ -137,6 +139,7 @@ class BaseStrategy(ABC):
                 repo_name=self._git_utils.get_default_remote_name().split("/")[-1].split(".")[0]
                 if self._git_utils.get_default_remote_name()
                 else "Not Found",
+                review_count=self._snapshot_utils.get_review_count(),
             )
 
     def get_comparable_commit(self) -> str:

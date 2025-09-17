@@ -75,3 +75,6 @@ binary_config.json
 service.app.tar*
 service.app/*
 *.tar.gz
+binary_service/
+binary_manifest.json
+node_modules/

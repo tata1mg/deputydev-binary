@@ -27,7 +27,7 @@ from app.utils.route_error_handler.route_error_handler import get_error_handler
 focus_search = Blueprint("focus_search", url_prefix="")
 
 
-@focus_search.route("/get-focus-search-results", methods=["POST"])
+@focus_search.route("/get-focus-search-results", methods=["POST"], name="get_focus_search_results")
 async def get_focus_search_results(_request: Request) -> HTTPResponse:
     json_body = _request.json
     chunks = await FocusSearchService.get_search_results(payload=FocusSearchParams(**json_body))
@@ -37,7 +37,7 @@ async def get_focus_search_results(_request: Request) -> HTTPResponse:
     return HTTPResponse(body=json.dumps(response))
 
 
-@focus_search.route("/get-files-in-dir", methods=["POST"])
+@focus_search.route("/get-files-in-dir", methods=["POST"], name="get_files_in_dir")
 @get_error_handler(special_handlers=[ToolErrorHandler])
 async def get_files_in_dir(_request: Request) -> HTTPResponse:
     json_body = _request.json
@@ -54,7 +54,7 @@ async def get_files_in_dir(_request: Request) -> HTTPResponse:
     return HTTPResponse(body=json.dumps(response))
 
 
-@focus_search.route("/grep-search", methods=["POST"])
+@focus_search.route("/grep-search", methods=["POST"], name="grep_search")
 @get_error_handler(special_handlers=[ToolErrorHandler])
 async def grep_search(_request: Request) -> HTTPResponse:
     json_body = _request.json

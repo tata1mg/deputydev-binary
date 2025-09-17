@@ -22,7 +22,7 @@ from app.utils.route_error_handler.route_error_handler import get_error_handler
 codebase_read = Blueprint("codebase_read", url_prefix="")
 
 
-@codebase_read.route("/iteratively-read-file", methods=["POST"])
+@codebase_read.route("/iteratively-read-file", methods=["POST"], name="iteratively_read_file")
 @get_error_handler(special_handlers=[ToolErrorHandler])
 async def read_file(_request: Request) -> HTTPResponse:
     json_body = _request.json
@@ -45,7 +45,7 @@ async def read_file(_request: Request) -> HTTPResponse:
     return HTTPResponse(body=json.dumps(response))
 
 
-@codebase_read.route("/read-file-or-summary", methods=["POST"])
+@codebase_read.route("/read-file-or-summary", methods=["POST"], name="read_file_or_summary")
 @get_error_handler(special_handlers=[])
 async def read_file_or_summary(_request: Request) -> HTTPResponse:
     json_body = _request.json

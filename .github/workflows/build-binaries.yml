@@ -1,0 +1,148 @@
+name: Build Binaries [macOS x64, Linux x64, Windows x64]
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Custom version prefix for the build"
+        required: false
+        default: ""
+      upload_to_s3:
+        description: "Upload built binaries to S3?"
+        required: true
+        type: choice
+        options:
+          - "yes"
+          - "no"
+        default: "no"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            arch: x86_64
+          - os: ubuntu-latest
+            arch: x86_64
+          - os: windows-latest
+            arch: x86_64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPUTYDEV_CORE_ACCESS_KEY }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.15"
+      
+      - name: Add a package
+        run: npm install crc-32
+      
+      - name: Install jq on Windows
+        if: ${{ runner.os == 'Windows' && github.event.inputs.upload_to_s3 == 'yes' }}
+        shell: pwsh
+        run: choco install jq -y
+
+      - name: Add github.com to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Build ${{ runner.os }} - ${{ matrix.arch }} binary
+        shell: bash
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          echo "Building for ${{ runner.os }} / ${{ matrix.arch }} with version=${VERSION:-none}"
+          cd $GITHUB_WORKSPACE
+          
+          # Pick script based on OS
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            BUILD_SCRIPT=./build-windows-binary.sh
+          else
+            BUILD_SCRIPT=./build-macos-linux-binary.sh
+          fi
+          
+          # Run with or without version
+          if [ -n "$VERSION" ]; then
+            CMD="$BUILD_SCRIPT --version \"$VERSION\""
+          else
+            CMD="$BUILD_SCRIPT"
+          fi
+          
+          # Special case: macOS x86_64 → force Rosetta
+          if [ "${{ runner.os }}" = "macOS" ] && [ "${{ matrix.arch }}" = "x86_64" ]; then
+            echo "Running under Rosetta (x86_64)..."
+            CMD="arch -x86_64 $CMD"
+          fi
+          
+          echo "Executing: $CMD"
+          ARCH=${{ matrix.arch }} eval $CMD
+
+
+
+      - name: Detect platform + arch
+        id: platform
+        run: |
+          OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          ARCH=${{ matrix.arch }}
+          echo "artifact_name=${OS}-${ARCH}-bundle" >> "$GITHUB_OUTPUT"
+
+      - name: Upload binary + manifest bundle
+        if: ${{ github.event.inputs.upload_to_s3 != 'yes' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.platform.outputs.artifact_name }}
+          path: |
+            ./*.tar.gz
+            binary_manifest.json
+
+      - name: Upload manifest separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.platform.outputs.artifact_name }}_manifest.json
+          path: binary_manifest.json
+
+      # --- S3 Upload sequence, conditional on input ---
+      - name: Extract S3 key from manifest
+        id: manifest
+        if: ${{ github.event.inputs.upload_to_s3 == 'yes' }}
+        run: |
+          S3_KEY=$(jq -r '.. | .s3_key? // empty' binary_manifest.json)
+          TAR_GZ_FILE=$(basename "$S3_KEY")
+          echo "s3_key=$S3_KEY" >> "$GITHUB_OUTPUT"
+          echo "tar_gz_file=$TAR_GZ_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Get presigned S3 URL
+        id: presign
+        if: ${{ github.event.inputs.upload_to_s3 == 'yes' }}
+        run: |
+          RESPONSE=$(curl -s --location 'https://api.deputydev.ai/end_user/v1/binary-upload/get-presigned-url' \
+            --header "authorization: ${{ secrets.BINARY_UPLOAD_AUTH_KEY }}" \
+            --header 'Content-Type: application/json' \
+            --data "{\"s3_key\": \"${{ steps.manifest.outputs.s3_key }}\"}")
+          PRESIGNED_URL=$(echo "$RESPONSE" | jq -r '.data.presigned_url')
+          echo "presigned_url=$PRESIGNED_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Upload binary to S3
+        if: ${{ github.event.inputs.upload_to_s3 == 'yes' }}
+        run: |
+          echo "Uploading ${{ steps.manifest.outputs.tar_gz_file }} to S3..."
+          curl -X PUT \
+            -H "Cache-Control: max-age=7776000" \
+            -T "./${{ steps.manifest.outputs.tar_gz_file }}" \
+            "${{ steps.presign.outputs.presigned_url }}"

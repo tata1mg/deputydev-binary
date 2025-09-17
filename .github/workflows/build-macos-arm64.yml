@@ -1,0 +1,54 @@
+name: Build Binary [macOS arm64]
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPUTYDEV_CORE_ACCESS_KEY }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.15"
+
+      - name: Add github.com to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Build macOS binary
+        run: |
+          echo "Building for ${{ matrix.arch }}"
+          cd $GITHUB_WORKSPACE
+          ARCH=${{ matrix.arch }} ./build-macos-linux-binary.sh
+
+
+      - name: Detect platform + arch
+        id: platform
+        run: |
+          OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          ARCH=${{ matrix.arch }}
+          echo "artifact_name=${OS}-${ARCH}-bundle" >> "$GITHUB_OUTPUT"
+
+      - name: Upload binary + manifest bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.platform.outputs.artifact_name }}
+          path: |
+            ./*.tar.gz
+            binary_manifest.json
