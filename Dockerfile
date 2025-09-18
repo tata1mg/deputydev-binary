@@ -55,4 +55,4 @@ COPY --from=builder /app /app
 EXPOSE 8001
 
 # Default command mirrors compose usage
-CMD ["python", "-m", "app.service", "8001"]
+CMD ["python", "-m", "app.service", "0.0.0.0", "8001"]

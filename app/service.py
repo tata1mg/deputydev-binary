@@ -30,8 +30,9 @@ for listener in listeners:
 def main() -> None:
     multiprocessing.freeze_support()
     os.environ["SSL_CERT_FILE"] = f"{certifi.where()}"
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8001  # Default: 8001
-    app.run(host="127.0.0.1", port=port, debug=False, legacy=True)
+    host = sys.argv[1] if len(sys.argv) > 1 else "127.0.0.1"  # Default: localhost
+    port = int(sys.argv[2]) if len(sys.argv) > 2 else 8001  # Default: 8001
+    app.run(host=host, port=port, debug=False, legacy=True)
 
 
 if __name__ == "__main__":
